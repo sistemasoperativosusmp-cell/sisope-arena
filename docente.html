@@ -67,13 +67,16 @@ async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
   if (!(await esDocente())) { location.replace('alumno.html'); return; }
   $('#quien').textContent = ses.user.email;
-  const [{ data: sem }, { data: cfg }] = await Promise.all([
+  const [{ data: sem, error: e1 }, { data: cfg, error: e2 }] = await Promise.all([
     sb.from('semanas').select('*').order('semana'),
     sb.from('config').select('valor').eq('clave', 'SemanaActual').maybeSingle()
   ]);
+  if (e1 || e2) { console.error('semanas/config', e1, e2); toast('No se pudo leer semanas/config: ' + (e1 || e2).message, true); }
   SEMANAS = sem || [];
+  if (!SEMANAS.length) { toast('La tabla "semanas" llegó vacía. Revisa el diagnóstico en Supabase.', true); }
   $('#semana').innerHTML = SEMANAS.map(s => `<option value="${s.semana}">Semana ${s.semana}${s.tema ? ' · ' + esc(s.tema) : ''}</option>`).join('');
-  $('#semana').value = String(cfg?.valor || 1);
+  const deseada = String(parseInt(cfg?.valor, 10) || 1);
+  $('#semana').value = SEMANAS.some(s => String(s.semana) === deseada) ? deseada : String(SEMANAS[0]?.semana ?? '');
   completarSesion(); await cargarAsistencia(); await cargarStats();
 }
 
@@ -123,6 +126,7 @@ async function cargarStats() {
 
 $('#semana').addEventListener('change', async () => { completarSesion(); await cargarAsistencia(); });
 $('#iniciar').addEventListener('click', async () => {
+  if (!semanaSel()) { toast('Primero elige una semana válida.', true); return; }
   const b = $('#iniciar'); b.disabled = true;
   const { data, error } = await sb.rpc('iniciar_semana', { p_semana: semanaSel(), p_fecha: $('#fecha').value || null, p_practica: $('#practica').value, p_unidad: $('#unidad').value, p_tema: $('#tema').value, p_tipo: $('#tipo').value });
   b.disabled = false;
