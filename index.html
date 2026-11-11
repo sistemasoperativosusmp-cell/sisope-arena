@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Ingresar</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<div class="login">
+  <form class="box" id="f">
+    <h1 class="pix">SISOPE ARENA</h1>
+    <p>Sistemas Operativos y Plataformas · USMP</p>
+    <label>Correo institucional<input id="email" type="email" autocomplete="username" required placeholder="nombre@usmp.pe"></label>
+    <label>Contraseña<input id="pass" type="password" autocomplete="current-password" required></label>
+    <button class="btn pix" id="go" type="submit">INGRESAR</button>
+    <div class="msg" id="msg" role="alert"></div>
+  </form>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/comun.js"></script>
+<script>
+async function destino() { location.replace((await esDocente()) ? 'docente.html' : 'alumno.html'); }
+sb.auth.getSession().then(({ data }) => { if (data.session) destino(); });
+$('#f').addEventListener('submit', async (e) => {
+  e.preventDefault(); $('#msg').textContent = ''; $('#go').disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim().toLowerCase(), password: $('#pass').value });
+  $('#go').disabled = false;
+  if (error) { $('#msg').textContent = /invalid/i.test(error.message) ? 'Correo o contraseña incorrectos.' : 'No se pudo ingresar: ' + error.message; return; }
+  destino();
+});
+</script>
+</body>
+</html>

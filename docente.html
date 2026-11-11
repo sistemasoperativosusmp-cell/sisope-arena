@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Docente</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="pix" id="titulo">SISOPE ARENA · DOCENTE</div>
+  <div class="who"><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
+</header>
+<nav class="tabs">
+  <a href="#" class="on">Inicio</a>
+  <a href="#" class="off" title="Próximamente">Juego del Miedo</a>
+  <a href="#" class="off" title="Próximamente">Trabajo grupal</a>
+  <a href="#" class="off" title="Próximamente">Radar de silencio</a>
+  <a href="#" class="off" title="Próximamente">Exámenes</a>
+  <a href="#" class="off" title="Próximamente">Ajustes</a>
+</nav>
+<main>
+  <div class="grid2">
+    <section class="card">
+      <h2 class="pix">1 · SESIÓN DE HOY</h2>
+      <div class="form">
+        <label>Semana<select id="semana"></select></label>
+        <label>Fecha<input id="fecha" type="date"></label>
+        <label>Práctica<select id="practica"><option>Practica 1</option><option>Practica 2</option><option>Practica 3</option><option>Practica 4</option></select></label>
+        <label>Unidad<select id="unidad"><option>UNIDAD I</option><option>UNIDAD II</option><option>UNIDAD III</option><option>UNIDAD IV</option></select></label>
+        <label>Tema<input id="tema" type="text"></label>
+        <label>Trabajo grupal<select id="tipo"><option>Taller grupal</option><option>Juego de roles</option><option>TikTok</option><option>Responsabilidad social</option><option>Debate</option><option>Exposición</option><option>Examen</option><option>—</option></select></label>
+      </div>
+      <p class="help">Al elegir la semana se completan solos tema, unidad, práctica y tipo de trabajo según el plan del sílabo.</p>
+      <button class="btn green big pix" id="iniciar">INICIAR / CONTINUAR SEMANA</button>
+      <p class="help" style="text-align:center">Solo crea las filas que faltan: nunca borra lo ya registrado.</p>
+    </section>
+    <div>
+      <section class="card">
+        <h2 class="pix">2 · ASISTENCIA</h2>
+        <p class="help" style="margin-top:0">Toca a un alumno para cambiar su estado. Puedes hacerlo en cualquier momento de la clase: no se borra nada.</p>
+        <div class="legend">
+          <span><i class="sq" style="border:2px solid var(--green)"></i>Presente</span>
+          <span><i class="sq" style="background:var(--gold)"></i>Tarde</span>
+          <span><i class="sq" style="background:var(--mute)"></i>Ausente (sale del radar y del sorteo)</span>
+        </div>
+        <div class="chips" id="chips"></div>
+        <div class="count" id="conteo"></div>
+      </section>
+      <section class="stats">
+        <div><small>Semanas registradas</small><b id="stSem">–</b></div>
+        <div><small>Víctimas actuales</small><b id="stVic">–</b></div>
+        <div><small>Ranking</small><b style="font-size:22px">En vivo</b></div>
+      </section>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/comun.js"></script>
+<script>
+let SEMANAS = [], FILAS = [];
+const ORDEN = { Presente: 'Tarde', Tarde: 'Ausente', Ausente: 'Presente' };
+
+async function iniciar() {
+  const ses = await sesionORedirigir(); if (!ses) return;
+  if (!(await esDocente())) { location.replace('alumno.html'); return; }
+  $('#quien').textContent = ses.user.email;
+  const [{ data: sem }, { data: cfg }] = await Promise.all([
+    sb.from('semanas').select('*').order('semana'),
+    sb.from('config').select('valor').eq('clave', 'SemanaActual').maybeSingle()
+  ]);
+  SEMANAS = sem || [];
+  $('#semana').innerHTML = SEMANAS.map(s => `<option value="${s.semana}">Semana ${s.semana}${s.tema ? ' · ' + esc(s.tema) : ''}</option>`).join('');
+  $('#semana').value = String(cfg?.valor || 1);
+  completarSesion(); await cargarAsistencia(); await cargarStats();
+}
+
+function semanaSel() { return Number($('#semana').value); }
+function completarSesion() {
+  const s = SEMANAS.find(x => x.semana === semanaSel()) || {};
+  $('#fecha').value = s.fecha || new Date().toLocaleDateString('en-CA');
+  if (s.practica) $('#practica').value = s.practica;
+  if (s.unidad) $('#unidad').value = s.unidad;
+  $('#tema').value = s.tema || '';
+  if (s.tipo_grupal) $('#tipo').value = s.tipo_grupal;
+  $('#iniciar').textContent = 'INICIAR / CONTINUAR SEMANA ' + semanaSel();
+  $('#titulo').textContent = 'SISOPE ARENA · DOCENTE · SEMANA ' + semanaSel();
+}
+
+async function cargarAsistencia() {
+  const { data, error } = await sb.from('detalle').select('id, asistencia, hora_llegada, jugadores(nombre, alias, consultora)').eq('semana', semanaSel());
+  if (error) { toast('Error al leer asistencia: ' + error.message, true); return; }
+  FILAS = (data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
+  pintarAsistencia();
+}
+
+function pintarAsistencia() {
+  if (!FILAS.length) { $('#chips').innerHTML = '<div class="empty">Aún no hay filas para esta semana. Presiona "Iniciar / continuar semana".</div>'; $('#conteo').textContent = ''; return; }
+  $('#chips').innerHTML = FILAS.map(f => `<button class="chip ${f.asistencia}" data-id="${f.id}"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : f.asistencia === 'Ausente' ? ' · AUSENTE' : ''}</small></button>`).join('');
+  const c = k => FILAS.filter(f => f.asistencia === k).length;
+  $('#conteo').textContent = `${c('Presente')} presentes · ${c('Tarde')} tarde · ${c('Ausente')} ausentes`;
+  document.querySelectorAll('.chip').forEach(b => b.onclick = () => cambiarAsistencia(Number(b.dataset.id)));
+}
+
+async function cambiarAsistencia(id) {
+  const f = FILAS.find(x => x.id === id); const nuevo = ORDEN[f.asistencia];
+  const hora = nuevo === 'Tarde' ? new Date().toTimeString().slice(0, 5) : null;
+  const antes = { ...f }; f.asistencia = nuevo; f.hora_llegada = hora; pintarAsistencia();
+  const { error } = await sb.from('detalle').update({ asistencia: nuevo, hora_llegada: hora }).eq('id', id);
+  if (error) { Object.assign(f, antes); pintarAsistencia(); toast('No se guardó: ' + error.message, true); }
+}
+
+async function cargarStats() {
+  const [{ data: d }, { data: v }] = await Promise.all([
+    sb.from('detalle').select('semana'),
+    sb.from('v_ranking').select('alias').eq('victima', true)
+  ]);
+  $('#stSem').textContent = new Set((d || []).map(x => x.semana)).size + ' / 14';
+  $('#stVic').textContent = (v || []).length;
+}
+
+$('#semana').addEventListener('change', async () => { completarSesion(); await cargarAsistencia(); });
+$('#iniciar').addEventListener('click', async () => {
+  const b = $('#iniciar'); b.disabled = true;
+  const { data, error } = await sb.rpc('iniciar_semana', { p_semana: semanaSel(), p_fecha: $('#fecha').value || null, p_practica: $('#practica').value, p_unidad: $('#unidad').value, p_tema: $('#tema').value, p_tipo: $('#tipo').value });
+  b.disabled = false;
+  if (error) { toast('Error: ' + error.message, true); return; }
+  toast(`Semana ${semanaSel()}: ${data} filas nuevas creadas`);
+  const { data: sem } = await sb.from('semanas').select('*').order('semana'); SEMANAS = sem || SEMANAS;
+  await cargarAsistencia(); await cargarStats();
+});
+iniciar();
+</script>
+</body>
+</html>
