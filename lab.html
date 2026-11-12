@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Laboratorio</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="pix">SISOPE ARENA · DOCENTE</div>
+  <div class="pills"><span>Laboratorio · calificación en casa</span></div>
+  <div class="who"><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
+</header>
+<nav class="tabs" id="nav"></nav>
+<main>
+  <div class="filtros">
+    <label>Semana <select id="semana"></select></label>
+    <label>Buscar <input id="buscar" placeholder="Nombre o alias"></label>
+    <span class="avance" id="avance"></span>
+  </div>
+  <div class="grhead" id="cab"></div>
+  <div class="grlist" id="lista"><div class="empty">Cargando…</div></div>
+  <section class="leyenda"><h3 class="pix">LEYENDA</h3><div class="ley"><div><span class="seg mini2"><button>2.5</button><button class="on">3</button></span><p><b>Laboratorio:</b> de 0 a 3 puntos, en pasos de 0.5.</p></div>
+      <div><span class="seg mini2 txt"><button class="on p">Ayudó a otros</button></span><p><b>Modo de trabajo</b> (no da puntos): Individual · Ayudó a otros · Recibió ayuda · Grupal. Sirve para detectar quién trabaja solo o depende de otros.</p></div>
+      <div><span class="seg mini2"><button>0</button><button class="on">1</button></span><p><b>Tocar de nuevo</b> la opción marcada la borra (queda <b>pendiente</b>, distinto de 0).</p></div>
+      <div><span class="seg mini2 bulk"><i>Todos</i><button>3</button></span><p><b>Todos:</b> pone la misma nota a toda la consultora; luego ajustas a quien corresponda.</p></div>
+      <div><span class="tag" style="background:#fff1c2;color:#7a5a00">pendiente</span><p>Aún sin calificar. Arriba ves el avance “N de M calificados”. Se califica aunque haya faltado a clase.</p></div></div></section>
+</main>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/comun.js"></script>
+<script src="assets/casa.js"></script>
+<script>
+window.CASA = {
+  campos: 'lab, lab_modo', max: 3, grid: '240px minmax(380px,1fr) minmax(360px,1fr) 80px',
+  cols: [
+    { campo: 'lab', titulo: 'Nota del laboratorio', sub: '0 a 3 puntos', opciones: [0, 0.5, 1, 1.5, 2, 2.5, 3], masivo: [0, 1.5, 2, 2.5, 3] },
+    { campo: 'lab_modo', titulo: 'Modo de trabajo', sub: 'no da puntos', cls: 'txt', opciones: ['Individual', 'Ayudó a otros', 'Recibió ayuda', 'Grupal'], masivo: ['Grupal'] }
+  ],
+  total: f => nv(f.lab) || 0,
+  calificado: f => f.lab !== null && f.lab !== undefined
+};
+iniciarCasa();
+</script>
+</body>
+</html>

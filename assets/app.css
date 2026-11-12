@@ -185,3 +185,44 @@ nav.tabs a.gr{background:var(--purple);border-color:var(--purple);color:#fff}
 .ley .bon.mini2{pointer-events:none;flex-shrink:0}
 .seg.bulk i{font-style:normal;font-size:11px;font-weight:800;color:#5a2fa6;padding:0 8px;display:flex;align-items:center;background:#ece3fb;border-right:1px solid #c9b8ee}.seg.bulk button{padding:5px 11px}
 .grhead,.grrow{grid-template-columns:210px 340px repeat(3,minmax(130px,1fr)) 50px 150px}.seg.part button{padding:7px 7px}
+/* Menú agrupado */
+nav.menu{gap:18px;align-items:center;padding:8px 24px}
+nav.menu .mg{display:flex;align-items:center;gap:6px;padding-right:18px;border-right:2px solid var(--line)}
+nav.menu .mg:last-child{border-right:0}
+nav.menu .mgt{font-size:10px;font-weight:800;color:var(--mute);letter-spacing:1px;margin-right:4px;white-space:nowrap}
+nav.menu a{padding:6px 13px;font-size:13px;cursor:pointer}
+nav.menu a.on{color:#fff}
+.c-navy{background:var(--navy)!important;border-color:var(--navy)!important}.c-red{background:var(--red)!important;border-color:var(--red)!important}
+.c-purple{background:var(--purple)!important;border-color:var(--purple)!important}.c-teal{background:#0f766e!important;border-color:#0f766e!important}
+.c-blue{background:var(--blue)!important;border-color:var(--blue)!important}.c-orange{background:var(--orange)!important;border-color:var(--orange)!important}
+.ajs{display:flex;flex-direction:column;gap:4px}
+.ajs .bon{height:30px}.ajs .bon span{min-width:50px;font-size:13px}.ajs .bon button{padding:0 8px;font-size:13px}.ajs .bon .bmenos{width:26px;padding:0}
+.bon.fal{border-color:#e6a3a3;background:#fff5f5}.bon.fal .bmas{background:#c23030;color:#fff}.bon.fal .bmenos{background:#fde8e8;color:#a02424}.bon.fal span.si{color:#c23030}
+.grhead,.grrow{grid-template-columns:200px 330px repeat(3,minmax(130px,1fr)) 46px 150px}
+/* Calificación en casa */
+.filtros{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.filtros label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--mute)}
+.filtros select,.filtros input{padding:8px 10px;border-radius:10px;border:2px solid var(--line);color:var(--ink);background:#fff}
+.filtros select{max-width:460px}
+.avance{margin-left:auto;font-weight:800;color:var(--navy);background:#e7efff;padding:6px 12px;border-radius:999px;font-size:13px}
+.grrow.pend{background:#fffdf3}.pendt{background:#fff1c2;color:#7a5a00;border-radius:999px;padding:1px 7px}
+.seg.txt button{font-size:12px;padding:7px 9px;font-weight:700}
+.cnt.mini3{height:34px;background:var(--blue);border-radius:10px;display:inline-flex}.cnt.mini3 button:first-child{width:28px}.cnt.mini3 button:last-child{min-width:56px;font-size:13px}
+.ley .cnt.mini3{pointer-events:none}
+/* D7 · Exámenes */
+.tabla{background:#fff;border:2px solid var(--line);border-radius:14px;overflow:auto}
+.tf{display:grid;grid-template-columns:minmax(220px,3fr) repeat(5,62px) 70px 76px 70px 76px 70px 120px 86px;gap:6px;padding:7px 14px;border-bottom:1px solid #edf0f6;align-items:center;font-size:14px;min-width:1150px}
+.tf b{display:block;font-size:13px}.tf small{font-size:11px;font-weight:700;color:var(--mute)}
+.tcab{background:var(--navy);color:#fff;font-size:12px;font-weight:800;position:sticky;top:0}
+.tcab .ex{background:var(--orange);border-radius:6px;padding:3px 4px;text-align:center}
+.tf .g{background:#eef1f7;border-radius:6px;padding:5px;text-align:center}.tf .g.b{font-weight:800}
+.tf input{width:100%;padding:5px;border:2px solid #f0c48a;border-radius:6px;text-align:center;font-weight:800;color:var(--ink)}
+.tf input.bn{font-weight:600}.tf input.mod{background:#fff1c2;border-color:var(--gold)}
+.tf .cond{font-size:12px;font-weight:800}.cond.ok{color:var(--green)}.cond.mal{color:#c23030}.cond.pen{color:var(--orange)}
+.tf .min{text-align:center;font-weight:800;font-size:13px}.tf .min.mal{color:#c23030}
+.tpie{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 14px;border-top:2px solid var(--line);flex-wrap:wrap;min-width:1150px}
+.tpie #cambios{margin-right:auto}
+.bulkex{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:var(--mute)}
+.btn:disabled,.sbtn:disabled{opacity:.45;cursor:not-allowed}
+.cnt.mini3{width:fit-content;overflow:hidden}.cnt.mini3 button{color:#fff;background:transparent}
+.ley .cnt.mini3{flex-shrink:0}

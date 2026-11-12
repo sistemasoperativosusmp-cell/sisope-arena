@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Exámenes y bonus</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="pix">SISOPE ARENA · DOCENTE</div>
+  <div class="pills"><span>PF = (3 × PE + EP + EF) / 5</span><span>Aprueba con <b id="nApr">10.5</b></span></div>
+  <div class="who"><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
+</header>
+<nav class="tabs" id="nav"></nav>
+<main>
+  <div class="filtros">
+    <label>Consultora <select id="cons"><option value="">Todas</option></select></label>
+    <label>Buscar <input id="buscar" placeholder="Nombre o alias"></label>
+    <span class="help" style="margin:0">El bonus se suma a la nota del examen (máximo 20). Las celdas blancas se editan; las grises se calculan solas.</span>
+  </div>
+  <div class="tabla">
+    <div class="tf tcab"><div>Alumno</div><div>P1</div><div>P2</div><div>P3</div><div>P4</div><div>PE</div><div class="ex">EP</div><div class="ex">Bonus EP</div><div class="ex">EF</div><div class="ex">Bonus EF</div><div>PF</div><div>Condición</div><div>EF mínimo</div></div>
+    <div id="filas"><div class="empty">Cargando…</div></div>
+    <div class="tpie">
+      <span class="help" style="margin:0" id="cambios"></span>
+      <div class="bulkex">Bonus a todos los filtrados:
+        <button class="sbtn" onclick="bonusTodos('bonus_ep')">+0.5 EP</button><button class="sbtn" onclick="bonusTodos('bonus_ef')">+0.5 EF</button>
+      </div>
+      <button class="sbtn" id="descartar">Descartar cambios</button>
+      <button class="btn green" id="guardar">Guardar notas</button>
+    </div>
+  </div>
+  <section class="leyenda"><h3 class="pix">LEYENDA</h3><div class="ley">
+    <div><span class="tag" style="background:#eef1f7;color:var(--ink)">12.50</span><p><b>Gris:</b> se calcula solo. P1–P4 salen de los puntos de cada práctica (entre 0 y 20); PE es su promedio.</p></div>
+    <div><span class="tag" style="background:#fff;border:2px solid #f0c48a;color:var(--ink)">14</span><p><b>Blanco:</b> notas del examen parcial (EP) y final (EF), de 0 a 20. Vacío = aún no rinde.</p></div>
+    <div><span class="tag" style="background:#fff;border:2px solid #f0c48a;color:var(--ink)">+1</span><p><b>Bonus EP / EF:</b> puntos extra por investigación o reto adicional. Se suman al examen sin pasar de 20.</p></div>
+    <div><span class="tag" style="background:#fde8e8;color:#c23030">&gt; 20</span><p><b>EF mínimo:</b> lo que necesita en el final para aprobar. “&gt; 20” = ya no le alcanza solo con el final.</p></div>
+    <div><span class="tag" style="background:#fff1c2;color:#7a5a00">sin guardar</span><p>Las celdas cambiadas se resaltan en amarillo hasta que presiones <b>Guardar notas</b>.</p></div>
+  </div></section>
+</main>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/comun.js"></script>
+<script>
+let NOTAS = [], CAMBIOS = {}, APR = 10.5;
+const CAMPOS = ['ep', 'bonus_ep', 'ef', 'bonus_ef'];
+const d2 = v => v === null || v === undefined || v === '' ? '' : Number(v).toFixed(2);
+const val = (r, c) => (CAMBIOS[r.jugador_id] && c in CAMBIOS[r.jugador_id]) ? CAMBIOS[r.jugador_id][c] : r[c];
+
+async function iniciar() {
+  const ses = await sesionORedirigir(); if (!ses) return;
+  if (!(await esDocente())) { location.replace('alumno.html'); return; }
+  $('#quien').textContent = ses.user.email;
+  const { data: c } = await sb.from('config').select('valor').eq('clave', 'NotaAprobatoria').maybeSingle();
+  APR = Number(c?.valor) || 10.5; $('#nApr').textContent = APR;
+  await cargar();
+  $('#cons').innerHTML = '<option value="">Todas</option>' + [...new Set(NOTAS.map(r => r.consultora).filter(Boolean))].sort().map(x => `<option>${esc(x)}</option>`).join('');
+  $('#cons').onchange = pintar; $('#buscar').oninput = pintar;
+}
+async function cargar() {
+  const { data, error } = await sb.from('v_notas').select('*').order('nombre');
+  if (error) { toast('Error al cargar: ' + error.message, true); return; }
+  NOTAS = data || []; CAMBIOS = {}; pintar();
+}
+function visibles() {
+  const q = $('#buscar').value.trim().toLowerCase(), cons = $('#cons').value;
+  return NOTAS.filter(r => (!cons || r.consultora === cons) && (!q || (r.nombre + ' ' + r.alias).toLowerCase().includes(q)));
+}
+// Cálculo local para ver el efecto antes de guardar (misma fórmula que la base)
+function calc(r) {
+  const n = c => { const v = val(r, c); return v === '' || v === null || v === undefined ? null : Number(v); };
+  const epf = n('ep') === null ? null : Math.min(20, n('ep') + (n('bonus_ep') || 0));
+  const eff = n('ef') === null ? null : Math.min(20, n('ef') + (n('bonus_ef') || 0));
+  const pe = Number(r.pe), pf = (3 * pe + (epf || 0) + (eff || 0)) / 5;
+  const cond = pf >= APR ? 'APROBADO' : eff === null ? 'PENDIENTE EF' : 'DESAPROBADO';
+  return { pf, cond, min: Math.max(0, APR * 5 - 3 * pe - (epf || 0)) };
+}
+function pintar() {
+  const rs = visibles();
+  $('#filas').innerHTML = rs.length ? rs.map(r => {
+    const k = calc(r), ch = CAMBIOS[r.jugador_id] || {};
+    return `<div class="tf">
+      <div><b>${esc(r.nombre)}</b><small>${esc(r.alias)}${r.consultora ? ' · ' + esc(r.consultora) : ''}</small></div>
+      ${['p1', 'p2', 'p3', 'p4'].map(p => `<div class="g">${d2(r[p])}</div>`).join('')}<div class="g b">${d2(r.pe)}</div>
+      ${CAMPOS.map(c => `<input class="${c in ch ? 'mod' : ''} ${c.startsWith('bonus') ? 'bn' : 'b'}" inputmode="decimal" value="${val(r, c) ?? ''}" placeholder="${c.startsWith('bonus') ? '0' : '—'}" data-j="${r.jugador_id}" data-c="${c}">`).join('')}
+      <div class="g b">${k.pf.toFixed(2)}</div>
+      <div class="cond ${k.cond === 'APROBADO' ? 'ok' : k.cond === 'DESAPROBADO' ? 'mal' : 'pen'}">${k.cond}</div>
+      <div class="min ${k.min > 20 ? 'mal' : ''}">${k.cond === 'APROBADO' ? '—' : k.min > 20 ? '&gt; 20' : k.min.toFixed(2)}</div>
+    </div>`;
+  }).join('') : '<div class="empty">Nadie coincide con el filtro.</div>';
+  document.querySelectorAll('#filas input').forEach(i => i.onchange = () => editar(i));
+  const n = Object.keys(CAMBIOS).length; $('#cambios').textContent = n ? `${n} alumno(s) con cambios sin guardar` : 'Sin cambios pendientes';
+  $('#guardar').disabled = !n; $('#descartar').disabled = !n;
+}
+function editar(i) {
+  const j = i.dataset.j, c = i.dataset.c, raw = i.value.trim().replace(',', '.');
+  if (raw !== '' && (isNaN(raw) || Number(raw) < 0 || (!c.startsWith('bonus') && Number(raw) > 20))) { toast(c.startsWith('bonus') ? 'El bonus debe ser 0 o más' : 'La nota va de 0 a 20', true); pintar(); return; }
+  const r = NOTAS.find(x => x.jugador_id === j);
+  const nuevo = raw === '' ? (c.startsWith('bonus') ? 0 : null) : Number(raw);
+  CAMBIOS[j] = CAMBIOS[j] || {};
+  if (Number(r[c] ?? (c.startsWith('bonus') ? 0 : NaN)) === nuevo || (r[c] === null && nuevo === null)) delete CAMBIOS[j][c]; else CAMBIOS[j][c] = nuevo;
+  if (!Object.keys(CAMBIOS[j]).length) delete CAMBIOS[j];
+  pintar();
+}
+function bonusTodos(c) {
+  visibles().forEach(r => { CAMBIOS[r.jugador_id] = CAMBIOS[r.jugador_id] || {}; CAMBIOS[r.jugador_id][c] = Number(val(r, c) || 0) + 0.5; });
+  pintar(); toast(`+0.5 de ${c === 'bonus_ep' ? 'bonus EP' : 'bonus EF'} a ${visibles().length} alumnos. Revisa y presiona Guardar notas.`);
+}
+$('#descartar').onclick = () => { CAMBIOS = {}; pintar(); };
+$('#guardar').onclick = async () => {
+  const filas = Object.entries(CAMBIOS).map(([j, ch]) => { const r = NOTAS.find(x => x.jugador_id === j); const o = { jugador_id: j }; CAMPOS.forEach(c => o[c] = c in ch ? ch[c] : (r[c] ?? (c.startsWith('bonus') ? 0 : null))); return o; });
+  $('#guardar').disabled = true;
+  const { error } = await sb.from('examenes').upsert(filas, { onConflict: 'jugador_id' });
+  if (error) { $('#guardar').disabled = false; toast('No se guardó: ' + error.message, true); return; }
+  toast(`Notas guardadas (${filas.length} alumnos)`); await cargar();
+};
+iniciar();
+</script>
+</body>
+</html>
