@@ -112,3 +112,19 @@ nav.tabs a.jm{background:var(--red);border-color:var(--red);color:#fff}
 .etq.on{background:#c23030;border-color:#c23030;color:#fff}.etq.on.pos{background:var(--green);border-color:var(--green)}
 .sep{width:100%;border-top:2px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px;align-items:center}
 .lista{width:100%;display:flex;flex-direction:column;gap:8px}
+.cnt{display:flex;height:44px;border-radius:10px;overflow:hidden}
+.cnt button{border:0;background:transparent;color:#fff;font-weight:800;cursor:pointer}
+.cnt button:first-child{width:30px;font-size:18px;background:#00000026}
+.cnt button:last-child{min-width:62px;padding:0 10px;font-size:15px}
+.cnt.ok{background:var(--green)}.cnt.no{background:#c23030}.cnt.voz{background:var(--blue)}
+.cnt.voz button:last-child{font-size:13px}
+.cnt button:disabled{opacity:.35;cursor:not-allowed}
+.cnt button:hover:not(:disabled){filter:brightness(1.12)}
+.leyenda{margin-top:20px;background:#fff;border:2px solid var(--line);border-radius:14px;padding:16px 18px}
+.leyenda h3{margin:0 0 12px;font-size:11px;color:var(--navy);font-weight:400}
+.ley{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px 20px}
+.ley>div{display:flex;align-items:center;gap:10px}
+.ley p{margin:0;font-size:13px;color:var(--mute);font-weight:700;line-height:1.35}.ley p b{color:var(--ink)}
+.ley .mini2{height:34px;flex-shrink:0;pointer-events:none}.ley .cnt.mini2 button:last-child{min-width:54px;font-size:13px}
+.ley .ab.mini2{width:34px;min-width:34px;height:34px}
+.ley .tag{flex-shrink:0}

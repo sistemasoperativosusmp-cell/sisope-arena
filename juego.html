@@ -39,6 +39,19 @@
     </aside>
     <section class="grupos" id="grupos"><div class="empty">Cargando…</div></section>
   </div>
+  <section class="leyenda">
+    <h3 class="pix">LEYENDA</h3>
+    <div class="ley">
+      <div><span class="cnt ok mini2"><button>−</button><button>✓ 0.5</button></span><p><b>Acertó.</b> Cada toque suma <b class="pAc"></b> pts. El “−” quita un acierto si te equivocaste.</p></div>
+      <div><span class="cnt no mini2"><button>−</button><button>✗ −0.5</button></span><p><b>No contestó.</b> Cada toque resta <b class="pFa"></b> pts. El “−” devuelve el medio punto.</p></div>
+      <div><span class="cnt voz mini2"><button>−</button><button>Voz 1</button></span><p><b>Participó por iniciativa propia.</b> No da puntos: cuenta para el radar de silencio.</p></div>
+      <div><span class="ab et mini2" style="display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1b2340" stroke-width="2"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><p><b>Etiquetas</b> (Mudo, Flojo, Proactivo…). Solo las ves tú; no afectan la nota.</p></div>
+      <div><span class="tag rojo">Sin hablar</span> <span class="tag">Voz 2</span><p><b>Voz</b> = aciertos + participaciones voluntarias + liderar/exponer en grupal. En rojo: aún no habla hoy.</p></div>
+      <div><span class="tag xp">1 XP</span><p>Puntos del Juego del Miedo de hoy (aciertos − no contestó).</p></div>
+      <div><span class="fila aus" style="padding:2px 8px;border:0;display:inline-block;background:#eee;border-radius:6px;font-weight:800;font-size:12px">AUSENTE</span><p>En gris: no participa ni sale en el sorteo. Si llega, usa <b>Registrar llegada tarde</b>.</p></div>
+      <div><span class="tag" style="background:var(--ink);color:#fff">Deshacer</span><p>Revierte el último toque que hiciste en esta pantalla.</p></div>
+    </div>
+  </section>
 </main>
 
 <!-- D3 · Víctima -->
@@ -131,11 +144,17 @@ function filaHTML(f) {
   return `<div class="fila ${aus ? 'aus' : v === 0 ? 'mudo' : ''}">
     <div class="q"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : aus ? ' · AUSENTE' : ''}</small>
       <div class="tags"><span class="tag ${v === 0 ? 'rojo' : ''}">${v === 0 ? 'Sin hablar' : 'Voz ' + v}</span><span class="tag xp">${fmt(xpJM(f))} XP</span>${et.map(e => `<span class="tag et">${esc(e)}</span>`).join('')}</div></div>
-    <button class="ab ok" ${dis} title="Acertó" onclick="sumar('${f.jugador_id}','jm_aciertos',1)">✓ ${num(f.jm_aciertos)}</button>
-    <button class="ab no" ${dis} title="No contestó" onclick="sumar('${f.jugador_id}','jm_fallos',1)">✗ ${num(f.jm_fallos)}</button>
-    <button class="ab voz" ${dis} title="Participación voluntaria" onclick="sumar('${f.jugador_id}','part_vol',1)">Voz ${num(f.part_vol)}</button>
+    ${contador(f, 'jm_aciertos', 'ok', '✓', fmt1(num(f.jm_aciertos) * PA), dis)}
+    ${contador(f, 'jm_fallos', 'no', '✗', (num(f.jm_fallos) ? '−' : '') + fmt1(num(f.jm_fallos) * PF), dis)}
+    ${contador(f, 'part_vol', 'voz', 'Voz', String(num(f.part_vol)), dis)}
     <button class="ab et" title="Etiquetas" onclick="abrirEtq('${f.jugador_id}')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></button>
   </div>`;
+}
+
+const fmt1 = n => (Math.round(n * 10) / 10).toFixed(1);
+function contador(f, campo, cls, ico, valor, dis) {
+  const tit = { jm_aciertos: 'Acertó', jm_fallos: 'No contestó', part_vol: 'Participación voluntaria' }[campo];
+  return `<div class="cnt ${cls}"><button ${dis || (num(f[campo]) ? '' : 'disabled')} title="Quitar (${tit})" onclick="sumar('${f.jugador_id}','${campo}',-1)">−</button><button ${dis} title="${tit}" onclick="sumar('${f.jugador_id}','${campo}',1)">${ico} ${valor}</button></div>`;
 }
 
 function resumen() {
@@ -155,7 +174,8 @@ async function sumar(jid, campo, delta, sinPila) {
   f[campo] = data[campo]; pintar(); if (VIC === jid) pintarVictima();
   if (!sinPila) PILA.push({ jid, campo, delta });
   const txt = { jm_aciertos: `✓ +${fmt(PA)}`, jm_fallos: `✗ −${fmt(PF)}`, part_vol: 'Voz +1' }[campo];
-  toast(`${f.jugadores?.alias}: ${delta > 0 ? txt : 'deshecho'}`);
+  const menos = { jm_aciertos: `✓ −${fmt(PA)}`, jm_fallos: `✗ quitado (+${fmt(PF)})`, part_vol: 'Voz −1' }[campo];
+  toast(`${f.jugadores?.alias}: ${delta > 0 ? txt : menos}`);
 }
 
 async function deshacer() {
