@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Trabajo grupal</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="pix">SISOPE ARENA · DOCENTE</div>
+  <div class="pills" id="pills"></div>
+  <div class="who"><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
+</header>
+<nav class="tabs">
+  <a href="docente.html">Inicio</a>
+  <a href="juego.html">Juego del Miedo</a>
+  <a href="grupal.html" class="gr">Trabajo grupal</a>
+  <a href="#" class="off" title="Próximamente">Radar de silencio</a>
+  <a href="#" class="off" title="Próximamente">Exámenes</a>
+  <a href="#" class="off" title="Próximamente">Ajustes</a>
+</nav>
+<main>
+  <div class="grhead">
+    <div>Alumno</div>
+    <div>Participación <span class="nop">(no da puntos, cuenta como voz)</span></div>
+    <div><b>Comunicación efectiva</b><br>Deficiente 0 · Bueno 0.5 · Excelente 1</div>
+    <div><b>Conocimiento técnico</b><br>Deficiente 0 · Bueno 0.5 · Excelente 1</div>
+    <div><b>Análisis crítico</b><br>Deficiente 0 · Bueno 0.5 · Excelente 1</div>
+    <div style="text-align:right"><b>Total / 3</b></div>
+  </div>
+  <div id="grupos" class="grlist"><div class="empty">Cargando…</div></div>
+  <section class="leyenda">
+    <h3 class="pix">LEYENDA</h3>
+    <div class="ley">
+      <div><span class="seg mini2"><button class="on p">Lideró</button><button>Habló</button></span><p><b>Participación.</b> No da puntos. “Lideró” y “Habló” suman 1 de voz para el radar de silencio.</p></div>
+      <div><span class="seg mini2"><button>0</button><button class="on">0.5</button><button>1</button></span><p><b>Rúbrica:</b> 0 deficiente · 0.5 bueno · 1 excelente en cada criterio. Máximo 3 puntos por semana.</p></div>
+      <div><span class="seg mini2 bulk"><button>Todos 1</button></span><p><b>Aplicar a toda la consultora:</b> pone la misma nota a todos los presentes del grupo. Luego ajustas a quien corresponda.</p></div>
+      <div><span class="tag" style="background:var(--ink);color:#fff">Tocar de nuevo</span><p>Tocar la opción ya marcada la <b>borra</b> (queda sin calificar).</p></div>
+      <div><span class="tag" style="background:#eee;color:var(--mute)">AUSENTE</span><p>En gris y bloqueado. Si llegó tarde, márcalo en <b>Inicio</b> o en <b>Juego del Miedo</b>.</p></div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/comun.js"></script>
+<script>
+let SEM = 1, FILAS = [];
+const PART = [['Lideró', 'Lideró'], ['Expuso / habló', 'Habló'], ['Apoyó sin exponer', 'Apoyó'], ['No participó', 'No part.']];
+const CRIT = ['gr_comunicacion', 'gr_tecnico', 'gr_analisis'];
+const NIV = [0, 0.5, 1];
+const n = v => v === null || v === undefined ? null : Number(v);
+const total = f => CRIT.reduce((s, c) => s + (n(f[c]) || 0), 0);
+const fmt = x => String(Math.round(x * 10) / 10);
+
+async function iniciar() {
+  const ses = await sesionORedirigir(); if (!ses) return;
+  if (!(await esDocente())) { location.replace('alumno.html'); return; }
+  $('#quien').textContent = ses.user.email;
+  const { data: c } = await sb.from('config').select('valor').eq('clave', 'SemanaActual').maybeSingle();
+  SEM = parseInt(c?.valor, 10) || 1;
+  const { data: s } = await sb.from('semanas').select('*').eq('semana', SEM).maybeSingle();
+  $('#pills').innerHTML = [`Semana ${SEM}`, s?.tema, s?.tipo_grupal ? 'Grupal: ' + s.tipo_grupal : null].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
+  const { data, error } = await sb.from('detalle').select('id, asistencia, tipo_grupal, participacion_grupal, gr_comunicacion, gr_tecnico, gr_analisis, jugadores(nombre, alias, consultora, rol_consultora)').eq('semana', SEM);
+  if (error) { toast('Error al cargar: ' + error.message, true); return; }
+  FILAS = (data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
+  if (['Examen', '—'].includes(s?.tipo_grupal)) toast(`La semana ${SEM} no tiene trabajo grupal (${s.tipo_grupal}).`, true);
+  pintar();
+}
+
+function seg(f, campo, opciones, cls) {
+  const dis = f.asistencia === 'Ausente' ? 'disabled' : '';
+  return `<span class="seg ${cls || ''}">${opciones.map(([val, txt]) => {
+    const on = campo === 'participacion_grupal' ? f[campo] === val : n(f[campo]) === val;
+    return `<button ${dis} class="${on ? 'on' : ''} ${cls === 'part' ? 'p' : ''}" onclick='poner(${f.id}, "${campo}", ${JSON.stringify(val)})'>${esc(txt)}</button>`;
+  }).join('')}</span>`;
+}
+
+function pintar() {
+  if (!FILAS.length) { $('#grupos').innerHTML = `<div class="empty">No hay filas para la semana ${SEM}. Ve a <a href="docente.html">Inicio</a> y presiona "Iniciar / continuar semana".</div>`; return; }
+  const grupos = {};
+  FILAS.forEach(f => { const g = f.jugadores?.consultora || 'SIN CONSULTORA'; (grupos[g] = grupos[g] || []).push(f); });
+  $('#grupos').innerHTML = Object.keys(grupos).sort().map(g => {
+    const filas = grupos[g], pres = filas.filter(f => f.asistencia !== 'Ausente');
+    const prom = pres.length ? pres.reduce((s, f) => s + total(f), 0) / pres.length : 0;
+    return `<div class="grupo">
+      <div class="grrow grcab"><div class="pix" style="font-size:11px">${esc(g.toUpperCase())}<small>Promedio ${fmt(prom)} / 3</small></div>
+        <div class="nop" style="font-weight:800">Aplicar a toda la consultora →</div>
+        ${CRIT.map(c => `<span class="seg bulk">${NIV.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c}", ${v})'>Todos ${v}</button>`).join('')}</span>`).join('')}
+        <div></div></div>
+      ${filas.map(f => `<div class="grrow ${f.asistencia === 'Ausente' ? 'aus' : ''}">
+        <div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.jugadores?.rol_consultora ? ' · ' + esc(f.jugadores.rol_consultora) : ''}${f.asistencia === 'Ausente' ? ' · AUSENTE' : f.asistencia === 'Tarde' ? ' · TARDE' : ''}</small></div>
+        ${seg(f, 'participacion_grupal', PART, 'part')}
+        ${CRIT.map(c => seg(f, c, NIV.map(v => [v, String(v)]))).join('')}
+        <div class="tot">${fmt(total(f))}</div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+async function poner(id, campo, valor) {
+  const f = FILAS.find(x => x.id === id); const antes = f[campo];
+  const actual = campo === 'participacion_grupal' ? f[campo] : n(f[campo]);
+  const nuevo = actual === valor ? null : valor;
+  f[campo] = nuevo; pintar();
+  const { error } = await sb.from('detalle').update({ [campo]: nuevo }).eq('id', id);
+  if (error) { f[campo] = antes; pintar(); toast('No se guardó: ' + error.message, true); }
+}
+
+async function masivo(g, campo, valor) {
+  const filas = FILAS.filter(f => (f.jugadores?.consultora || 'SIN CONSULTORA') === g && f.asistencia !== 'Ausente');
+  if (!filas.length) return;
+  const antes = filas.map(f => f[campo]); filas.forEach(f => f[campo] = valor); pintar();
+  const { error } = await sb.from('detalle').update({ [campo]: valor }).in('id', filas.map(f => f.id));
+  if (error) { filas.forEach((f, i) => f[campo] = antes[i]); pintar(); toast('No se guardó: ' + error.message, true); return; }
+  const nombre = { gr_comunicacion: 'Comunicación', gr_tecnico: 'Conocimiento técnico', gr_analisis: 'Análisis crítico' }[campo];
+  toast(`${g}: ${nombre} = ${valor} para ${filas.length} alumnos`);
+}
+iniciar();
+</script>
+</body>
+</html>
