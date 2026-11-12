@@ -11,7 +11,7 @@ async function salir() { await sb.auth.signOut(); location.replace('index.html')
 const MENU = [
   ['EN CLASE', [['docente.html', 'Inicio', 'navy'], ['juego.html', 'Juego del Miedo', 'red'], ['grupal.html', 'Trabajo grupal', 'purple']]],
   ['EN CASA', [['lab.html', 'Laboratorio', 'teal'], ['foro.html', 'Foro', 'blue'], ['quiz.html', 'Quiz', 'gold'], ['kahoot.html', 'Kahoot', 'pink']]],
-  ['NOTAS', [['examenes.html', 'Exámenes y bonus', 'orange'], ['progreso.html', 'Progreso', 'teal'], [null, 'Ajustes']]]
+  ['NOTAS', [['examenes.html', 'Exámenes y bonus', 'orange'], ['progreso.html', 'Progreso', 'teal'], ['ajustes.html', 'Ajustes', 'navy']]]
 ];
 function pintarNav() {
   const actual = location.pathname.split('/').pop() || 'docente.html';
