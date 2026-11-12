@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Foro</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112010">
+<link rel="stylesheet" href="assets/app.css?v=202611112017">
 </head>
 <body>
 <header class="top">
@@ -22,25 +22,25 @@
   <div class="grhead" id="cab"></div>
   <div class="grlist" id="lista"><div class="empty">Cargando…</div></div>
   <section class="leyenda"><h3 class="pix">LEYENDA</h3><div class="ley"><div><span class="seg mini2"><button>0</button><button class="on">0.5</button><button>1</button></span><p><b>Rúbrica del foro (máx. 2):</b> Contenido técnico 0 / 0.5 / 1 + Análisis y argumentación 0 / 0.5 / 1.</p></div>
-      <div><span class="cnt voz mini3"><button>−</button><button>💬 2</button></span><p><b>Respuestas a compañeros</b> (no da puntos): cuántas veces comentó aportes de otros. Indica quién interactúa y quién solo publica.</p></div>
+      <div><span class="jmc mini2"><button class="menos">−0.5</button><span class="neto pos">+0.5</span><button class="mas">+0.5</button></span><p><b>Bonificación</b> (aparte de la rúbrica): cuando el aporte va más allá, con fuentes o investigación propia. Sube de 0.5 en 0.5, nunca negativa.</p></div>
       <div><span class="seg mini2"><button>0</button><button class="on">1</button></span><p><b>Tocar de nuevo</b> la opción marcada la borra (queda <b>pendiente</b>, distinto de 0).</p></div>
       <div><span class="seg mini2 bulk"><i>Todos</i><button>3</button></span><p><b>Todos:</b> pone la misma nota a toda la consultora; luego ajustas a quien corresponda.</p></div>
       <div><span class="tag" style="background:#fff1c2;color:#7a5a00">pendiente</span><p>Aún sin calificar. Arriba ves el avance “N de M calificados”. Se califica aunque haya faltado a clase.</p></div></div></section>
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112010"></script>
-<script src="assets/comun.js?v=202611112010"></script>
-<script src="assets/casa.js?v=202611112010"></script>
+<script src="assets/config.js?v=202611112017"></script>
+<script src="assets/comun.js?v=202611112017"></script>
+<script src="assets/casa.js?v=202611112017"></script>
 <script>
 window.CASA = {
-  campos: 'foro_tecnico, foro_analisis, foro_resp', max: 2, grid: '240px repeat(2,minmax(200px,1fr)) minmax(170px,1fr) 80px',
+  campos: 'foro_tecnico, foro_analisis, foro_bonus', max: 2, grid: '240px repeat(2,minmax(200px,1fr)) minmax(170px,1fr) 80px',
   cols: [
     { campo: 'foro_tecnico', titulo: 'Contenido técnico', sub: 'Deficiente 0 · Bueno 0.5 · Excelente 1', opciones: [0, 0.5, 1], masivo: [0, 0.5, 1] },
     { campo: 'foro_analisis', titulo: 'Análisis y argumentación', sub: 'Deficiente 0 · Bueno 0.5 · Excelente 1', opciones: [0, 0.5, 1], masivo: [0, 0.5, 1] },
-    { campo: 'foro_resp', titulo: 'Respuestas a compañeros', sub: 'no da puntos', tipo: 'cnt', ico: '💬' }
+    { campo: 'foro_bonus', titulo: 'Bonificación', sub: 'aporte extra, fuentes, investigación', tipo: 'bono' }
   ],
-  total: f => (nv(f.foro_tecnico) || 0) + (nv(f.foro_analisis) || 0),
+  total: f => (nv(f.foro_tecnico) || 0) + (nv(f.foro_analisis) || 0) + (nv(f.foro_bonus) || 0),
   calificado: f => f.foro_tecnico !== null || f.foro_analisis !== null
 };
 iniciarCasa();

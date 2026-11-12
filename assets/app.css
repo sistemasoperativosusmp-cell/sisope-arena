@@ -226,3 +226,11 @@ nav.menu a.on{color:#fff}
 .btn:disabled,.sbtn:disabled{opacity:.45;cursor:not-allowed}
 .cnt.mini3{width:fit-content;overflow:hidden}.cnt.mini3 button{color:#fff;background:transparent}
 .ley .cnt.mini3{flex-shrink:0}
+.grcab input.tema{margin-top:6px;width:100%;padding:6px 8px;border-radius:8px;border:2px solid var(--line);font-size:13px;font-weight:700;background:#fff;color:var(--ink)}
+.grcab input.tema:focus{border-color:var(--purple);outline:0}
+.jmc.eq .neto{font-size:12px;min-width:56px}
+.grhead,.grrow{grid-template-columns:200px 330px repeat(3,minmax(130px,1fr)) 46px 170px}
+.seg button.neg{color:#c23030}.seg button.neg.on{background:#c23030;color:#fff}
+.ley .jmc.mini2{flex-shrink:0}
+.grhead,.grrow{grid-template-columns:190px 320px repeat(3,minmax(125px,1fr)) 40px 180px}
+.jmc{width:fit-content}.jmc button:disabled{opacity:.45}

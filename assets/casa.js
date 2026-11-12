@@ -32,6 +32,10 @@ async function cargarCasa() {
 }
 
 function celda(f, col) {
+  if (col.tipo === 'bono') {
+    const v = nv(f[col.campo]) || 0;
+    return `<div class="jmc"><button class="menos" ${v ? '' : 'disabled'} onclick="contar(${f.id}, '${col.campo}', -0.5)">−0.5</button><span class="neto ${v ? 'pos' : ''}">${v ? '+' + f1(v) : '0'}</span><button class="mas" onclick="contar(${f.id}, '${col.campo}', 0.5)">+0.5</button></div>`;
+  }
   if (col.tipo === 'cnt') {
     const v = nv(f[col.campo]) || 0;
     return `<span class="cnt mini3"><button ${v ? '' : 'disabled'} onclick="contar(${f.id}, '${col.campo}', -1)">−</button><button onclick="contar(${f.id}, '${col.campo}', 1)">${esc(col.ico || '')} ${v}</button></span>`;
@@ -39,7 +43,7 @@ function celda(f, col) {
   return `<span class="seg ${col.cls || ''}">${col.opciones.map(o => {
     const [val, txt] = Array.isArray(o) ? o : [o, String(o)];
     const on = typeof val === 'number' ? nv(f[col.campo]) === val : f[col.campo] === val;
-    return `<button class="${on ? 'on' : ''} ${col.cls === 'txt' ? 'p' : ''}" onclick='poner(${f.id}, "${col.campo}", ${JSON.stringify(val)})'>${esc(txt)}</button>`;
+ return `<button class="${on ? 'on' : ''} ${col.cls === 'txt' ? 'p' : ''} ${typeof val === 'number' && val < 0 ? 'neg' : ''}" onclick='poner(${f.id}, "${col.campo}", ${JSON.stringify(val)})'>${esc(txt)}</button>`;
   }).join('')}</span>`;
 }
 
@@ -56,7 +60,7 @@ function pintarCasa() {
     const fs = grupos[g], prom = fs.reduce((s, f) => s + CASA.total(f), 0) / fs.length;
     return `<div class="grupo">
       <div class="grrow grcab" style="${grid}"><div class="pix" style="font-size:11px">${esc(g.toUpperCase())}<small>Promedio ${f1(prom)} / ${CASA.max}</small></div>
-        ${CASA.cols.map(c => c.masivo ? `<span class="seg bulk"><i>Todos</i>${c.masivo.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c.campo}", ${JSON.stringify(v)})'>${esc(String(v))}</button>`).join('')}</span>` : '<div></div>').join('')}<div></div></div>
+        ${CASA.cols.map(c => c.masivo ? `<span class="seg bulk"><i>Todos</i>${c.masivo.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c.campo}", ${JSON.stringify(v)})'>${esc(v < 0 ? 'No cumplió' : String(v))}</button>`).join('')}</span>` : '<div></div>').join('')}<div></div></div>
       ${fs.map(f => `<div class="grrow ${CASA.calificado(f) ? '' : 'pend'}" style="${grid}">
         <div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Ausente' ? ' · faltó a clase' : ''}${CASA.calificado(f) ? '' : ' · <span class="pendt">pendiente</span>'}</small></div>
         ${CASA.cols.map(c => celda(f, c)).join('')}

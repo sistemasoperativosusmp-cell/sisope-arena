@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Trabajo grupal</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112010">
+<link rel="stylesheet" href="assets/app.css?v=202611112017">
 </head>
 <body>
 <header class="top">
@@ -21,7 +21,7 @@
     <div><b>Conocimiento técnico</b><br>Deficiente 0 · Bueno 0.5 · Excelente 1</div>
     <div><b>Análisis crítico</b><br>Deficiente 0 · Bueno 0.5 · Excelente 1</div>
     <div style="text-align:right"><b>Total / 3</b></div>
-    <div><b>Bonus / Falta</b><br>Más de lo pedido · Falta de respeto o regla</div>
+    <div><b>Bonus / Falta</b><br>+ hizo más · − faltó a una regla</div>
   </div>
   <div id="grupos" class="grlist"><div class="empty">Cargando…</div></div>
   <section class="leyenda">
@@ -30,8 +30,8 @@
       <div><span class="seg mini2 part"><button class="on p">Lideró</button><button>Apoyó</button><button>Habló</button></span><p><b>Participación (una sola opción)</b>, no da puntos. Voz para el radar: Lideró 3 · Apoyó 2 · Habló 1 · Intentando 0.5 · No part. 0.</p></div>
       <div><span class="seg mini2"><button>0</button><button class="on">0.5</button><button>1</button></span><p><b>Rúbrica:</b> 0 deficiente · 0.5 bueno · 1 excelente en cada criterio. Máximo 3 puntos por semana.</p></div>
       <div><span class="seg mini2 bulk"><i>Todos</i><button>1</button></span><p><b>Aplicar a toda la consultora:</b> pone la misma nota a todos los presentes del grupo. Luego ajustas a quien corresponda.</p></div>
-      <div><span class="bon mini2"><button class="bmenos">−</button><span class="si">★ +0.5</span><button class="bmas">+0.5</button></span><p><b>Bonus:</b> solo cuando el equipo hizo más de lo pedido o el alumno investigó por su cuenta. Sube de 0.5 en 0.5, aparte de la rúbrica. “★ +0.5 equipo” lo da a todos los presentes del grupo.</p></div>
-      <div><span class="bon fal mini2"><button class="bmenos">↺</button><span class="si">⚠ −0.5</span><button class="bmas">−0.5</button></span><p><b>Falta:</b> descuenta 0.5 por falta de respeto o regla incumplida (al alumno o con “⚠ −0.5 equipo” a todo el grupo). Resta del XP y de la práctica. ↺ la retira.</p></div>
+      <div class="ancho"><span class="jmc mini2"><button class="menos">−0.5</button><span class="neto pos">+1</span><button class="mas">+0.5</button></span><p><b>Bonus / Falta:</b> <b>+0.5</b> cuando hizo más de lo pedido o investigó por su cuenta; <b>−0.5</b> por falta de respeto o regla incumplida. El centro es el neto (puede ser negativo) y se suma al XP y a la práctica. En la cabecera, el mismo control aplica a <b>todo el equipo</b>.</p></div>
+      <div><span class="tag" style="background:#fff;border:2px solid var(--line);color:var(--mute)">Tema del grupo</span><p>Escribe bajo el nombre de la consultora el tema que trabajan (ej. Hyper-V, seguridad DHCP). Se guarda al salir del cuadro.</p></div>
       <div><span class="tag" style="background:var(--ink);color:#fff">Tocar de nuevo</span><p>Tocar la opción ya marcada la <b>borra</b> (queda sin calificar).</p></div>
       <div><span class="tag" style="background:#eee;color:var(--mute)">AUSENTE</span><p>En gris y bloqueado. Si llegó tarde, márcalo en <b>Inicio</b> o en <b>Juego del Miedo</b>.</p></div>
     </div>
@@ -39,8 +39,8 @@
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112010"></script>
-<script src="assets/comun.js?v=202611112010"></script>
+<script src="assets/config.js?v=202611112017"></script>
+<script src="assets/comun.js?v=202611112017"></script>
 <script>
 let SEM = 1, FILAS = [];
 const PART = [['Lideró', 'Lideró'], ['Apoyó', 'Apoyó'], ['Habló', 'Habló'], ['Intentando', 'Intentando'], ['No participó', 'No part.']];
@@ -58,7 +58,7 @@ async function iniciar() {
   SEM = parseInt(c?.valor, 10) || 1;
   const { data: s } = await sb.from('semanas').select('*').eq('semana', SEM).maybeSingle();
   $('#pills').innerHTML = [`Semana ${SEM}`, s?.tema, s?.tipo_grupal ? 'Grupal: ' + s.tipo_grupal : null].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
-  const { data, error } = await sb.from('detalle').select('id, asistencia, tipo_grupal, participacion_grupal, gr_comunicacion, gr_tecnico, gr_analisis, extra, falta, jugadores(nombre, alias, consultora, rol_consultora)').eq('semana', SEM);
+  const { data, error } = await sb.from('detalle').select('id, asistencia, tipo_grupal, participacion_grupal, gr_comunicacion, gr_tecnico, gr_analisis, extra, falta, tema_grupal, jugadores(nombre, alias, consultora, rol_consultora)').eq('semana', SEM);
   if (error) { toast('Error al cargar: ' + error.message, true); return; }
   FILAS = (data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
   if (['Examen', '—'].includes(s?.tipo_grupal)) toast(`La semana ${SEM} no tiene trabajo grupal (${s.tipo_grupal}).`, true);
@@ -81,18 +81,18 @@ function pintar() {
     const filas = grupos[g], pres = filas.filter(f => f.asistencia !== 'Ausente');
     const prom = pres.length ? pres.reduce((s, f) => s + total(f), 0) / pres.length : 0;
     return `<div class="grupo">
-      <div class="grrow grcab"><div class="pix" style="font-size:11px">${esc(g.toUpperCase())}<small>Promedio ${fmt(prom)} / 3</small></div>
+      <div class="grrow grcab"><div><div class="pix" style="font-size:11px">${esc(g.toUpperCase())}</div><small>Promedio ${fmt(prom)} / 3</small>
+          <input class="tema" placeholder="Tema del grupo (ej. Hyper-V)" value="${esc(filas.find(f => f.tema_grupal)?.tema_grupal || '')}" onchange='guardarTema(${JSON.stringify(g)}, this.value)'></div>
         <div class="nop" style="font-weight:800">Aplicar a toda la consultora →</div>
         ${CRIT.map(c => `<span class="seg bulk"><i>Todos</i>${NIV.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c}", ${v})'>${v}</button>`).join('')}</span>`).join('')}
         <div></div>
-        <div class="ajs"><div class="bon"><button class="bmas" onclick='ajusteGrupo(${JSON.stringify(g)}, "extra", 1)'>★ +0.5 equipo</button><button class="bmenos" title="Quitar 0.5 de bonus a todo el equipo" onclick='ajusteGrupo(${JSON.stringify(g)}, "extra", -1)'>−</button></div>
-          <div class="bon fal"><button class="bmas" onclick='ajusteGrupo(${JSON.stringify(g)}, "falta", 1)'>⚠ −0.5 equipo</button><button class="bmenos" title="Quitar la falta a todo el equipo" onclick='ajusteGrupo(${JSON.stringify(g)}, "falta", -1)'>↺</button></div></div></div>
+        <div>${netoHTML(null, 0, `ajusteGrupo(${esc(JSON.stringify(g))}, -1)`, `ajusteGrupo(${esc(JSON.stringify(g))}, 1)`, 'equipo')}</div></div>
       ${filas.map(f => `<div class="grrow ${f.asistencia === 'Ausente' ? 'aus' : ''}">
         <div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.jugadores?.rol_consultora ? ' · ' + esc(f.jugadores.rol_consultora) : ''}${f.asistencia === 'Ausente' ? ' · AUSENTE' : f.asistencia === 'Tarde' ? ' · TARDE' : ''}</small></div>
         ${seg(f, 'participacion_grupal', PART, 'part')}
         ${CRIT.map(c => seg(f, c, NIV.map(v => [v, String(v)]))).join('')}
         <div class="tot">${fmt(total(f))}</div>
-        <div class="ajs">${ajusteHTML(f, 'extra')}${ajusteHTML(f, 'falta')}</div>
+        <div>${netoHTML(f, (n(f.extra) || 0) - (n(f.falta) || 0), `ajuste(${f.id}, -1)`, `ajuste(${f.id}, 1)`)}</div>
       </div>`).join('')}
     </div>`;
   }).join('');
@@ -116,32 +116,40 @@ async function masivo(g, campo, valor) {
   const nombre = { gr_comunicacion: 'Comunicación', gr_tecnico: 'Conocimiento técnico', gr_analisis: 'Análisis crítico' }[campo];
   toast(`${g}: ${nombre} = ${valor} para ${filas.length} alumnos`);
 }
-// ---------- Bonus ("extra") y Falta ("falta"): pasos de 0.5, nunca negativos; la falta RESTA puntos ----------
+// ---------- Bonus / Falta en un solo control neto: + da bonus (o retira falta), − registra falta (o retira bonus) ----------
 const PASO = 0.5;
-function ajusteHTML(f, campo) {
-  const v = n(f[campo]) || 0, aus = f.asistencia === 'Ausente', bono = campo === 'extra';
-  return `<div class="bon ${bono ? '' : 'fal'} ${aus ? 'off' : ''}"><button class="bmenos" ${aus || !v ? 'disabled' : ''} title="${bono ? 'Quitar bonus' : 'Quitar falta'}" onclick="ajuste(${f.id}, '${campo}', -1)">${bono ? '−' : '↺'}</button><span class="${v ? 'si' : ''}">${v ? (bono ? '★ +' : '⚠ −') + fmt(v) : (bono ? '★ 0' : '⚠ 0')}</span><button class="bmas" ${aus ? 'disabled' : ''} title="${bono ? 'Dar bonus' : 'Registrar falta'}" onclick="ajuste(${f.id}, '${campo}', 1)">${bono ? '+0.5' : '−0.5'}</button></div>`;
+function netoHTML(f, v, menos, mas, txt) {
+  const dis = f && f.asistencia === 'Ausente' ? 'disabled' : '';
+  return `<div class="jmc ${dis ? 'off' : ''} ${txt ? 'eq' : ''}"><button ${dis} class="menos" title="Falta: −${PASO}" onclick="${menos}">−${PASO}</button><span class="neto ${v < 0 ? 'neg' : v > 0 ? 'pos' : ''}">${txt ? txt : (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v))}</span><button ${dis} class="mas" title="Bonus: +${PASO}" onclick="${mas}">+${PASO}</button></div>`;
 }
-async function guardarAjuste(filas, campo, signo) {
-  const cambia = filas.filter(f => f.asistencia !== 'Ausente' && (n(f[campo]) || 0) + signo * PASO >= 0);
-  if (!cambia.length) return 0;
-  const antes = cambia.map(f => n(f[campo]) || 0);
-  cambia.forEach((f, i) => f[campo] = antes[i] + signo * PASO); pintar();
-  const res = await Promise.all(cambia.map(f => sb.from('detalle').update({ [campo]: f[campo] }).eq('id', f.id)));
+function paso(f, signo) {   // devuelve los campos a cambiar
+  const ex = n(f.extra) || 0, fa = n(f.falta) || 0;
+  if (signo > 0) return fa > 0 ? { falta: fa - PASO } : { extra: ex + PASO };
+  return ex > 0 ? { extra: ex - PASO } : { falta: fa + PASO };
+}
+async function aplicar(filas, signo) {
+  const cambia = filas.filter(f => f.asistencia !== 'Ausente'); if (!cambia.length) return 0;
+  const antes = cambia.map(f => ({ extra: f.extra, falta: f.falta })), cambios = cambia.map(f => paso(f, signo));
+  cambia.forEach((f, i) => Object.assign(f, cambios[i])); pintar();
+  const res = await Promise.all(cambia.map((f, i) => sb.from('detalle').update(cambios[i]).eq('id', f.id)));
   const err = res.find(r => r.error);
-  res.forEach((r, i) => { if (r.error) cambia[i][campo] = antes[i]; }); pintar();
+  res.forEach((r, i) => { if (r.error) Object.assign(cambia[i], antes[i]); }); pintar();
   if (err) toast('No se guardó: ' + err.error.message, true);
   return cambia.length - res.filter(r => r.error).length;
 }
-const etiqueta = (campo, signo) => campo === 'extra' ? (signo > 0 ? 'bonus +' + PASO : 'bonus −' + PASO) : (signo > 0 ? 'falta −' + PASO : 'falta retirada');
-async function ajuste(id, campo, signo) {
+async function ajuste(id, signo) {
   const f = FILAS.find(x => x.id === id);
-  if (await guardarAjuste([f], campo, signo)) toast(`${f.jugadores?.alias}: ${etiqueta(campo, signo)}`, campo === 'falta' && signo > 0);
+  if (await aplicar([f], signo)) { const v = (n(f.extra) || 0) - (n(f.falta) || 0); toast(`${f.jugadores?.alias}: ${signo > 0 ? 'bonus +' : 'falta −'}${PASO} (neto ${v > 0 ? '+' : ''}${fmt(v)})`, signo < 0); }
 }
-async function ajusteGrupo(g, campo, signo) {
-  const filas = FILAS.filter(f => (f.jugadores?.consultora || 'SIN CONSULTORA') === g);
-  const k = await guardarAjuste(filas, campo, signo);
-  if (k) toast(`${g}: ${etiqueta(campo, signo)} para ${k} alumnos`, campo === 'falta' && signo > 0);
+async function ajusteGrupo(g, signo) {
+  const k = await aplicar(FILAS.filter(f => (f.jugadores?.consultora || 'SIN CONSULTORA') === g), signo);
+  if (k) toast(`${g}: ${signo > 0 ? 'bonus +' : 'falta −'}${PASO} para ${k} alumnos`, signo < 0);
+}
+async function guardarTema(g, tema) {
+  const fs = FILAS.filter(f => (f.jugadores?.consultora || 'SIN CONSULTORA') === g); const t = tema.trim() || null;
+  const { error } = await sb.from('detalle').update({ tema_grupal: t }).in('id', fs.map(f => f.id));
+  if (error) { toast('No se guardó el tema: ' + error.message, true); return; }
+  fs.forEach(f => f.tema_grupal = t); toast(t ? `${g}: tema “${t}”` : `${g}: tema borrado`);
 }
 iniciar();
 </script>
