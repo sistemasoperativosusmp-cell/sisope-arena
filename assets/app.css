@@ -184,3 +184,4 @@ nav.tabs a.gr{background:var(--purple);border-color:var(--purple);color:#fff}
 .grcab .bon{border-color:#e0c060}
 .ley .bon.mini2{pointer-events:none;flex-shrink:0}
 .seg.bulk i{font-style:normal;font-size:11px;font-weight:800;color:#5a2fa6;padding:0 8px;display:flex;align-items:center;background:#ece3fb;border-right:1px solid #c9b8ee}.seg.bulk button{padding:5px 11px}
+.grhead,.grrow{grid-template-columns:210px 340px repeat(3,minmax(130px,1fr)) 50px 150px}.seg.part button{padding:7px 7px}

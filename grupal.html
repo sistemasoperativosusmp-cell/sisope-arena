@@ -23,7 +23,7 @@
 <main>
   <div class="grhead">
     <div>Alumno</div>
-    <div>Participación <span class="nop">(no da puntos, cuenta como voz)</span></div>
+    <div>Participación <span class="nop">(voz para el radar, no da puntos)</span></div>
     <div><b>Comunicación efectiva</b><br>Deficiente 0 · Bueno 0.5 · Excelente 1</div>
     <div><b>Conocimiento técnico</b><br>Deficiente 0 · Bueno 0.5 · Excelente 1</div>
     <div><b>Análisis crítico</b><br>Deficiente 0 · Bueno 0.5 · Excelente 1</div>
@@ -34,7 +34,7 @@
   <section class="leyenda">
     <h3 class="pix">LEYENDA</h3>
     <div class="ley">
-      <div><span class="seg mini2"><button class="on p">Lideró</button><button>Habló</button></span><p><b>Participación.</b> No da puntos. “Lideró” y “Habló” suman 1 de voz para el radar de silencio.</p></div>
+      <div class="ancho"><span class="seg mini2 part"><button class="on p">Lideró 3</button><button>Apoyó 2</button><button>Habló 1</button><button>Intent. ½</button><button>No 0</button></span><p><b>Participación (una sola opción):</b> el número es la <b>voz</b> que suma para el radar de silencio: Lideró 3 · Apoyó 2 · Habló 1 · Intentando 0.5 · No participó 0. No da puntos ni XP.</p></div>
       <div><span class="seg mini2"><button>0</button><button class="on">0.5</button><button>1</button></span><p><b>Rúbrica:</b> 0 deficiente · 0.5 bueno · 1 excelente en cada criterio. Máximo 3 puntos por semana.</p></div>
       <div><span class="seg mini2 bulk"><i>Todos</i><button>1</button></span><p><b>Aplicar a toda la consultora:</b> pone la misma nota a todos los presentes del grupo. Luego ajustas a quien corresponda.</p></div>
       <div><span class="bon mini2"><button class="bmenos">−</button><span class="si">★ +0.5</span><button class="bmas">+0.5</button></span><p><b>Bonus:</b> solo cuando el equipo hizo más de lo pedido o el alumno investigó por su cuenta. Sube de 0.5 en 0.5, aparte de la rúbrica. “+0.5 equipo” lo da a todos los presentes del grupo.</p></div>
@@ -49,7 +49,7 @@
 <script src="assets/comun.js"></script>
 <script>
 let SEM = 1, FILAS = [];
-const PART = [['Lideró', 'Lideró'], ['Expuso / habló', 'Habló'], ['Apoyó sin exponer', 'Apoyó'], ['No participó', 'No part.']];
+const PART = [['Lideró', 'Lideró 3'], ['Apoyó', 'Apoyó 2'], ['Habló', 'Habló 1'], ['Intentando', 'Intent. ½'], ['No participó', 'No 0']];
 const CRIT = ['gr_comunicacion', 'gr_tecnico', 'gr_analisis'];
 const NIV = [0, 0.5, 1];
 const n = v => v === null || v === undefined ? null : Number(v);

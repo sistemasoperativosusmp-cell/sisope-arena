@@ -47,7 +47,7 @@
       <div><span class="tag" style="background:var(--navy);color:#fff">☑ Varios</span><p><b>Selección múltiple:</b> marca la casilla (o toca el nombre), o la casilla de la consultora, y usa la barra inferior para dar o quitar puntos a todos a la vez.</p></div>
       <div><span class="cnt voz mini2"><button>−</button><button>Voz 1</button></span><p><b>Participó por iniciativa propia.</b> No da puntos: cuenta para el radar de silencio.</p></div>
       <div><span class="ab et mini2" style="display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1b2340" stroke-width="2"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><p><b>Etiquetas</b> (Mudo, Flojo, Proactivo…). Solo las ves tú; no afectan la nota.</p></div>
-      <div><span class="tag rojo">Sin hablar</span> <span class="tag">Voz 2</span><p><b>Voz</b> = aciertos + participaciones voluntarias + liderar/exponer en grupal. En rojo: aún no habla hoy.</p></div>
+      <div><span class="tag rojo">Sin hablar</span> <span class="tag">Voz 2</span><p><b>Voz</b> = aciertos + participaciones voluntarias + participación en el trabajo grupal (Lideró 3 · Apoyó 2 · Habló 1 · Intentando 0.5). En rojo: aún no habla hoy.</p></div>
       <div><span class="tag xp">✓2 · ✗1</span><p>Cuántas veces acertó y cuántas no contestó hoy.</p></div>
       <div><span class="fila aus" style="padding:2px 8px;border:0;display:inline-block;background:#eee;border-radius:6px;font-weight:800;font-size:12px">AUSENTE</span><p>En gris: no participa ni sale en el sorteo. Si llega, usa <b>Registrar llegada tarde</b>.</p></div>
       <div><span class="tag" style="background:var(--ink);color:#fff">Deshacer</span><p>Revierte el último toque (o la última acción en grupo) que hiciste en esta pantalla.</p></div>
@@ -104,7 +104,8 @@
 let SEM = 1, FILAS = [], ETQ = [], OBS = {}, RADAR = {}, PA = 0.5, PF = 0.5, soloMudos = false, PILA = [], ELEGIDOS = new Set(), SEL = new Set(), VIC = null, ETQ_ALUMNO = null;
 const num = n => Number(n || 0);
 const fmt = n => String(Math.round(n * 100) / 100);
-const voz = f => num(f.jm_aciertos) + num(f.part_vol) + (['Lideró', 'Expuso / habló'].includes(f.participacion_grupal) ? 1 : 0);
+const VOZ_GR = { 'Lideró': 3, 'Apoyó': 2, 'Habló': 1, 'Intentando': 0.5 };
+const voz = f => num(f.jm_aciertos) + num(f.part_vol) + (VOZ_GR[f.participacion_grupal] || 0);
 const xpJM = f => num(f.jm_aciertos) * PA - num(f.jm_fallos) * PF;
 const iniciales = a => (a || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase();
 
