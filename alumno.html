@@ -4,65 +4,182 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112315">
+<link rel="stylesheet" href="assets/app.css?v=202611112339">
 </head>
 <body class="arena">
-<header class="top">
+<header class="top atop">
   <div class="pix">SISOPE ARENA</div>
-  <div class="live"><i></i>EN VIVO</div>
-  <div class="who"><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
+  <nav class="anav"><a href="#ranking" data-v="ranking">Ranking</a><a href="#perfil" data-v="perfil">Mi perfil</a><a href="#puntajes" data-v="puntajes">Mis puntajes</a></nav>
+  <div class="who"><span class="live"><i></i><span id="vivo">EN VIVO</span></span><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
 </header>
-<main>
-  <div style="display:flex;flex-direction:column;gap:20px">
-    <section class="panel" id="yo"><h2 class="pix">MI PERFIL</h2><div class="empty">Cargando…</div></section>
-    <section class="panel"><h2 class="pix">RANKING</h2><div id="ranking"></div></section>
-  </div>
-  <div style="display:flex;flex-direction:column;gap:20px">
-    <section class="panel" style="border:3px solid var(--red)"><h2 class="pix" style="color:#ff8a8a">VÍCTIMAS DEL JUEGO DEL MIEDO</h2>
-      <p style="color:#ffd0d0;font-weight:700;font-size:13px;margin:0 0 10px">Serán los primeros en recibir preguntas. Participa para salir de la lista.</p>
-      <div class="vict" id="victimas"></div></section>
-    <section class="panel"><h2 class="pix" style="color:#c9b2f5">CONSULTORAS</h2><div id="consultoras"></div></section>
-  </div>
+<main class="amain">
+  <!-- A1 · RANKING -->
+  <section class="vista" id="v-ranking">
+    <div class="acol">
+      <div class="podio3" id="podio"></div>
+      <div class="panel"><div id="ranking"><div class="empty">Cargando…</div></div></div>
+    </div>
+    <div class="aside">
+      <div class="panel vic"><h2 class="pix">VÍCTIMAS DEL JUEGO DEL MIEDO</h2><p>Serán los primeros en recibir preguntas. Participa para salir de la lista.</p><div class="vlist" id="victimas"></div></div>
+      <div class="panel"><h2 class="pix" style="color:#c9b2f5">RANKING DE CONSULTORAS</h2><div id="consultoras"></div></div>
+    </div>
+  </section>
+
+  <!-- A2 · PERFIL -->
+  <section class="vista hide" id="v-perfil">
+    <div class="panel pcard" id="pcard"></div>
+    <div class="acol">
+      <div class="panel nivbar" id="nivbar"></div>
+      <div class="pgrid">
+        <div class="panel"><h2 class="pix">INSIGNIAS</h2><div class="insig" id="insignias"></div><p class="gris">Las grises aún están bloqueadas: pasa el mouse para ver cómo ganarlas.</p></div>
+        <div class="panel"><h2 class="pix">MIS NOTAS</h2><div id="misnotas"></div><a href="#puntajes" class="alink">Ver detalle por práctica →</a></div>
+      </div>
+      <div class="panel" id="fbpanel"><h2 class="pix">MENSAJES DE TU DOCENTE</h2><div id="feedback"></div></div>
+    </div>
+  </section>
+
+  <!-- A3 · MIS PUNTAJES -->
+  <section class="vista hide" id="v-puntajes">
+    <div class="acol">
+      <div class="chips2" id="chips"></div>
+      <div class="panel"><div class="mp" id="mp"></div><p class="gris">Cada práctica vale como máximo 20. Si la suma de tus semanas pasa de 20, se toma 20. “—” = no hubo o aún no se califica.</p></div>
+    </div>
+    <div class="aside">
+      <div class="panel"><h2 class="pix">AVANCE VS OBJETIVO</h2><div id="avance"></div></div>
+      <div class="panel"><h2 class="pix">EXÁMENES</h2><div id="examenes"></div></div>
+    </div>
+  </section>
 </main>
+<div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112315"></script>
-<script src="assets/comun.js?v=202611112315"></script>
+<script src="assets/config.js?v=202611112339"></script>
+<script src="assets/comun.js?v=202611112339"></script>
 <script>
-let MI_ALIAS = null;
+let YO = null, R = [], NOTAS = null, DET = [], SEMS = {}, CFG = {}, FILTRO = 'Todas';
+const n = v => Number(v || 0), f1 = v => String(Math.round(v * 100) / 100), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + f1(Math.abs(v));
+const PRACS = ['Practica 1', 'Practica 2', 'Practica 3', 'Practica 4'];
+const VOZ_GR = { 'Lideró': 3, 'Apoyó': 2, 'Habló': 1, 'Intentando': 0.5 };
+
 async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
-  if (await esDocente()) { $('#quien').innerHTML = esc(ses.user.email) + ' · <a href="docente.html" style="color:#f2b705">Panel docente</a>'; }
-  else $('#quien').textContent = ses.user.email;
-  const { data: yo } = await sb.from('jugadores').select('alias').eq('correo', ses.user.email.toLowerCase()).maybeSingle();
-  MI_ALIAS = yo?.alias || null;
+  const doc = await esDocente();
+  $('#quien').innerHTML = doc ? '<a href="docente.html" style="color:#f2b705">Panel docente</a>' : '';
+  const { data: yo } = await sb.from('jugadores').select('id, alias, nombre, consultora, rol_consultora, avatar_url').eq('correo', ses.user.email.toLowerCase()).maybeSingle();
+  YO = yo;
+  const [{ data: s }, { data: c }] = await Promise.all([sb.from('semanas').select('semana, tema, practica, kahoot_podio'), sb.from('config').select('clave, valor')]);
+  SEMS = Object.fromEntries((s || []).map(x => [x.semana, x])); CFG = Object.fromEntries((c || []).map(x => [x.clave, x.valor]));
+  $('#vivo').textContent = `EN VIVO · semana ${CFG.SemanaActual || 1}`;
+  window.addEventListener('hashchange', mostrar); mostrar();
   await refrescar();
   sb.channel('pulso').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pulso' }, refrescar).subscribe();
-  const { data: cfg } = await sb.from('config').select('valor').eq('clave', 'RefrescoSegundos').maybeSingle();
-  setInterval(refrescar, Math.max(20, Number(cfg?.valor || 60)) * 1000);
+  setInterval(refrescar, Math.max(20, Number(CFG.RefrescoSegundos || 60)) * 1000);
+}
+function mostrar() {
+  const v = (location.hash || '#ranking').slice(1);
+  document.querySelectorAll('.vista').forEach(s => s.classList.toggle('hide', s.id !== 'v-' + v));
+  document.querySelectorAll('.anav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
 }
 async function refrescar() {
-  const [{ data: r, error }, { data: c }, { data: n }] = await Promise.all([
+  const q = await Promise.all([
     sb.from('v_ranking').select('*').order('posicion'),
     sb.from('v_ranking_consultoras').select('*').order('posicion'),
-    sb.from('v_notas').select('p1,p2,p3,p4,ep_final,ef_final,pf').eq('alias', MI_ALIAS || '-').maybeSingle()
+    YO ? sb.from('v_notas').select('*').eq('jugador_id', YO.id).maybeSingle() : { data: null },
+    YO ? sb.from('detalle').select('*').eq('jugador_id', YO.id).order('semana') : { data: [] },
+    YO ? sb.from('feedback').select('texto, creado, semana').eq('jugador_id', YO.id).eq('visible_alumno', true).order('creado', { ascending: false }) : { data: [] }
   ]);
-  if (error) { toast('Error al leer ranking: ' + error.message, true); return; }
-  const yo = (r || []).find(x => x.alias === MI_ALIAS);
-  $('#yo').innerHTML = '<h2 class="pix">MI PERFIL</h2>' + (yo ? `
-    <div class="me">${yo.avatar_url ? `<img class="avatar" src="${esc(yo.avatar_url)}" alt="Avatar de ${esc(yo.alias)}">` : '<div class="avatar"></div>'}
-      <div style="flex:1;min-width:220px">
-        <div style="font-size:28px;font-weight:800">${esc(yo.alias)}</div>
-        <div style="color:#b8c2e6;font-weight:700">${esc(yo.consultora || '')} · ${esc(yo.rol_consultora || '')}</div>
-        <div style="margin-top:8px;font-weight:800">Nivel ${yo.nivel} · ${esc(yo.rango)} · Puesto ${yo.posicion}</div>
-        <div class="bar"><div style="width:${Math.round((yo.progreso || 0) * 100)}%"></div></div>
-        <div style="font-weight:800">${yo.xp} / ${yo.xp_siguiente ?? 'MAX'} XP${yo.siguiente_rango ? ' · siguiente: ' + esc(yo.siguiente_rango) : ''}</div>
-        ${n ? `<div style="margin-top:8px;color:#d6dcf2;font-weight:700">P1 ${n.p1} · P2 ${n.p2} · P3 ${n.p3} · P4 ${n.p4} · Parcial ${n.ep_final ?? '—'} · Final ${n.ef_final ?? '—'} · Promedio ${n.pf}</div>` : ''}
-      </div></div>` : '<div class="empty">Tu cuenta aún no está vinculada a un jugador. Avisa a tu docente.</div>');
-  $('#ranking').innerHTML = (r || []).map(x => `<div class="rank ${x.alias === MI_ALIAS ? 'yo' : ''}"><span class="pos">${x.posicion}</span><span class="al">${esc(x.alias)}</span><span style="flex:1;color:#b8c2e6;font-size:13px;font-weight:700">${esc(x.rango)}</span><span class="hoy">${x.xp_hoy >= 0 ? '+' : ''}${x.xp_hoy} hoy</span><span class="xp">${x.xp} XP</span></div>`).join('') || '<div class="empty">Sin jugadores.</div>';
-  const v = (r || []).filter(x => x.victima);
-  $('#victimas').innerHTML = v.map(x => `<span>${esc(x.alias)}</span>`).join('') || '<span style="background:transparent;border:0">Nadie por ahora</span>';
-  $('#consultoras').innerHTML = (c || []).map(x => `<div class="rank"><span class="pos">${x.posicion}</span><span class="al">${esc(x.consultora)}</span><span class="xp">${x.xp} XP</span></div>`).join('');
+  if (q[0].error) { toast('Error al leer el ranking: ' + q[0].error.message, true); return; }
+  R = q[0].data || []; NOTAS = q[2].data; DET = q[3].data || [];
+  pintarRanking(q[1].data || []); pintarPerfil(q[4].data || []); pintarPuntajes();
+}
+
+// ---------- A1 · Ranking ----------
+const avatar = (x, cls) => x?.avatar_url ? `<img class="${cls}" src="${esc(x.avatar_url)}" alt="">` : `<div class="${cls} ini">${esc((x?.alias || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase())}</div>`;
+function pintarRanking(cons) {
+  const top = R.slice(0, 3), orden = [top[1], top[0], top[2]], col = { 1: '#f2b705', 2: '#c9d1e6', 3: '#e0742a' };
+  $('#podio').innerHTML = orden.map(p => p ? `<div class="pod p${p.posicion} ${p.alias === YO?.alias ? 'yo' : ''}">${avatar(p, 'pav')}<div class="ppos pix" style="color:${col[p.posicion] || '#fff'}">${p.posicion}°</div><b>${esc(p.alias)}</b><small>${esc(p.rango)}</small><div class="pxp">${f1(p.xp)} XP</div><div class="phoy">${sg(n(p.xp_hoy))} hoy</div></div>` : '<div class="pod vacio"></div>').join('');
+  const maxXp = Math.max(1, ...R.map(x => n(x.xp)));
+  $('#ranking').innerHTML = R.length ? R.map(x => `<div class="rank ${x.alias === YO?.alias ? 'yo' : ''}"><span class="pos">${x.posicion}</span>${avatar(x, 'rav')}<span class="al">${esc(x.alias)}</span><span class="rg">${esc(x.rango)}</span><span class="hoy">${sg(n(x.xp_hoy))} hoy</span><span class="mbar"><i style="width:${Math.max(0, n(x.xp)) / maxXp * 100}%"></i></span><span class="xp">${f1(x.xp)} XP</span></div>`).join('') : '<div class="empty">Aún no hay jugadores.</div>';
+  const v = R.filter(x => x.victima);
+  $('#victimas').innerHTML = v.length ? v.map(x => `<div class="vit ${x.alias === YO?.alias ? 'yo' : ''}">${avatar(x, 'vav')}<b>${esc(x.alias)}</b>${x.alias === YO?.alias ? '<small>¡eres tú! participa hoy</small>' : ''}</div>`).join('') : '<div class="gris">Nadie por ahora. 🎉</div>';
+  $('#consultoras').innerHTML = cons.map(c => `<div class="rank ${c.consultora === YO?.consultora ? 'yo' : ''}"><span class="pos">${c.posicion}</span><span class="al">${esc(c.consultora)}</span><span class="xp">${f1(c.xp)} XP</span></div>`).join('') || '<div class="gris">Sin consultoras.</div>';
+}
+
+// ---------- Cálculo por semana (misma regla que la base) ----------
+function partes(d) {
+  const k = n(d.kahoot_pos), podio = SEMS[d.semana]?.kahoot_podio || 3, c = x => Number(CFG[x]);
+  const kah = !k || k >= 99 ? 0 : k === 1 ? (c('KahootP1') || 2) : k === 2 ? (c('KahootP2') || 1) : k === 3 ? (c('KahootP3') || 0.5) : k <= podio ? (c('KahootExtra') || 0.5) : 0;
+  return { gr: n(d.gr_comunicacion) + n(d.gr_tecnico) + n(d.gr_analisis), lab: n(d.lab), quiz: n(d.quiz), foro: n(d.foro_tecnico) + n(d.foro_analisis) + n(d.foro_bonus), kah, jm: n(d.jm_aciertos) * (c('JMAcierto') || 0.5) - n(d.jm_fallos) * (c('JMFallo') || 0.5), ext: n(d.extra) - n(d.falta) };
+}
+const voz = d => n(d.jm_aciertos) + n(d.part_vol) + (VOZ_GR[d.participacion_grupal] || 0);
+
+// ---------- A2 · Perfil ----------
+function insignias(yo) {
+  const D = DET, presentes = D.filter(d => d.asistencia !== 'Ausente');
+  let racha = 0, mejor = 0; D.forEach(d => { racha = voz(d) > 0 ? racha + 1 : 0; mejor = Math.max(mejor, racha); });
+  return [
+    ['🎤', 'Primera voz', 'Habla en clase al menos una vez', D.some(d => voz(d) > 0)],
+    ['🔥', 'En racha', 'Participa 3 semanas seguidas', mejor >= 3],
+    ['😱', 'Sin miedo', '3 aciertos en el Juego del Miedo en una semana', D.some(d => n(d.jm_aciertos) >= 3)],
+    ['👑', 'Líder', 'Lidera un trabajo grupal', D.some(d => d.participacion_grupal === 'Lideró')],
+    ['🧪', 'Lab perfecto', 'Saca 3 en un laboratorio', D.some(d => n(d.lab) >= 3)],
+    ['💬', 'Foro de oro', 'Saca 2 en la rúbrica del foro', D.some(d => n(d.foro_tecnico) + n(d.foro_analisis) >= 2)],
+    ['🎓', 'Certificado', 'Saca 4 en un quiz de certificación', D.some(d => n(d.quiz) >= 4)],
+    ['🥇', 'Campeón Kahoot', 'Gana un Kahoot (1er puesto)', D.some(d => n(d.kahoot_pos) === 1)],
+    ['⭐', 'Milla extra', 'Recibe un bonus por hacer más de lo pedido', D.some(d => n(d.extra) > 0 || n(d.foro_bonus) > 0)],
+    ['📅', 'Siempre presente', '4 semanas o más sin faltar', D.length >= 4 && presentes.length === D.length],
+    ['🏆', 'Top 3', 'Llega al podio del ranking', !!yo && yo.posicion <= 3],
+    ['🚀', 'Imparable', 'Alcanza el nivel 10', !!yo && yo.nivel >= 10]
+  ];
+}
+function pintarPerfil(fb) {
+  if (!YO) { $('#pcard').innerHTML = '<div class="empty">Tu cuenta aún no está vinculada a un jugador. Avisa a tu docente.</div>'; return; }
+  const yo = R.find(x => x.alias === YO.alias) || {};
+  $('#pcard').innerHTML = `${avatar(YO, 'bav')}<div class="pal">${esc(YO.alias)}</div><div class="psub">${esc(YO.consultora || '')}${YO.rol_consultora ? ' · ' + esc(YO.rol_consultora) : ''}</div>
+    <div class="prango"><small>NIVEL ${yo.nivel ?? 1} · TU RANGO</small><b>${esc((yo.rango || '').toUpperCase())}</b></div>
+    ${yo.hito ? `<div class="psub">Hito del temario: ${esc(yo.hito)}</div>` : ''}
+    <div class="pstats"><div><small>Posición</small><b>${yo.posicion ?? '—'}°</b></div><div><small>XP total</small><b>${f1(n(yo.xp))}</b></div></div>`;
+  const prog = Math.max(0, Math.min(1, n(yo.progreso)));
+  $('#nivbar').innerHTML = `<div><small class="pix">TU NIVEL</small><b>${esc(yo.rango || '')}</b></div>
+    <div class="nb"><small class="pix">PROGRESO XP</small><div class="bar"><div style="width:${Math.round(prog * 100)}%"></div></div><span>${yo.xp_siguiente ? `${f1(n(yo.xp))} / ${f1(n(yo.xp_siguiente))} XP · te faltan ${f1(n(yo.xp_siguiente) - n(yo.xp))}` : '¡Rango máximo!'}</span></div>
+    <div><small class="pix">SIGUIENTE</small><b>${esc(yo.siguiente_rango || '—')}</b></div>`;
+  $('#insignias').innerHTML = insignias(yo).map(([e, t, como, ok]) => `<div class="ins ${ok ? 'ok' : ''}" data-tip="${esc(t)}: ${esc(como)}${ok ? ' ✓ ganada' : ''}"><span>${e}</span><small>${esc(t)}</small></div>`).join('');
+  const nt = NOTAS || {}, fila = (t, v, d) => `<div class="nf"><span>${t}</span><b>${v === null || v === undefined ? '—' : Number(v).toFixed(2)}</b></div>`;
+  $('#misnotas').innerHTML = PRACS.map((p, i) => fila(`Práctica ${i + 1}`, nt['p' + (i + 1)])).join('') + fila('Promedio de prácticas (PE)', nt.pe) + fila(`Parcial${n(nt.bonus_ep) ? ' (+' + f1(n(nt.bonus_ep)) + ' bonus)' : ''}`, nt.ep_final) + fila(`Final${n(nt.bonus_ef) ? ' (+' + f1(n(nt.bonus_ef)) + ' bonus)' : ''}`, nt.ef_final)
+    + `<div class="nf pf"><span>Promedio final</span><b>${nt.pf !== undefined && nt.pf !== null ? Number(nt.pf).toFixed(2) : '—'}</b></div>`
+    + (nt.condicion && nt.condicion !== 'APROBADO' && nt.ef_minimo !== undefined ? `<div class="meta">Necesitas <b>${Number(nt.ef_minimo) > 20 ? 'más de 20' : Number(nt.ef_minimo).toFixed(2)}</b> en el examen final para aprobar.</div>` : nt.condicion === 'APROBADO' ? '<div class="meta okm">¡Vas aprobando! Sigue así.</div>' : '');
+  $('#feedback').innerHTML = fb.length ? fb.map(f => `<div class="fbm"><small>${new Date(f.creado).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}${f.semana ? ' · semana ' + f.semana : ''}</small><p>${esc(f.texto)}</p></div>`).join('') : '<div class="gris">Aún no tienes mensajes.</div>';
+  activarTips();
+}
+
+// ---------- A3 · Mis puntajes ----------
+function pintarPuntajes() {
+  const prac = [...PRACS.filter(p => DET.some(d => d.practica === p))];
+  $('#chips').innerHTML = ['Todas', ...prac].map(p => `<button class="${FILTRO === p ? 'on' : ''}" onclick="FILTRO='${p}';pintarPuntajes()">${p === 'Todas' ? 'Todas' : 'Práctica ' + p.slice(-1)}</button>`).join('');
+  const cols = [['gr', 'Grupal'], ['lab', 'LAB'], ['quiz', 'Quiz'], ['foro', 'Foro'], ['kah', 'Kahoot'], ['jm', 'Miedo'], ['ext', 'Extra']];
+  const vacio = (d, k) => ({ gr: d.gr_comunicacion == null && d.gr_tecnico == null && d.gr_analisis == null, lab: d.lab == null, quiz: d.quiz == null, foro: d.foro_tecnico == null && d.foro_analisis == null && !n(d.foro_bonus), kah: d.kahoot_pos == null, jm: !n(d.jm_aciertos) && !n(d.jm_fallos), ext: !n(d.extra) && !n(d.falta) })[k];
+  const celda = (v, nulo) => nulo ? '<span class="vac">—</span>' : `<span class="${v < 0 ? 'neg' : v > 0 ? 'pos' : ''}">${v > 0 ? '+' : v < 0 ? '−' : ''}${f1(Math.abs(v))}</span>`;
+  let h = `<div class="mr mc"><div>Práctica / semana</div>${cols.map(c => `<div>${c[1]}</div>`).join('')}<div>Puntaje</div></div>`;
+  (FILTRO === 'Todas' ? prac : [FILTRO]).forEach(p => {
+    const fs = DET.filter(d => d.practica === p); let tot = 0;
+    h += `<div class="mr mp1"><div>${p.replace('Practica', 'Práctica')}</div>${cols.map(() => '<div></div>').join('')}<div></div></div>`;
+    fs.forEach(d => { const x = partes(d), t = Object.values(x).reduce((a, b) => a + b, 0); tot += t;
+      h += `<div class="mr ${d.asistencia === 'Ausente' ? 'aus' : ''}"><div><b>S${d.semana}</b> ${esc(SEMS[d.semana]?.tema || '')}${d.asistencia === 'Ausente' ? ' <small>· faltaste</small>' : ''}</div>${cols.map(c => `<div>${celda(x[c[0]], vacio(d, c[0]))}</div>`).join('')}<div class="b">${celda(t)}</div></div>`; });
+    const nota = NOTAS?.['p' + (PRACS.indexOf(p) + 1)];
+    h += `<div class="mr ms"><div>Nota de la ${p.replace('Practica', 'práctica')}</div>${cols.map(() => '<div></div>').join('')}<div class="b">${nota !== undefined && nota !== null ? Number(nota).toFixed(2) : f1(Math.max(0, Math.min(20, tot)))}</div></div>`;
+  });
+  $('#mp').innerHTML = prac.length ? h : '<div class="empty">Aún no tienes semanas registradas.</div>';
+  const nt = NOTAS || {};
+  $('#avance').innerHTML = PRACS.map((p, i) => { const v = n(nt['p' + (i + 1)]); return `<div class="av"><div><span>Práctica ${i + 1}</span><span>${v.toFixed(2)} / 20</span></div><div class="bar"><div style="width:${v / 20 * 100}%;background:${v >= Number(CFG.NotaAprobatoria || 10.5) ? '#3c9a1f' : '#f2b705'}"></div></div></div>`; }).join('');
+  const ex = (t, e, b, fin) => `<div>${t} ${e ?? '—'}</div><div class="bn">${n(b) ? '+' + f1(n(b)) : '—'}</div><div class="b">${fin !== null && fin !== undefined ? Number(fin).toFixed(2) : '—'}</div>`;
+  $('#examenes').innerHTML = `<div class="ex"><div class="h">Examen</div><div class="h">Bonus</div><div class="h">Nota</div>${ex('Parcial', nt.ep, nt.bonus_ep, nt.ep_final)}${ex('Final', nt.ef, nt.bonus_ef, nt.ef_final)}</div>`;
+}
+function activarTips() {
+  const tip = $('#tip');
+  document.querySelectorAll('[data-tip]').forEach(el => {
+    el.onmousemove = ev => { tip.textContent = el.dataset.tip; tip.classList.remove('hide'); tip.style.left = (ev.clientX + 14) + 'px'; tip.style.top = (ev.clientY + 14) + 'px'; };
+    el.onmouseleave = () => tip.classList.add('hide');
+  });
 }
 iniciar();
 </script>
