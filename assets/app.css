@@ -396,3 +396,11 @@ input.ok,select.ok{border-color:var(--green)!important;background:#eef8ea!import
 .eqh{display:flex;justify-content:space-between;align-items:center;background:#0f1733;border-radius:12px;padding:10px 12px;margin-bottom:8px}
 .eqh b{font-size:16px}.eqh small{display:block;color:#9fd08a;font-weight:800;font-size:12px}.eqp{text-align:right}.eqp .pix{color:var(--gold);font-size:16px}.eqp small{display:block;color:#b8c2e6;font-weight:800;font-size:12px}
 .rank .rol{display:block;font-size:11px;color:#b8c2e6;font-weight:700}
+/* Login: recuperar contraseña */
+.login .olvide{display:block;width:100%;margin-top:14px;background:transparent;border:0;color:#9cc3ff;font-weight:800;font-size:14px;cursor:pointer;text-align:center;text-decoration:none}
+.login .msg.ok{color:#9fd08a}
+.reglas{list-style:none;padding:0;margin:0 0 12px;font-size:13px;font-weight:700;color:#8f9bc4}.reglas li::before{content:'○ '}.reglas li.ok{color:#9fd08a}.reglas li.ok::before{content:'● '}
+.atop .cambiar{color:#9cc3ff;font-weight:800;font-size:13px;text-decoration:none}
+/* Foto de perfil */
+.avup{position:relative;cursor:pointer;display:block}.avup span{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);background:#0f1733cc;color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:4px 10px;white-space:nowrap;opacity:0;transition:opacity .15s}
+.avup:hover span,.avup:focus-within span{opacity:1}@media(hover:none){.avup span{opacity:1}}

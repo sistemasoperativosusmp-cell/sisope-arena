@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Juego del Miedo</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112346">
+<link rel="stylesheet" href="assets/app.css?v=202611112355">
 </head>
 <body>
 <header class="top">
@@ -91,8 +91,8 @@
 
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112346"></script>
-<script src="assets/comun.js?v=202611112346"></script>
+<script src="assets/config.js?v=202611112355"></script>
+<script src="assets/comun.js?v=202611112355"></script>
 <script>
 let SEM = 1, FILAS = [], ETQ = [], OBS = {}, RADAR = {}, PA = 0.5, PF = 0.5, soloMudos = false, PILA = [], ELEGIDOS = new Set(), SEL = new Set(), VIC = null, ETQ_ALUMNO = null;
 const num = n => Number(n || 0);
@@ -234,7 +234,7 @@ function elegirVictima() {
 }
 function pintarVictima() {
   const f = FILAS.find(x => x.jugador_id === VIC); if (!f) return; const j = f.jugadores || {}, rd = RADAR[VIC] || {}, v = voz(f);
-  $('#vAv').innerHTML = j.avatar_url ? `<img class="av" src="${esc(j.avatar_url)}" alt="">` : `<div class="av">${esc(iniciales(j.alias))}</div>`;
+  $('#vAv').innerHTML = j.avatar_url ? `<img class="av" src="${esc(avatarSrc(j.avatar_url))}" alt="">` : `<div class="av">${esc(iniciales(j.alias))}</div>`;
   $('#vNom').textContent = j.nombre || ''; $('#vSub').textContent = [j.alias, j.consultora, j.rol_consultora].filter(Boolean).join(' · ');
   $('#vTags').innerHTML = (v === 0 ? '<span class="tag rojo" style="font-size:13px;padding:4px 12px">Sin hablar esta semana</span>' : `<span class="tag" style="font-size:13px;padding:4px 12px">Voz ${v} esta semana</span>`)
     + (num(rd.semanas_silencio) ? `<span class="tag" style="font-size:13px;padding:4px 12px;background:#fde8e8;color:#a02424">${num(rd.semanas_silencio)} semana(s) en silencio</span>` : '')

@@ -4,13 +4,13 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112346">
+<link rel="stylesheet" href="assets/app.css?v=202611112355">
 </head>
 <body class="arena">
 <header class="top atop">
   <div class="pix">SISOPE ARENA</div>
   <nav class="anav"><a href="#ranking" data-v="ranking">Ranking</a><a href="#perfil" data-v="perfil">Mi perfil</a><a href="#puntajes" data-v="puntajes">Mis puntajes</a></nav>
-  <div class="who"><span class="live"><i></i><span id="vivo">EN VIVO</span></span><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
+  <div class="who"><a href="reset.html" class="cambiar">🔑 Contraseña</a><span class="live"><i></i><span id="vivo">EN VIVO</span></span><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
 </header>
 <main class="amain">
   <!-- A1 · RANKING -->
@@ -60,8 +60,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112346"></script>
-<script src="assets/comun.js?v=202611112346"></script>
+<script src="assets/config.js?v=202611112355"></script>
+<script src="assets/comun.js?v=202611112355"></script>
 <script>
 let CONS = [], SK = null, YO = null, R = [], NOTAS = null, DET = [], SEMS = {}, CFG = {}, FILTRO = 'Todas';
 const n = v => Number(v || 0), f1 = v => String(Math.round(v * 100) / 100), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + f1(Math.abs(v));
@@ -101,7 +101,7 @@ async function refrescar() {
 }
 
 // ---------- A1 · Ranking ----------
-const avatar = (x, cls) => x?.avatar_url ? `<img class="${cls}" src="${esc(x.avatar_url)}" alt="">` : `<div class="${cls} ini">${esc((x?.alias || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase())}</div>`;
+const avatar = (x, cls) => x?.avatar_url ? `<img class="${cls}" src="${esc(avatarSrc(x.avatar_url))}" alt="" loading="lazy">` : `<div class="${cls} ini">${esc((x?.alias || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase())}</div>`;
 function pintarRanking(cons) {
   const top = R.slice(0, 3), orden = [top[1], top[0], top[2]], col = { 1: '#f2b705', 2: '#c9d1e6', 3: '#e0742a' };
   $('#podio').innerHTML = orden.map(p => p ? `<div class="pod p${p.posicion} ${p.alias === YO?.alias ? 'yo' : ''}">${avatar(p, 'pav')}<div class="ppos pix" style="color:${col[p.posicion] || '#fff'}">${p.posicion}°</div><b>${esc(p.alias)}</b><small>${esc(p.rango)}</small><div class="pxp">${f1(p.xp)} XP</div><div class="phoy">${sg(n(p.xp_hoy))} hoy</div></div>` : '<div class="pod vacio"></div>').join('');
@@ -142,7 +142,8 @@ function insignias(yo) {
 function pintarPerfil(fb) {
   if (!YO) { $('#pcard').innerHTML = '<div class="empty">Tu cuenta aún no está vinculada a un jugador. Avisa a tu docente.</div>'; return; }
   const yo = R.find(x => x.alias === YO.alias) || {};
-  $('#pcard').innerHTML = `${avatar(YO, 'bav')}<div class="pal">${esc(YO.alias)}</div><div class="psub">${esc(YO.consultora || '')}${YO.rol_consultora ? ' · ' + esc(YO.rol_consultora) : ''}</div>
+  YO.avatar_url = R.find(x => x.alias === YO.alias)?.avatar_url ?? YO.avatar_url;
+  $('#pcard').innerHTML = `<label class="avup" title="Cambiar mi foto">${avatar(YO, 'bav')}<span>📷 Cambiar foto</span><input type="file" accept="image/*" hidden onchange="subirFoto(this.files[0])"></label><div class="pal">${esc(YO.alias)}</div><div class="psub">${esc(YO.consultora || '')}${YO.rol_consultora ? ' · ' + esc(YO.rol_consultora) : ''}</div>
     <div class="prango"><small>NIVEL ${yo.nivel ?? 1} · TU RANGO</small><b>${esc((yo.rango || '').toUpperCase())}</b></div>
     ${yo.hito ? `<div class="psub">Hito del temario: ${esc(yo.hito)}</div>` : ''}
     <div class="pstats"><div><small>Posición</small><b>${yo.posicion ?? '—'}°</b></div><div><small>XP total</small><b>${f1(n(yo.xp))}</b></div></div>`;
@@ -157,6 +158,23 @@ function pintarPerfil(fb) {
     + (nt.condicion && nt.condicion !== 'APROBADO' && nt.ef_minimo !== undefined ? `<div class="meta">Necesitas <b>${Number(nt.ef_minimo) > 20 ? 'más de 20' : Number(nt.ef_minimo).toFixed(2)}</b> en el examen final para aprobar.</div>` : nt.condicion === 'APROBADO' ? '<div class="meta okm">¡Vas aprobando! Sigue así.</div>' : '');
   $('#feedback').innerHTML = fb.length ? fb.map(f => `<div class="fbm"><small>${new Date(f.creado).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}${f.semana ? ' · semana ' + f.semana : ''}</small><p>${esc(f.texto)}</p></div>`).join('') : '<div class="gris">Aún no tienes mensajes.</div>';
   activarTips();
+}
+
+// ---------- Foto de perfil: se recorta cuadrada, se reduce a 256 px (webp) y se guarda en Supabase Storage ----------
+async function subirFoto(file) {
+  if (!file || !YO) return;
+  if (!file.type.startsWith('image/')) { toast('Elige una imagen', true); return; }
+  toast('Subiendo foto…');
+  try {
+    const img = await new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = URL.createObjectURL(file); });
+    const lado = Math.min(img.width, img.height), c = document.createElement('canvas'); c.width = c.height = 256;
+    c.getContext('2d').drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, 256, 256);
+    const blob = await new Promise(ok => c.toBlob(ok, 'image/webp', 0.85));
+    const { data: nom, error: e1 } = await sb.rpc('mi_archivo_avatar'); if (e1) throw e1;
+    const { error: e2 } = await sb.storage.from('avatares').upload(nom, blob, { upsert: true, contentType: 'image/webp', cacheControl: '60' }); if (e2) throw e2;
+    const { data: ruta, error: e3 } = await sb.rpc('set_mi_avatar', { p_version: String(Date.now()) }); if (e3) throw e3;
+    YO.avatar_url = ruta; toast('¡Foto actualizada!'); await refrescar();
+  } catch (e) { toast('No se pudo subir la foto: ' + (e.message || e), true); }
 }
 
 // ---------- Asistencia, equipo y habilidades ----------

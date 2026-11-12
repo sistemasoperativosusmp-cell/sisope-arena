@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Nueva contraseña</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css?v=202611112355">
+</head>
+<body>
+<div class="login">
+  <form class="box" id="f">
+    <h1 class="pix">NUEVA CONTRASEÑA</h1>
+    <p id="intro">Verificando tu enlace…</p>
+    <div id="campos" class="hide">
+      <label>Nueva contraseña<input id="p1" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label>Repite la contraseña<input id="p2" type="password" autocomplete="new-password" minlength="8" required></label>
+      <ul class="reglas"><li id="r1">Al menos 8 caracteres</li><li id="r2">Una letra y un número</li><li id="r3">Ambas coinciden</li></ul>
+      <button class="btn pix" id="go" type="submit">GUARDAR</button>
+    </div>
+    <div class="msg" id="msg" role="alert"></div>
+    <a class="olvide" href="index.html">← Volver a ingresar</a>
+  </form>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js?v=202611112355"></script>
+<script src="assets/comun.js?v=202611112355"></script>
+<script>
+// Llega aquí desde el enlace del correo (Supabase abre una sesión de recuperación) o con la sesión iniciada para cambiarla.
+let listo = false;
+function habilitar(txt) { if (listo) return; listo = true; $('#intro').textContent = txt; $('#campos').classList.remove('hide'); $('#p1').focus(); }
+sb.auth.onAuthStateChange((ev, ses) => { if (ev === 'PASSWORD_RECOVERY') habilitar('Escribe tu nueva contraseña.'); else if (ses && !listo) habilitar('Escribe tu nueva contraseña.'); });
+setTimeout(async () => {
+  if (listo) return;
+  const err = new URLSearchParams(location.hash.slice(1)).get('error_description');
+  const { data } = await sb.auth.getSession();
+  if (data.session) habilitar('Cambia tu contraseña (sesión de ' + data.session.user.email + ').');
+  else { $('#intro').textContent = err ? 'El enlace no es válido o ya venció. Pide uno nuevo desde “¿Olvidaste tu contraseña?”.' : 'Abre esta página desde el enlace que te llegó por correo.'; }
+}, 1500);
+function validar() {
+  const a = $('#p1').value, b = $('#p2').value, ok1 = a.length >= 8, ok2 = /[a-zA-Z]/.test(a) && /\d/.test(a), ok3 = a && a === b;
+  $('#r1').className = ok1 ? 'ok' : ''; $('#r2').className = ok2 ? 'ok' : ''; $('#r3').className = ok3 ? 'ok' : ''; return ok1 && ok2 && ok3;
+}
+$('#p1').oninput = validar; $('#p2').oninput = validar;
+$('#f').addEventListener('submit', async (e) => {
+  e.preventDefault(); $('#msg').textContent = '';
+  if (!validar()) { $('#msg').textContent = 'Revisa los requisitos de la contraseña.'; return; }
+  $('#go').disabled = true;
+  const { error } = await sb.auth.updateUser({ password: $('#p1').value });
+  $('#go').disabled = false;
+  if (error) { $('#msg').textContent = /different|same/i.test(error.message) ? 'Usa una contraseña distinta a la anterior.' : 'No se pudo guardar: ' + error.message; return; }
+  $('#campos').classList.add('hide'); $('#intro').textContent = '¡Listo! Tu contraseña fue actualizada. Entrando…';
+  setTimeout(async () => location.replace((await esDocente()) ? 'docente.html' : 'alumno.html'), 1500);
+});
+</script>
+</body>
+</html>
