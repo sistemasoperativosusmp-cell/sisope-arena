@@ -10,7 +10,7 @@ async function salir() { await sb.auth.signOut(); location.replace('index.html')
 // Menú docente agrupado (se pinta en <nav id="nav">)
 const MENU = [
   ['EN CLASE', [['docente.html', 'Inicio', 'navy'], ['juego.html', 'Juego del Miedo', 'red'], ['grupal.html', 'Trabajo grupal', 'purple']]],
-  ['EN CASA', [['lab.html', 'Laboratorio', 'teal'], ['foro.html', 'Foro', 'blue'], ['quiz.html', 'Quiz y Kahoot', 'gold']]],
+  ['EN CASA', [['lab.html', 'Laboratorio', 'teal'], ['foro.html', 'Foro', 'blue'], ['quiz.html', 'Quiz', 'gold'], ['kahoot.html', 'Kahoot', 'pink']]],
   ['NOTAS', [['examenes.html', 'Exámenes y bonus', 'orange'], [null, 'Radar de silencio'], [null, 'Ajustes']]]
 ];
 function pintarNav() {

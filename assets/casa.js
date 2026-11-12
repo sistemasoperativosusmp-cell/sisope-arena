@@ -25,6 +25,7 @@ async function iniciarCasa() {
 }
 
 async function cargarCasa() {
+  if (CASA.preparar) await CASA.preparar();
   const { data, error } = await sb.from('detalle').select(`id, asistencia, ${CASA.campos}, jugadores(nombre, alias, consultora)`).eq('semana', SEM);
   if (error) { toast('Error al cargar: ' + error.message, true); return; }
   FILAS = (data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
@@ -59,7 +60,7 @@ function pintarCasa() {
   // Lista individual por orden alfabético (apellidos), sin agrupar por consultora
   $('#lista').innerHTML = `<div class="grupo">
       <div class="grrow grcab" style="${grid}"><div><div class="pix" style="font-size:11px">${FILTRO ? 'FILTRADOS' : 'TODA LA CLASE'}</div><small>${vis.length} alumnos · promedio ${f1(prom)} / ${CASA.max}</small></div>
-        ${CASA.cols.map(c => c.masivo ? `<span class="seg bulk"><i>Todos</i>${c.masivo.map(v => `<button onclick='masivo(${JSON.stringify(v)}, "${c.campo}")'>${esc(v < 0 ? 'No cumplió' : (c.campo === 'kahoot_pos' && v === 4) ? 'Participó' : String(v))}</button>`).join('')}</span>` : '<div></div>').join('')}<div></div></div>
+        ${CASA.cols.map(c => c.masivo ? `<span class="seg bulk"><i>Todos</i>${c.masivo.map(v => `<button onclick='masivo(${JSON.stringify(v)}, "${c.campo}")'>${esc(v < 0 ? 'No cumplió' : (c.campo === 'kahoot_pos' && v === 99) ? 'Participó' : String(v))}</button>`).join('')}</span>` : '<div></div>').join('')}<div></div></div>
       ${vis.length ? vis.map((f, i) => `<div class="grrow ${CASA.calificado(f) ? '' : 'pend'}" style="${grid}">
         <div class="nomn"><span class="nro">${i + 1}</span><div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Ausente' ? ' · faltó a clase' : ''}${CASA.calificado(f) ? '' : ' · <span class="pendt">pendiente</span>'}</small></div></div>
         ${CASA.cols.map(c => celda(f, c)).join('')}
@@ -75,7 +76,7 @@ async function poner(id, campo, valor) {
   f[campo] = nuevo; pintarCasa();
   const { error } = await sb.from('detalle').update({ [campo]: nuevo }).eq('id', id);
   if (error) { f[campo] = antes; pintarCasa(); toast('No se guardó: ' + error.message, true); return; }
-  if (campo === 'kahoot_pos' && nuevo >= 1 && nuevo <= 3) {
+  if (campo === 'kahoot_pos' && nuevo >= 1 && nuevo < 99) {
     const otros = FILAS.filter(x => x.id !== id && nv(x.kahoot_pos) === nuevo);
     if (otros.length) toast(`Ojo: ${otros.map(x => x.jugadores?.alias).join(', ')} también tiene el puesto ${nuevo}°`, true);
   }

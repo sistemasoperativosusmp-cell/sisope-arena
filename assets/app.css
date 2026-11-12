@@ -236,3 +236,8 @@ nav.menu a.on{color:#fff}
 .jmc{width:fit-content}.jmc button:disabled{opacity:.45}
 .c-gold{background:#b8860b!important;border-color:#b8860b!important}
 .nomn{display:flex;align-items:center;gap:10px}.nro{min-width:24px;height:24px;border-radius:6px;background:#eef1f7;color:var(--mute);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.c-pink{background:#be185d!important;border-color:#be185d!important}
+.podio{display:inline-flex;align-items:center;border:2px solid #be185d;border-radius:10px;overflow:hidden;background:#fff}
+.podio button{border:0;background:#fce7f3;color:#be185d;font-weight:800;width:32px;height:34px;cursor:pointer;font-size:16px}
+.podio b{min-width:34px;text-align:center;color:#be185d;font-size:16px}
+.ley .podio.mini2{pointer-events:none;flex-shrink:0}
