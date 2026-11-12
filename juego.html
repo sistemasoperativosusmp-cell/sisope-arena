@@ -35,6 +35,7 @@
       <input id="buscar" placeholder="Nombre, apellido o alias">
       <button class="sbtn dark" id="btnMudos">Solo los que no han hablado</button>
       <button class="sbtn gold" id="btnTarde">Registrar llegada tarde</button>
+      <button class="sbtn" id="btnTodos">Seleccionar a todos los presentes</button>
       <button class="sbtn" id="btnDeshacer">Deshacer último</button>
     </aside>
     <section class="grupos" id="grupos"><div class="empty">Cargando…</div></section>
@@ -42,17 +43,26 @@
   <section class="leyenda">
     <h3 class="pix">LEYENDA</h3>
     <div class="ley">
-      <div><span class="cnt ok mini2"><button>−</button><button>✓ 0.5</button></span><p><b>Acertó.</b> Cada toque suma <b class="pAc"></b> pts. El “−” quita un acierto si te equivocaste.</p></div>
-      <div><span class="cnt no mini2"><button>−</button><button>✗ −0.5</button></span><p><b>No contestó.</b> Cada toque resta <b class="pFa"></b> pts. El “−” devuelve el medio punto.</p></div>
+      <div class="ancho"><span class="jmc mini2"><button class="menos">−0.5</button><span class="neto neg">−0.5</span><button class="mas">+0.5</button></span><p><b>Juego del Miedo.</b> <b>+</b> acertó (suma <b class="pAc"></b>), <b>−</b> no contestó (resta <b class="pFa"></b>). El número del centro es el neto de hoy y <b>puede ser negativo</b>. ¿Te equivocaste? Usa <b>Deshacer</b>.</p></div>
+      <div><span class="tag" style="background:var(--navy);color:#fff">☑ Varios</span><p><b>Selección múltiple:</b> marca la casilla (o toca el nombre), o la casilla de la consultora, y usa la barra inferior para dar o quitar puntos a todos a la vez.</p></div>
       <div><span class="cnt voz mini2"><button>−</button><button>Voz 1</button></span><p><b>Participó por iniciativa propia.</b> No da puntos: cuenta para el radar de silencio.</p></div>
       <div><span class="ab et mini2" style="display:inline-flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1b2340" stroke-width="2"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span><p><b>Etiquetas</b> (Mudo, Flojo, Proactivo…). Solo las ves tú; no afectan la nota.</p></div>
       <div><span class="tag rojo">Sin hablar</span> <span class="tag">Voz 2</span><p><b>Voz</b> = aciertos + participaciones voluntarias + liderar/exponer en grupal. En rojo: aún no habla hoy.</p></div>
-      <div><span class="tag xp">1 XP</span><p>Puntos del Juego del Miedo de hoy (aciertos − no contestó).</p></div>
+      <div><span class="tag xp">✓2 · ✗1</span><p>Cuántas veces acertó y cuántas no contestó hoy.</p></div>
       <div><span class="fila aus" style="padding:2px 8px;border:0;display:inline-block;background:#eee;border-radius:6px;font-weight:800;font-size:12px">AUSENTE</span><p>En gris: no participa ni sale en el sorteo. Si llega, usa <b>Registrar llegada tarde</b>.</p></div>
-      <div><span class="tag" style="background:var(--ink);color:#fff">Deshacer</span><p>Revierte el último toque que hiciste en esta pantalla.</p></div>
+      <div><span class="tag" style="background:var(--ink);color:#fff">Deshacer</span><p>Revierte el último toque (o la última acción en grupo) que hiciste en esta pantalla.</p></div>
     </div>
   </section>
 </main>
+
+<!-- Barra de selección múltiple -->
+<div class="barra hide" id="barra">
+  <div class="bi"><b id="bN"></b><small id="bNom"></small></div>
+  <button class="ab no" onclick="sumar([...SEL],'jm_fallos',1)">✗ −<span class="pFa"></span> a todos</button>
+  <button class="ab ok" onclick="sumar([...SEL],'jm_aciertos',1)">✓ +<span class="pAc"></span> a todos</button>
+  <button class="ab voz" onclick="sumar([...SEL],'part_vol',1)">Voz +1</button>
+  <button class="sbtn" onclick="SEL.clear();pintar()">Quitar selección</button>
+</div>
 
 <!-- D3 · Víctima -->
 <div class="modal hide" id="mVictima"><div class="box">
@@ -62,8 +72,8 @@
   <div class="sub" id="vSub"></div>
   <div class="tags" id="vTags" style="justify-content:center"></div>
   <div class="big3" style="margin-top:6px">
-    <button class="ab ok" data-campo="jm_aciertos">✓ +<span class="pAc"></span></button>
     <button class="ab no" data-campo="jm_fallos">✗ −<span class="pFa"></span></button>
+    <button class="ab ok" data-campo="jm_aciertos">✓ +<span class="pAc"></span></button>
     <button class="ab voz" data-campo="part_vol">Voz +1</button>
   </div>
   <div class="sep"><div class="lbl" style="font-size:13px;font-weight:800;color:var(--mute)">Etiquetas de hoy (solo docente)</div><div class="etqs" id="vEtq"></div></div>
@@ -91,7 +101,7 @@
 <script src="assets/config.js"></script>
 <script src="assets/comun.js"></script>
 <script>
-let SEM = 1, FILAS = [], ETQ = [], OBS = {}, RADAR = {}, PA = 0.5, PF = 0.5, soloMudos = false, PILA = [], ELEGIDOS = new Set(), VIC = null, ETQ_ALUMNO = null;
+let SEM = 1, FILAS = [], ETQ = [], OBS = {}, RADAR = {}, PA = 0.5, PF = 0.5, soloMudos = false, PILA = [], ELEGIDOS = new Set(), SEL = new Set(), VIC = null, ETQ_ALUMNO = null;
 const num = n => Number(n || 0);
 const fmt = n => String(Math.round(n * 100) / 100);
 const voz = f => num(f.jm_aciertos) + num(f.part_vol) + (['Lideró', 'Expuso / habló'].includes(f.participacion_grupal) ? 1 : 0);
@@ -134,27 +144,39 @@ function pintar() {
   const grupos = {};
   vis.forEach(f => { const g = f.jugadores?.consultora || 'SIN CONSULTORA'; (grupos[g] = grupos[g] || []).push(f); });
   const nombres = Object.keys(grupos).sort();
-  $('#grupos').innerHTML = nombres.length ? nombres.map(g => `<div class="grupo"><h3>${esc(g.toUpperCase())}</h3>${grupos[g].map(filaHTML).join('')}</div>`).join('') : '<div class="empty">Nadie coincide con el filtro. 🎉</div>';
-  resumen();
+  $('#grupos').innerHTML = nombres.length ? nombres.map(g => `<div class="grupo"><h3><label><input type="checkbox" ${grupos[g].filter(f => f.asistencia !== 'Ausente').every(f => SEL.has(f.jugador_id)) && grupos[g].some(f => f.asistencia !== 'Ausente') ? 'checked' : ''} onchange="selGrupo('${esc(g)}')"> ${esc(g.toUpperCase())}</label></h3>${grupos[g].map(filaHTML).join('')}</div>`).join('') : '<div class="empty">Nadie coincide con el filtro. 🎉</div>';
+  resumen(); pintarBarra();
 }
 
 function filaHTML(f) {
   const v = voz(f), aus = f.asistencia === 'Ausente', et = OBS[f.jugador_id] || [];
-  const dis = aus ? 'disabled' : '';
-  return `<div class="fila ${aus ? 'aus' : v === 0 ? 'mudo' : ''}">
-    <div class="q"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : aus ? ' · AUSENTE' : ''}</small>
-      <div class="tags"><span class="tag ${v === 0 ? 'rojo' : ''}">${v === 0 ? 'Sin hablar' : 'Voz ' + v}</span><span class="tag xp">${fmt(xpJM(f))} XP</span>${et.map(e => `<span class="tag et">${esc(e)}</span>`).join('')}</div></div>
-    ${contador(f, 'jm_aciertos', 'ok', '✓', fmt1(num(f.jm_aciertos) * PA), dis)}
-    ${contador(f, 'jm_fallos', 'no', '✗', (num(f.jm_fallos) ? '−' : '') + fmt1(num(f.jm_fallos) * PF), dis)}
-    ${contador(f, 'part_vol', 'voz', 'Voz', String(num(f.part_vol)), dis)}
+  const dis = aus ? 'disabled' : '', sel = SEL.has(f.jugador_id), n = xpJM(f);
+  return `<div class="fila ${aus ? 'aus' : v === 0 ? 'mudo' : ''} ${sel ? 'sel' : ''}">
+    <input type="checkbox" class="chk" ${dis} ${sel ? 'checked' : ''} title="Seleccionar" onchange="alternarSel('${f.jugador_id}')">
+    <div class="q" onclick="${aus ? '' : `alternarSel('${f.jugador_id}')`}"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : aus ? ' · AUSENTE' : ''}</small>
+      <div class="tags"><span class="tag ${v === 0 ? 'rojo' : ''}">${v === 0 ? 'Sin hablar' : 'Voz ' + v}</span><span class="tag xp">✓${num(f.jm_aciertos)} · ✗${num(f.jm_fallos)}</span>${et.map(e => `<span class="tag et">${esc(e)}</span>`).join('')}</div></div>
+    <div class="jmc ${dis ? 'off' : ''}">
+      <button ${dis} class="menos" title="No contestó: −${fmt(PF)}" onclick="sumar(['${f.jugador_id}'],'jm_fallos',1)">−${fmt(PF)}</button>
+      <span class="neto ${n < 0 ? 'neg' : n > 0 ? 'pos' : ''}">${n > 0 ? '+' : n < 0 ? '−' : ''}${fmt1(Math.abs(n))}</span>
+      <button ${dis} class="mas" title="Acertó: +${fmt(PA)}" onclick="sumar(['${f.jugador_id}'],'jm_aciertos',1)">+${fmt(PA)}</button>
+    </div>
+    <div class="cnt voz"><button ${dis || (num(f.part_vol) ? '' : 'disabled')} title="Quitar participación" onclick="sumar(['${f.jugador_id}'],'part_vol',-1)">−</button><button ${dis} title="Participación voluntaria" onclick="sumar(['${f.jugador_id}'],'part_vol',1)">Voz ${num(f.part_vol)}</button></div>
     <button class="ab et" title="Etiquetas" onclick="abrirEtq('${f.jugador_id}')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></button>
   </div>`;
 }
-
 const fmt1 = n => (Math.round(n * 10) / 10).toFixed(1);
-function contador(f, campo, cls, ico, valor, dis) {
-  const tit = { jm_aciertos: 'Acertó', jm_fallos: 'No contestó', part_vol: 'Participación voluntaria' }[campo];
-  return `<div class="cnt ${cls}"><button ${dis || (num(f[campo]) ? '' : 'disabled')} title="Quitar (${tit})" onclick="sumar('${f.jugador_id}','${campo}',-1)">−</button><button ${dis} title="${tit}" onclick="sumar('${f.jugador_id}','${campo}',1)">${ico} ${valor}</button></div>`;
+
+// ---------- Selección múltiple ----------
+function alternarSel(jid) { SEL.has(jid) ? SEL.delete(jid) : SEL.add(jid); pintar(); }
+function selGrupo(g) {
+  const ids = FILAS.filter(f => (f.jugadores?.consultora || 'SIN CONSULTORA') === g && f.asistencia !== 'Ausente').map(f => f.jugador_id);
+  const todos = ids.every(id => SEL.has(id)); ids.forEach(id => todos ? SEL.delete(id) : SEL.add(id)); pintar();
+}
+function selTodos() { const ids = FILAS.filter(f => f.asistencia !== 'Ausente').map(f => f.jugador_id); const todos = ids.every(id => SEL.has(id)); SEL.clear(); if (!todos) ids.forEach(id => SEL.add(id)); pintar(); }
+function pintarBarra() {
+  $('#barra').classList.toggle('hide', !SEL.size);
+  $('#bN').textContent = SEL.size === 1 ? '1 seleccionado' : `${SEL.size} seleccionados`;
+  $('#bNom').textContent = FILAS.filter(f => SEL.has(f.jugador_id)).map(f => f.jugadores?.alias).join(', ');
 }
 
 function resumen() {
@@ -165,22 +187,27 @@ function resumen() {
   $('#mVo').textContent = FILAS.reduce((s, f) => s + num(f.part_vol), 0);
 }
 
-async function sumar(jid, campo, delta, sinPila) {
-  const f = FILAS.find(x => x.jugador_id === jid); if (!f) return;
-  const antes = num(f[campo]); if (antes + delta < 0) return;
-  f[campo] = antes + delta; pintar(); if (VIC === jid) pintarVictima();
-  const { data, error } = await sb.rpc('incrementar', { p_jugador: jid, p_semana: SEM, p_campo: campo, p_delta: delta });
-  if (error) { f[campo] = antes; pintar(); toast('No se guardó: ' + error.message, true); return; }
-  f[campo] = data[campo]; pintar(); if (VIC === jid) pintarVictima();
-  if (!sinPila) PILA.push({ jid, campo, delta });
-  const txt = { jm_aciertos: `✓ +${fmt(PA)}`, jm_fallos: `✗ −${fmt(PF)}`, part_vol: 'Voz +1' }[campo];
-  const menos = { jm_aciertos: `✓ −${fmt(PA)}`, jm_fallos: `✗ quitado (+${fmt(PF)})`, part_vol: 'Voz −1' }[campo];
-  toast(`${f.jugadores?.alias}: ${delta > 0 ? txt : menos}`);
+async function sumar(jids, campo, delta, sinPila) {
+  const filas = jids.map(j => FILAS.find(x => x.jugador_id === j)).filter(f => f && f.asistencia !== 'Ausente' && num(f[campo]) + delta >= 0);
+  if (!filas.length) return;
+  const antes = filas.map(f => num(f[campo]));
+  filas.forEach(f => f[campo] = num(f[campo]) + delta); pintar(); if (VIC) pintarVictima();
+  const res = await Promise.all(filas.map(f => sb.rpc('incrementar', { p_jugador: f.jugador_id, p_semana: SEM, p_campo: campo, p_delta: delta })));
+  const ok = [];
+  res.forEach((r, i) => { if (r.error) filas[i][campo] = antes[i]; else { filas[i][campo] = r.data[campo]; ok.push(filas[i].jugador_id); } });
+  pintar(); if (VIC) pintarVictima();
+  const fallo = res.find(r => r.error);
+  if (fallo) toast('No se guardó en ' + (filas.length - ok.length) + ': ' + fallo.error.message, true);
+  if (!ok.length) return;
+  if (!sinPila) PILA.push({ jids: ok, campo, delta });
+  const txt = { jm_aciertos: `+${fmt(PA)}`, jm_fallos: `−${fmt(PF)}`, part_vol: 'Voz +1' }[campo];
+  const quien = ok.length === 1 ? filas.find(f => f.jugador_id === ok[0]).jugadores?.alias : `${ok.length} alumnos`;
+  if (!fallo) toast(sinPila ? `Deshecho (${quien})` : delta > 0 ? `${quien}: ${txt}` : `${quien}: Voz −1`);
 }
 
 async function deshacer() {
   const u = PILA.pop(); if (!u) { toast('No hay nada que deshacer'); return; }
-  await sumar(u.jid, u.campo, -u.delta, true);
+  await sumar(u.jids, u.campo, -u.delta, true);
 }
 
 // ---------- Etiquetas (tabla observaciones, solo docente) ----------
@@ -217,7 +244,7 @@ function pintarVictima() {
   $('#vNom').textContent = j.nombre || ''; $('#vSub').textContent = [j.alias, j.consultora, j.rol_consultora].filter(Boolean).join(' · ');
   $('#vTags').innerHTML = (v === 0 ? '<span class="tag rojo" style="font-size:13px;padding:4px 12px">Sin hablar esta semana</span>' : `<span class="tag" style="font-size:13px;padding:4px 12px">Voz ${v} esta semana</span>`)
     + (num(rd.semanas_silencio) ? `<span class="tag" style="font-size:13px;padding:4px 12px;background:#fde8e8;color:#a02424">${num(rd.semanas_silencio)} semana(s) en silencio</span>` : '')
-    + `<span class="tag xp" style="font-size:13px;padding:4px 12px">✓ ${num(f.jm_aciertos)} · ✗ ${num(f.jm_fallos)} · Voz ${num(f.part_vol)}</span>`;
+    + `<span class="tag xp" style="font-size:13px;padding:4px 12px">Juego del Miedo hoy: ${xpJM(f) > 0 ? '+' : xpJM(f) < 0 ? '−' : ''}${fmt1(Math.abs(xpJM(f)))} · Voz ${num(f.part_vol)}</span>`;
   $('#vEtq').innerHTML = etqHTML(VIC);
 }
 
@@ -238,10 +265,11 @@ async function marcarTarde(id) {
 $('#btnVictima').onclick = elegirVictima;
 $('#vOtra').onclick = elegirVictima;
 $('#btnDeshacer').onclick = deshacer;
+$('#btnTodos').onclick = selTodos;
 $('#btnTarde').onclick = abrirTarde;
 $('#buscar').oninput = pintar;
 $('#btnMudos').onclick = () => { soloMudos = !soloMudos; $('#btnMudos').classList.toggle('on', soloMudos); $('#btnMudos').textContent = soloMudos ? 'Ver a todos' : 'Solo los que no han hablado'; pintar(); };
-document.querySelectorAll('#mVictima .big3 button').forEach(b => b.onclick = () => sumar(VIC, b.dataset.campo, 1));
+document.querySelectorAll('#mVictima .big3 button').forEach(b => b.onclick = () => sumar([VIC], b.dataset.campo, 1));
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => { b.closest('.modal').classList.add('hide'); VIC = null; ETQ_ALUMNO = null; });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal').forEach(m => m.classList.add('hide')); });
 iniciar();

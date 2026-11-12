@@ -128,3 +128,27 @@ nav.tabs a.jm{background:var(--red);border-color:var(--red);color:#fff}
 .ley .mini2{height:34px;flex-shrink:0;pointer-events:none}.ley .cnt.mini2 button:last-child{min-width:54px;font-size:13px}
 .ley .ab.mini2{width:34px;min-width:34px;height:34px}
 .ley .tag{flex-shrink:0}
+/* Control neto del Juego del Miedo y selección múltiple */
+.jmc{display:flex;align-items:center;height:44px;border-radius:10px;overflow:hidden;border:2px solid var(--line);background:#fff;flex-shrink:0}
+.jmc button{height:100%;border:0;color:#fff;font-weight:800;font-size:14px;cursor:pointer;padding:0 10px}
+.jmc .menos{background:#c23030}.jmc .mas{background:var(--green)}
+.jmc .neto{min-width:58px;text-align:center;font-weight:800;font-size:17px;color:var(--mute)}
+.jmc .neto.pos{color:var(--green)}.jmc .neto.neg{color:#c23030}
+.jmc.off{opacity:.4}.jmc button:disabled{cursor:not-allowed}
+.jmc button:hover:not(:disabled){filter:brightness(1.12)}
+.chk{width:20px;height:20px;accent-color:var(--navy);flex-shrink:0;cursor:pointer}
+.fila .q{cursor:pointer}.fila.aus .q{cursor:default}
+.fila.sel{background:#e7efff;box-shadow:inset 4px 0 0 var(--blue)}
+.grupo h3 label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.grupo h3 input{width:18px;height:18px;accent-color:var(--navy)}
+.barra{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:30;background:var(--ink);color:#fff;border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 10px 30px #0006;max-width:calc(100vw - 32px)}
+.barra .bi{display:flex;flex-direction:column;max-width:260px}.barra .bi small{opacity:.75;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barra .ab{padding:0 14px}
+main{padding-bottom:110px}
+.ley .jmc.mini2{height:34px;pointer-events:none}.ley .jmc.mini2 button{font-size:12px;padding:0 7px}.ley .jmc.mini2 .neto{min-width:42px;font-size:13px}
+.fila{flex-wrap:wrap}.fila .q{min-width:170px}
+.ley>div.ancho{grid-column:span 2}@media(max-width:700px){.ley>div.ancho{grid-column:auto}}
+.toast{bottom:100px}
+@media(max-width:1500px){.grupos{grid-template-columns:1fr}}
+.fila{flex-wrap:nowrap}@media(max-width:700px){.fila{flex-wrap:wrap}}
+.toast{bottom:auto;top:16px;transform:translateX(-50%) translateY(-140px)}.toast.show{transform:translateX(-50%) translateY(0)}
