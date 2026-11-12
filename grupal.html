@@ -28,6 +28,7 @@
     <div><b>Conocimiento técnico</b><br>Deficiente 0 · Bueno 0.5 · Excelente 1</div>
     <div><b>Análisis crítico</b><br>Deficiente 0 · Bueno 0.5 · Excelente 1</div>
     <div style="text-align:right"><b>Total / 3</b></div>
+    <div><b>Bonus</b><br>Hizo más de lo pedido</div>
   </div>
   <div id="grupos" class="grlist"><div class="empty">Cargando…</div></div>
   <section class="leyenda">
@@ -35,7 +36,8 @@
     <div class="ley">
       <div><span class="seg mini2"><button class="on p">Lideró</button><button>Habló</button></span><p><b>Participación.</b> No da puntos. “Lideró” y “Habló” suman 1 de voz para el radar de silencio.</p></div>
       <div><span class="seg mini2"><button>0</button><button class="on">0.5</button><button>1</button></span><p><b>Rúbrica:</b> 0 deficiente · 0.5 bueno · 1 excelente en cada criterio. Máximo 3 puntos por semana.</p></div>
-      <div><span class="seg mini2 bulk"><button>Todos 1</button></span><p><b>Aplicar a toda la consultora:</b> pone la misma nota a todos los presentes del grupo. Luego ajustas a quien corresponda.</p></div>
+      <div><span class="seg mini2 bulk"><i>Todos</i><button>1</button></span><p><b>Aplicar a toda la consultora:</b> pone la misma nota a todos los presentes del grupo. Luego ajustas a quien corresponda.</p></div>
+      <div><span class="bon mini2"><button class="bmenos">−</button><span class="si">★ +0.5</span><button class="bmas">+0.5</button></span><p><b>Bonus:</b> solo cuando el equipo hizo más de lo pedido o el alumno investigó por su cuenta. Sube de 0.5 en 0.5, aparte de la rúbrica. “+0.5 equipo” lo da a todos los presentes del grupo.</p></div>
       <div><span class="tag" style="background:var(--ink);color:#fff">Tocar de nuevo</span><p>Tocar la opción ya marcada la <b>borra</b> (queda sin calificar).</p></div>
       <div><span class="tag" style="background:#eee;color:var(--mute)">AUSENTE</span><p>En gris y bloqueado. Si llegó tarde, márcalo en <b>Inicio</b> o en <b>Juego del Miedo</b>.</p></div>
     </div>
@@ -62,7 +64,7 @@ async function iniciar() {
   SEM = parseInt(c?.valor, 10) || 1;
   const { data: s } = await sb.from('semanas').select('*').eq('semana', SEM).maybeSingle();
   $('#pills').innerHTML = [`Semana ${SEM}`, s?.tema, s?.tipo_grupal ? 'Grupal: ' + s.tipo_grupal : null].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
-  const { data, error } = await sb.from('detalle').select('id, asistencia, tipo_grupal, participacion_grupal, gr_comunicacion, gr_tecnico, gr_analisis, jugadores(nombre, alias, consultora, rol_consultora)').eq('semana', SEM);
+  const { data, error } = await sb.from('detalle').select('id, asistencia, tipo_grupal, participacion_grupal, gr_comunicacion, gr_tecnico, gr_analisis, extra, jugadores(nombre, alias, consultora, rol_consultora)').eq('semana', SEM);
   if (error) { toast('Error al cargar: ' + error.message, true); return; }
   FILAS = (data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
   if (['Examen', '—'].includes(s?.tipo_grupal)) toast(`La semana ${SEM} no tiene trabajo grupal (${s.tipo_grupal}).`, true);
@@ -87,13 +89,15 @@ function pintar() {
     return `<div class="grupo">
       <div class="grrow grcab"><div class="pix" style="font-size:11px">${esc(g.toUpperCase())}<small>Promedio ${fmt(prom)} / 3</small></div>
         <div class="nop" style="font-weight:800">Aplicar a toda la consultora →</div>
-        ${CRIT.map(c => `<span class="seg bulk">${NIV.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c}", ${v})'>Todos ${v}</button>`).join('')}</span>`).join('')}
-        <div></div></div>
+        ${CRIT.map(c => `<span class="seg bulk"><i>Todos</i>${NIV.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c}", ${v})'>${v}</button>`).join('')}</span>`).join('')}
+        <div></div>
+        <div class="bon"><button class="bmas" onclick='bonusGrupo(${JSON.stringify(g)}, 1)'>+0.5 equipo</button><button class="bmenos" title="Quitar 0.5 a todo el equipo" onclick='bonusGrupo(${JSON.stringify(g)}, -1)'>−</button></div></div>
       ${filas.map(f => `<div class="grrow ${f.asistencia === 'Ausente' ? 'aus' : ''}">
         <div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.jugadores?.rol_consultora ? ' · ' + esc(f.jugadores.rol_consultora) : ''}${f.asistencia === 'Ausente' ? ' · AUSENTE' : f.asistencia === 'Tarde' ? ' · TARDE' : ''}</small></div>
         ${seg(f, 'participacion_grupal', PART, 'part')}
         ${CRIT.map(c => seg(f, c, NIV.map(v => [v, String(v)]))).join('')}
         <div class="tot">${fmt(total(f))}</div>
+        <div class="bon ${f.asistencia === 'Ausente' ? 'off' : ''}"><button class="bmenos" ${f.asistencia === 'Ausente' || !n(f.extra) ? 'disabled' : ''} onclick="bonus(${f.id}, -1)">−</button><span class="${n(f.extra) ? 'si' : ''}">${n(f.extra) ? '★ +' + fmt(n(f.extra)) : '0'}</span><button class="bmas" ${f.asistencia === 'Ausente' ? 'disabled' : ''} onclick="bonus(${f.id}, 1)">+0.5</button></div>
       </div>`).join('')}
     </div>`;
   }).join('');
@@ -116,6 +120,28 @@ async function masivo(g, campo, valor) {
   if (error) { filas.forEach((f, i) => f[campo] = antes[i]); pintar(); toast('No se guardó: ' + error.message, true); return; }
   const nombre = { gr_comunicacion: 'Comunicación', gr_tecnico: 'Conocimiento técnico', gr_analisis: 'Análisis crítico' }[campo];
   toast(`${g}: ${nombre} = ${valor} para ${filas.length} alumnos`);
+}
+// ---------- Bonus (columna "extra"): pasos de 0.5, nunca negativo ----------
+const PASO = 0.5;
+async function guardarBonus(filas, signo) {
+  const cambia = filas.filter(f => f.asistencia !== 'Ausente' && (n(f.extra) || 0) + signo * PASO >= 0);
+  if (!cambia.length) return 0;
+  const antes = cambia.map(f => n(f.extra) || 0);
+  cambia.forEach((f, i) => f.extra = antes[i] + signo * PASO); pintar();
+  const res = await Promise.all(cambia.map(f => sb.from('detalle').update({ extra: f.extra }).eq('id', f.id)));
+  const err = res.find(r => r.error);
+  res.forEach((r, i) => { if (r.error) cambia[i].extra = antes[i]; }); pintar();
+  if (err) toast('No se guardó el bonus: ' + err.error.message, true);
+  return cambia.length - res.filter(r => r.error).length;
+}
+async function bonus(id, signo) {
+  const f = FILAS.find(x => x.id === id);
+  if (await guardarBonus([f], signo)) toast(`${f.jugadores?.alias}: bonus ${signo > 0 ? '+' : '−'}${PASO} (total ★ ${fmt(n(f.extra))})`);
+}
+async function bonusGrupo(g, signo) {
+  const filas = FILAS.filter(f => (f.jugadores?.consultora || 'SIN CONSULTORA') === g);
+  const k = await guardarBonus(filas, signo);
+  if (k) toast(`${g}: bonus ${signo > 0 ? '+' : '−'}${PASO} para ${k} alumnos`);
 }
 iniciar();
 </script>

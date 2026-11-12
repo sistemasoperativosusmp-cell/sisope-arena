@@ -175,3 +175,12 @@ nav.tabs a.gr{background:var(--purple);border-color:var(--purple);color:#fff}
 @media(max-width:1250px){.grhead{display:none}.grrow{grid-template-columns:1fr 1fr}.grrow .tot{text-align:left}}
 .ley .seg.mini2{pointer-events:none;flex-shrink:0}
 .seg.bulk button{white-space:nowrap;padding:5px 8px}.seg button{white-space:nowrap}
+.grhead,.grrow{grid-template-columns:220px 280px repeat(3,minmax(140px,1fr)) 56px 150px}
+.bon{display:inline-flex;align-items:center;height:36px;border:2px solid #f2b705;border-radius:10px;overflow:hidden;background:#fffbea;width:fit-content}
+.bon button{height:100%;border:0;font-weight:800;cursor:pointer;padding:0 10px;white-space:nowrap}
+.bon .bmas{background:var(--gold);color:var(--ink)}.bon .bmenos{background:#fff1c2;color:#7a5a00;width:28px;padding:0}
+.bon span{min-width:54px;text-align:center;font-weight:800;color:var(--mute);font-size:14px}.bon span.si{color:#b45309}
+.bon button:disabled{opacity:.35;cursor:not-allowed}.bon.off{opacity:.4}
+.grcab .bon{border-color:#e0c060}
+.ley .bon.mini2{pointer-events:none;flex-shrink:0}
+.seg.bulk i{font-style:normal;font-size:11px;font-weight:800;color:#5a2fa6;padding:0 8px;display:flex;align-items:center;background:#ece3fb;border-right:1px solid #c9b8ee}.seg.bulk button{padding:5px 11px}
