@@ -241,3 +241,18 @@ nav.menu a.on{color:#fff}
 .podio button{border:0;background:#fce7f3;color:#be185d;font-weight:800;width:32px;height:34px;cursor:pointer;font-size:16px}
 .podio b{min-width:34px;text-align:center;color:#be185d;font-size:16px}
 .ley .podio.mini2{pointer-events:none;flex-shrink:0}
+/* Detalle por semana (Exámenes) */
+.quien{cursor:pointer}.quien:hover b{color:var(--blue);text-decoration:underline}.lupa{font-size:11px;opacity:.6}
+.modal .box.det{max-width:1100px;align-items:stretch}
+.dethead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;width:100%}
+.dfil{display:flex;gap:10px;align-items:center}.dfil label{font-size:13px;font-weight:800;color:var(--mute);display:flex;gap:6px;align-items:center}
+.dfil select{padding:8px;border-radius:10px;border:2px solid var(--line)}
+.dt{border:2px solid var(--line);border-radius:12px;overflow:auto}
+.dr{display:grid;grid-template-columns:minmax(220px,2fr) repeat(6,minmax(84px,1fr)) 130px;gap:6px;padding:6px 12px;border-bottom:1px solid #edf0f6;align-items:center;font-size:14px;text-align:center;min-width:900px}
+.dr>div:first-child{text-align:left}.dr small{color:var(--mute);font-weight:700;font-size:11px}
+.dr.dc{background:var(--navy);color:#fff;font-size:12px;font-weight:800;position:sticky;top:0}
+.dr.dp{background:#eef1f7;font-weight:800;color:var(--navy);font-size:12px}
+.dr.ds{background:#f7f8fc;font-weight:800;border-bottom:2px solid var(--line)}
+.dr.aus{opacity:.55}.dr .b{font-weight:800}
+.dr .pos{color:var(--green);font-weight:700}.dr .neg{color:#c23030;font-weight:700}.dr .vac{color:#c3c8d6}
+.dr .nota{background:var(--navy);color:#fff;border-radius:6px;padding:2px 6px}

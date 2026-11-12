@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Exámenes y bonus</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112043">
+<link rel="stylesheet" href="assets/app.css?v=202611112054">
 </head>
 <body>
 <header class="top">
@@ -36,13 +36,20 @@
     <div><span class="tag" style="background:#fff;border:2px solid #f0c48a;color:var(--ink)">14</span><p><b>Blanco:</b> notas del examen parcial (EP) y final (EF), de 0 a 20. Vacío = aún no rinde.</p></div>
     <div><span class="tag" style="background:#fff;border:2px solid #f0c48a;color:var(--ink)">+1</span><p><b>Bonus EP / EF:</b> puntos extra por investigación o reto adicional. Se suman al examen sin pasar de 20.</p></div>
     <div><span class="tag" style="background:#fde8e8;color:#c23030">&gt; 20</span><p><b>EF mínimo:</b> lo que necesita en el final para aprobar. “&gt; 20” = ya no le alcanza solo con el final.</p></div>
+    <div><span class="tag" style="background:#e7efff;color:#1d4fb0">🔍 Nombre</span><p><b>Toca el nombre</b> de un alumno para ver su detalle por semana y por actividad (Juego del Miedo, grupal, laboratorio, foro, quiz y Kahoot), filtrable por práctica.</p></div>
     <div><span class="tag" style="background:#fff1c2;color:#7a5a00">sin guardar</span><p>Las celdas cambiadas se resaltan en amarillo hasta que presiones <b>Guardar notas</b>.</p></div>
   </div></section>
 </main>
+<div class="modal hide" id="mDet"><div class="box plain det">
+  <div class="dethead"><div><h2 class="pix" style="color:var(--navy);text-align:left">DETALLE POR SEMANA</h2><div class="nom" id="dNom" style="font-size:22px;text-align:left"></div><div class="sub" id="dSub" style="text-align:left"></div></div>
+    <div class="dfil"><label>Práctica <select id="dPrac"><option value="">Todas</option><option>Practica 1</option><option>Practica 2</option><option>Practica 3</option><option>Practica 4</option></select></label><button class="sbtn" data-cerrar>Cerrar</button></div></div>
+  <div id="dTabla" style="width:100%"></div>
+  <div class="help" style="margin:0;align-self:flex-start">Juego del Miedo = aciertos − no contestó · Grupal = rúbrica + bonus − falta · Foro = rúbrica + bonificación · La nota de cada práctica es la suma de sus semanas, entre 0 y 20.</div>
+</div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112043"></script>
-<script src="assets/comun.js?v=202611112043"></script>
+<script src="assets/config.js?v=202611112054"></script>
+<script src="assets/comun.js?v=202611112054"></script>
 <script>
 let NOTAS = [], CAMBIOS = {}, APR = 10.5;
 const CAMPOS = ['ep', 'bonus_ep', 'ef', 'bonus_ef'];
@@ -82,7 +89,7 @@ function pintar() {
   $('#filas').innerHTML = rs.length ? rs.map(r => {
     const k = calc(r), ch = CAMBIOS[r.jugador_id] || {};
     return `<div class="tf">
-      <div><b>${esc(r.nombre)}</b><small>${esc(r.alias)}${r.consultora ? ' · ' + esc(r.consultora) : ''}</small></div>
+      <div class="quien" onclick="verDetalle('${r.jugador_id}')" title="Ver detalle por semana"><b>${esc(r.nombre)} <span class="lupa">🔍</span></b><small>${esc(r.alias)}${r.consultora ? ' · ' + esc(r.consultora) : ''}</small></div>
       ${['p1', 'p2', 'p3', 'p4'].map(p => `<div class="g">${d2(r[p])}</div>`).join('')}<div class="g b">${d2(r.pe)}</div>
       ${CAMPOS.map(c => `<input class="${c in ch ? 'mod' : ''} ${c.startsWith('bonus') ? 'bn' : 'b'}" inputmode="decimal" value="${val(r, c) ?? ''}" placeholder="${c.startsWith('bonus') ? '0' : '—'}" data-j="${r.jugador_id}" data-c="${c}">`).join('')}
       <div class="g b">${k.pf.toFixed(2)}</div>
@@ -116,6 +123,55 @@ $('#guardar').onclick = async () => {
   if (error) { $('#guardar').disabled = false; toast('No se guardó: ' + error.message, true); return; }
   toast(`Notas guardadas (${filas.length} alumnos)`); await cargar();
 };
+// ---------- Detalle por semana de un alumno ----------
+let DET = null;
+async function verDetalle(jid) {
+  const r = NOTAS.find(x => x.jugador_id === jid);
+  $('#dNom').textContent = r.nombre; $('#dSub').textContent = `${r.alias}${r.consultora ? ' · ' + r.consultora : ''} · PE ${d2(r.pe)} · PF ${d2(r.pf)}`;
+  $('#dTabla').innerHTML = '<div class="empty">Cargando…</div>'; $('#mDet').classList.remove('hide');
+  const [a, b, c] = await Promise.all([
+    sb.from('detalle').select('*').eq('jugador_id', jid).order('semana'),
+    sb.from('semanas').select('semana, tema, kahoot_podio'),
+    sb.from('config').select('clave, valor')
+  ]);
+  const err = a.error || b.error || c.error; if (err) { $('#dTabla').innerHTML = `<div class="empty">Error: ${esc(err.message)}</div>`; return; }
+  const cfg = Object.fromEntries((c.data || []).map(x => [x.clave, Number(x.valor)])), sem = Object.fromEntries((b.data || []).map(x => [x.semana, x]));
+  DET = { filas: a.data || [], cfg, sem, notas: r }; pintarDetalle();
+}
+function partes(d, cfg, sem) {
+  const n = v => Number(v || 0), k = n(d.kahoot_pos), podio = sem[d.semana]?.kahoot_podio || 3;
+  const kah = !k || k >= 99 ? 0 : k === 1 ? (cfg.KahootP1 ?? 2) : k === 2 ? (cfg.KahootP2 ?? 1) : k === 3 ? (cfg.KahootP3 ?? 0.5) : k <= podio ? (cfg.KahootExtra ?? 0.5) : 0;
+  return {
+    jm: n(d.jm_aciertos) * (cfg.JMAcierto ?? 0.5) - n(d.jm_fallos) * (cfg.JMFallo ?? 0.5),
+    gr: n(d.gr_comunicacion) + n(d.gr_tecnico) + n(d.gr_analisis) + n(d.extra) - n(d.falta),
+    lab: n(d.lab), foro: n(d.foro_tecnico) + n(d.foro_analisis) + n(d.foro_bonus), quiz: n(d.quiz), kah
+  };
+}
+const ceroVacio = (v, nulo) => nulo ? '<span class="vac">—</span>' : `<span class="${v < 0 ? 'neg' : v > 0 ? 'pos' : ''}">${v > 0 ? '' : v < 0 ? '−' : ''}${fmtN(Math.abs(v))}</span>`;
+const fmtN = v => String(Math.round(v * 100) / 100);
+function pintarDetalle() {
+  const { filas, cfg, sem, notas } = DET, filtro = $('#dPrac').value, tope = cfg.TopePractica ?? 20;
+  const cols = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
+  const practicas = ['Practica 1', 'Practica 2', 'Practica 3', 'Practica 4'].filter(p => !filtro || p === filtro);
+  let html = `<div class="dt"><div class="dr dc"><div>Semana</div>${cols.map(c => `<div>${c[1]}</div>`).join('')}<div>Total</div></div>`;
+  practicas.forEach((p, i) => {
+    const fs = filas.filter(d => d.practica === p); if (!fs.length && filtro !== p) return;
+    const suma = { jm: 0, gr: 0, lab: 0, foro: 0, quiz: 0, kah: 0 }; let tot = 0;
+    html += `<div class="dr dp"><div>${p}</div>${cols.map(() => '<div></div>').join('')}<div></div></div>`;
+    fs.forEach(d => {
+      const x = partes(d, cfg, sem), t = Object.values(x).reduce((a, b) => a + b, 0); tot += t; Object.keys(x).forEach(k => suma[k] += x[k]);
+      const nulos = { jm: !d.jm_aciertos && !d.jm_fallos, gr: d.gr_comunicacion == null && d.gr_tecnico == null && d.gr_analisis == null && !Number(d.extra) && !Number(d.falta), lab: d.lab == null, foro: d.foro_tecnico == null && d.foro_analisis == null && !Number(d.foro_bonus), quiz: d.quiz == null, kah: d.kahoot_pos == null };
+      html += `<div class="dr ${d.asistencia === 'Ausente' ? 'aus' : ''}"><div><b>S${d.semana}</b> <small>${esc(sem[d.semana]?.tema || d.tema || '')}${d.asistencia === 'Ausente' ? ' · ausente' : d.asistencia === 'Tarde' ? ' · tarde' : ''}</small></div>${cols.map(c => `<div>${ceroVacio(x[c[0]], nulos[c[0]])}</div>`).join('')}<div class="b">${ceroVacio(t)}</div></div>`;
+    });
+    if (!fs.length) html += `<div class="dr"><div class="vac">Sin semanas registradas</div></div>`;
+    const nota = Number(notas['p' + (['Practica 1', 'Practica 2', 'Practica 3', 'Practica 4'].indexOf(p) + 1)]);
+    html += `<div class="dr ds"><div>Subtotal ${p}</div>${cols.map(c => `<div>${ceroVacio(suma[c[0]])}</div>`).join('')}<div class="b">${ceroVacio(tot)} → <span class="nota">${d2(nota)}</span></div></div>`;
+  });
+  $('#dTabla').innerHTML = html + '</div>';
+}
+$('#dPrac').onchange = () => DET && pintarDetalle();
+document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => b.closest('.modal').classList.add('hide'));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#mDet').classList.add('hide'); });
 iniciar();
 </script>
 </body>
