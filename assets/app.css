@@ -234,3 +234,4 @@ nav.menu a.on{color:#fff}
 .ley .jmc.mini2{flex-shrink:0}
 .grhead,.grrow{grid-template-columns:190px 320px repeat(3,minmax(125px,1fr)) 40px 180px}
 .jmc{width:fit-content}.jmc button:disabled{opacity:.45}
+.c-gold{background:#b8860b!important;border-color:#b8860b!important}

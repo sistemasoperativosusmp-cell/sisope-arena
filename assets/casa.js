@@ -60,7 +60,7 @@ function pintarCasa() {
     const fs = grupos[g], prom = fs.reduce((s, f) => s + CASA.total(f), 0) / fs.length;
     return `<div class="grupo">
       <div class="grrow grcab" style="${grid}"><div class="pix" style="font-size:11px">${esc(g.toUpperCase())}<small>Promedio ${f1(prom)} / ${CASA.max}</small></div>
-        ${CASA.cols.map(c => c.masivo ? `<span class="seg bulk"><i>Todos</i>${c.masivo.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c.campo}", ${JSON.stringify(v)})'>${esc(v < 0 ? 'No cumplió' : String(v))}</button>`).join('')}</span>` : '<div></div>').join('')}<div></div></div>
+        ${CASA.cols.map(c => c.masivo ? `<span class="seg bulk"><i>Todos</i>${c.masivo.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c.campo}", ${JSON.stringify(v)})'>${esc(v < 0 ? 'No cumplió' : (c.campo === 'kahoot_pos' && v === 4) ? 'Participó' : String(v))}</button>`).join('')}</span>` : '<div></div>').join('')}<div></div></div>
       ${fs.map(f => `<div class="grrow ${CASA.calificado(f) ? '' : 'pend'}" style="${grid}">
         <div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Ausente' ? ' · faltó a clase' : ''}${CASA.calificado(f) ? '' : ' · <span class="pendt">pendiente</span>'}</small></div>
         ${CASA.cols.map(c => celda(f, c)).join('')}
@@ -76,7 +76,11 @@ async function poner(id, campo, valor) {
   const nuevo = actual === valor ? null : valor;
   f[campo] = nuevo; pintarCasa();
   const { error } = await sb.from('detalle').update({ [campo]: nuevo }).eq('id', id);
-  if (error) { f[campo] = antes; pintarCasa(); toast('No se guardó: ' + error.message, true); }
+  if (error) { f[campo] = antes; pintarCasa(); toast('No se guardó: ' + error.message, true); return; }
+  if (campo === 'kahoot_pos' && nuevo >= 1 && nuevo <= 3) {
+    const otros = FILAS.filter(x => x.id !== id && nv(x.kahoot_pos) === nuevo);
+    if (otros.length) toast(`Ojo: ${otros.map(x => x.jugadores?.alias).join(', ')} también tiene el puesto ${nuevo}°`, true);
+  }
 }
 async function contar(id, campo, delta) {
   const f = FILAS.find(x => x.id === id), antes = nv(f[campo]) || 0; if (antes + delta < 0) return;
