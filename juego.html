@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Juego del Miedo</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="pix">SISOPE ARENA · DOCENTE</div>
+  <div class="pills" id="pills"></div>
+  <div class="who"><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
+</header>
+<nav class="tabs">
+  <a href="docente.html">Inicio</a>
+  <a href="juego.html" class="jm">Juego del Miedo</a>
+  <a href="#" class="off" title="Próximamente">Trabajo grupal</a>
+  <a href="#" class="off" title="Próximamente">Radar de silencio</a>
+  <a href="#" class="off" title="Próximamente">Exámenes</a>
+  <a href="#" class="off" title="Próximamente">Ajustes</a>
+</nav>
+<main>
+  <div class="jmgrid">
+    <aside class="side">
+      <button class="btnv pix" id="btnVictima">ELEGIR VÍCTIMA AL AZAR</button>
+      <div class="help" style="margin:0">Prioriza a quien menos ha hablado esta semana y en el ciclo. No elige ausentes ni repite en la misma clase.</div>
+      <div class="minis">
+        <div class="mini alerta"><small>Sin hablar</small><b id="mSin">–</b></div>
+        <div class="mini"><small>Aciertos</small><b id="mAc">–</b></div>
+        <div class="mini"><small>No contestó</small><b id="mNo">–</b></div>
+        <div class="mini"><small>Voluntarias</small><b id="mVo">–</b></div>
+      </div>
+      <label class="lbl" for="buscar">Buscar alumno</label>
+      <input id="buscar" placeholder="Nombre, apellido o alias">
+      <button class="sbtn dark" id="btnMudos">Solo los que no han hablado</button>
+      <button class="sbtn gold" id="btnTarde">Registrar llegada tarde</button>
+      <button class="sbtn" id="btnDeshacer">Deshacer último</button>
+    </aside>
+    <section class="grupos" id="grupos"><div class="empty">Cargando…</div></section>
+  </div>
+</main>
+
+<!-- D3 · Víctima -->
+<div class="modal hide" id="mVictima"><div class="box">
+  <h2 class="pix">VÍCTIMA DEL JUEGO DEL MIEDO</h2>
+  <div id="vAv"></div>
+  <div class="nom" id="vNom"></div>
+  <div class="sub" id="vSub"></div>
+  <div class="tags" id="vTags" style="justify-content:center"></div>
+  <div class="big3" style="margin-top:6px">
+    <button class="ab ok" data-campo="jm_aciertos">✓ +<span class="pAc"></span></button>
+    <button class="ab no" data-campo="jm_fallos">✗ −<span class="pFa"></span></button>
+    <button class="ab voz" data-campo="part_vol">Voz +1</button>
+  </div>
+  <div class="sep"><div class="lbl" style="font-size:13px;font-weight:800;color:var(--mute)">Etiquetas de hoy (solo docente)</div><div class="etqs" id="vEtq"></div></div>
+  <div style="display:flex;gap:10px"><button class="sbtn" id="vOtra">Otra víctima</button><button class="sbtn" data-cerrar>Cerrar</button></div>
+</div></div>
+
+<!-- Etiquetas de un alumno -->
+<div class="modal hide" id="mEtq"><div class="box plain">
+  <h2 class="pix" style="color:var(--navy)">ETIQUETAS DE HOY</h2>
+  <div class="nom" style="font-size:22px" id="eNom"></div>
+  <div class="etqs" id="eEtq"></div>
+  <button class="sbtn" data-cerrar>Listo</button>
+</div></div>
+
+<!-- Llegada tarde -->
+<div class="modal hide" id="mTarde"><div class="box plain">
+  <h2 class="pix" style="color:var(--navy)">REGISTRAR LLEGADA TARDE</h2>
+  <div class="help" style="margin:0;text-align:center">Toca a quien acaba de llegar: pasa de Ausente a Tarde con la hora actual. No se borra nada.</div>
+  <div class="lista" id="tLista"></div>
+  <button class="sbtn" data-cerrar>Cerrar</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/comun.js"></script>
+<script>
+let SEM = 1, FILAS = [], ETQ = [], OBS = {}, RADAR = {}, PA = 0.5, PF = 0.5, soloMudos = false, PILA = [], ELEGIDOS = new Set(), VIC = null, ETQ_ALUMNO = null;
+const num = n => Number(n || 0);
+const fmt = n => String(Math.round(n * 100) / 100);
+const voz = f => num(f.jm_aciertos) + num(f.part_vol) + (['Lideró', 'Expuso / habló'].includes(f.participacion_grupal) ? 1 : 0);
+const xpJM = f => num(f.jm_aciertos) * PA - num(f.jm_fallos) * PF;
+const iniciales = a => (a || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase();
+
+async function iniciar() {
+  const ses = await sesionORedirigir(); if (!ses) return;
+  if (!(await esDocente())) { location.replace('alumno.html'); return; }
+  $('#quien').textContent = ses.user.email;
+  const { data: cfg } = await sb.from('config').select('clave, valor').in('clave', ['SemanaActual', 'JMAcierto', 'JMFallo']);
+  const c = Object.fromEntries((cfg || []).map(x => [x.clave, x.valor]));
+  SEM = parseInt(c.SemanaActual, 10) || 1; PA = Number(c.JMAcierto) || 0.5; PF = Number(c.JMFallo) || 0.5;
+  document.querySelectorAll('.pAc').forEach(e => e.textContent = fmt(PA)); document.querySelectorAll('.pFa').forEach(e => e.textContent = fmt(PF));
+  const { data: s } = await sb.from('semanas').select('*').eq('semana', SEM).maybeSingle();
+  $('#pills').innerHTML = [`Semana ${SEM}`, s?.tema ? `${s.tema}${s.unidad ? ' · ' + s.unidad : ''}` : null, s?.practica, s?.tipo_grupal ? 'Grupal: ' + s.tipo_grupal : null].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
+  await cargar();
+}
+
+async function cargar() {
+  const [r1, r2, r3, r4] = await Promise.all([
+    sb.from('detalle').select('id, jugador_id, asistencia, hora_llegada, jm_aciertos, jm_fallos, part_vol, participacion_grupal, jugadores(nombre, alias, consultora, rol_consultora, avatar_url)').eq('semana', SEM),
+    sb.from('etiquetas').select('*').order('id'),
+    sb.from('observaciones').select('jugador_id, etiquetas').eq('semana', SEM),
+    sb.from('v_radar').select('jugador_id, voz_ciclo, semanas_silencio')
+  ]);
+  const err = r1.error || r2.error || r3.error || r4.error;
+  if (err) { toast('Error al cargar: ' + err.message, true); return; }
+  FILAS = (r1.data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
+  ETQ = r2.data || [];
+  OBS = Object.fromEntries((r3.data || []).map(o => [o.jugador_id, o.etiquetas || []]));
+  RADAR = Object.fromEntries((r4.data || []).map(r => [r.jugador_id, r]));
+  pintar();
+}
+
+function pintar() {
+  if (!FILAS.length) { $('#grupos').innerHTML = `<div class="empty">No hay filas para la semana ${SEM}. Ve a <a href="docente.html">Inicio</a> y presiona "Iniciar / continuar semana".</div>`; resumen(); return; }
+  const q = $('#buscar').value.trim().toLowerCase();
+  const vis = FILAS.filter(f => (!q || (f.jugadores?.nombre + ' ' + f.jugadores?.alias).toLowerCase().includes(q)) && (!soloMudos || (f.asistencia !== 'Ausente' && voz(f) === 0)));
+  const grupos = {};
+  vis.forEach(f => { const g = f.jugadores?.consultora || 'SIN CONSULTORA'; (grupos[g] = grupos[g] || []).push(f); });
+  const nombres = Object.keys(grupos).sort();
+  $('#grupos').innerHTML = nombres.length ? nombres.map(g => `<div class="grupo"><h3>${esc(g.toUpperCase())}</h3>${grupos[g].map(filaHTML).join('')}</div>`).join('') : '<div class="empty">Nadie coincide con el filtro. 🎉</div>';
+  resumen();
+}
+
+function filaHTML(f) {
+  const v = voz(f), aus = f.asistencia === 'Ausente', et = OBS[f.jugador_id] || [];
+  const dis = aus ? 'disabled' : '';
+  return `<div class="fila ${aus ? 'aus' : v === 0 ? 'mudo' : ''}">
+    <div class="q"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : aus ? ' · AUSENTE' : ''}</small>
+      <div class="tags"><span class="tag ${v === 0 ? 'rojo' : ''}">${v === 0 ? 'Sin hablar' : 'Voz ' + v}</span><span class="tag xp">${fmt(xpJM(f))} XP</span>${et.map(e => `<span class="tag et">${esc(e)}</span>`).join('')}</div></div>
+    <button class="ab ok" ${dis} title="Acertó" onclick="sumar('${f.jugador_id}','jm_aciertos',1)">✓ ${num(f.jm_aciertos)}</button>
+    <button class="ab no" ${dis} title="No contestó" onclick="sumar('${f.jugador_id}','jm_fallos',1)">✗ ${num(f.jm_fallos)}</button>
+    <button class="ab voz" ${dis} title="Participación voluntaria" onclick="sumar('${f.jugador_id}','part_vol',1)">Voz ${num(f.part_vol)}</button>
+    <button class="ab et" title="Etiquetas" onclick="abrirEtq('${f.jugador_id}')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></button>
+  </div>`;
+}
+
+function resumen() {
+  const pres = FILAS.filter(f => f.asistencia !== 'Ausente');
+  $('#mSin').textContent = `${pres.filter(f => voz(f) === 0).length} / ${pres.length}`;
+  $('#mAc').textContent = FILAS.reduce((s, f) => s + num(f.jm_aciertos), 0);
+  $('#mNo').textContent = FILAS.reduce((s, f) => s + num(f.jm_fallos), 0);
+  $('#mVo').textContent = FILAS.reduce((s, f) => s + num(f.part_vol), 0);
+}
+
+async function sumar(jid, campo, delta, sinPila) {
+  const f = FILAS.find(x => x.jugador_id === jid); if (!f) return;
+  const antes = num(f[campo]); if (antes + delta < 0) return;
+  f[campo] = antes + delta; pintar(); if (VIC === jid) pintarVictima();
+  const { data, error } = await sb.rpc('incrementar', { p_jugador: jid, p_semana: SEM, p_campo: campo, p_delta: delta });
+  if (error) { f[campo] = antes; pintar(); toast('No se guardó: ' + error.message, true); return; }
+  f[campo] = data[campo]; pintar(); if (VIC === jid) pintarVictima();
+  if (!sinPila) PILA.push({ jid, campo, delta });
+  const txt = { jm_aciertos: `✓ +${fmt(PA)}`, jm_fallos: `✗ −${fmt(PF)}`, part_vol: 'Voz +1' }[campo];
+  toast(`${f.jugadores?.alias}: ${delta > 0 ? txt : 'deshecho'}`);
+}
+
+async function deshacer() {
+  const u = PILA.pop(); if (!u) { toast('No hay nada que deshacer'); return; }
+  await sumar(u.jid, u.campo, -u.delta, true);
+}
+
+// ---------- Etiquetas (tabla observaciones, solo docente) ----------
+function etqHTML(jid) {
+  const sel = OBS[jid] || [];
+  return ETQ.map(e => `<button class="etq ${sel.includes(e.nombre) ? 'on' : ''} ${e.tipo === 'Positivo' ? 'pos' : ''}" onclick="alternarEtq('${jid}', '${esc(e.nombre)}')">${esc(e.emoji || '')} ${esc(e.nombre)}</button>`).join('');
+}
+async function alternarEtq(jid, nombre) {
+  const antes = OBS[jid] || [];
+  const nuevo = antes.includes(nombre) ? antes.filter(x => x !== nombre) : [...antes, nombre];
+  OBS[jid] = nuevo; refrescarEtq(jid);
+  const { error } = await sb.from('observaciones').upsert({ jugador_id: jid, semana: SEM, etiquetas: nuevo }, { onConflict: 'jugador_id,semana' });
+  if (error) { OBS[jid] = antes; refrescarEtq(jid); toast('No se guardó la etiqueta: ' + error.message, true); }
+}
+function refrescarEtq(jid) { pintar(); if (ETQ_ALUMNO === jid) $('#eEtq').innerHTML = etqHTML(jid); if (VIC === jid) $('#vEtq').innerHTML = etqHTML(jid); }
+function abrirEtq(jid) {
+  const f = FILAS.find(x => x.jugador_id === jid); ETQ_ALUMNO = jid;
+  $('#eNom').textContent = `${f.jugadores?.nombre} · ${f.jugadores?.alias}`; $('#eEtq').innerHTML = etqHTML(jid); $('#mEtq').classList.remove('hide');
+}
+
+// ---------- D3 · Víctima al azar ----------
+function elegirVictima() {
+  const cand = FILAS.filter(f => f.asistencia !== 'Ausente' && !ELEGIDOS.has(f.jugador_id));
+  if (!cand.length) { toast(ELEGIDOS.size ? 'Ya pasaron todos los presentes. Reinicio el sorteo.' : 'No hay alumnos presentes', !ELEGIDOS.size); ELEGIDOS.clear(); if (!FILAS.some(f => f.asistencia !== 'Ausente')) return; return elegirVictima(); }
+  const mudos = cand.filter(f => voz(f) === 0), pool = mudos.length ? mudos : cand;
+  const peso = f => 1 / (1 + num(RADAR[f.jugador_id]?.voz_ciclo)) + 0.5 * num(RADAR[f.jugador_id]?.semanas_silencio);
+  const total = pool.reduce((s, f) => s + peso(f), 0); let r = Math.random() * total, elegido = pool[pool.length - 1];
+  for (const f of pool) { r -= peso(f); if (r <= 0) { elegido = f; break; } }
+  VIC = elegido.jugador_id; ELEGIDOS.add(VIC); pintarVictima(); $('#mVictima').classList.remove('hide');
+}
+function pintarVictima() {
+  const f = FILAS.find(x => x.jugador_id === VIC); if (!f) return; const j = f.jugadores || {}, rd = RADAR[VIC] || {}, v = voz(f);
+  $('#vAv').innerHTML = j.avatar_url ? `<img class="av" src="${esc(j.avatar_url)}" alt="">` : `<div class="av">${esc(iniciales(j.alias))}</div>`;
+  $('#vNom').textContent = j.nombre || ''; $('#vSub').textContent = [j.alias, j.consultora, j.rol_consultora].filter(Boolean).join(' · ');
+  $('#vTags').innerHTML = (v === 0 ? '<span class="tag rojo" style="font-size:13px;padding:4px 12px">Sin hablar esta semana</span>' : `<span class="tag" style="font-size:13px;padding:4px 12px">Voz ${v} esta semana</span>`)
+    + (num(rd.semanas_silencio) ? `<span class="tag" style="font-size:13px;padding:4px 12px;background:#fde8e8;color:#a02424">${num(rd.semanas_silencio)} semana(s) en silencio</span>` : '')
+    + `<span class="tag xp" style="font-size:13px;padding:4px 12px">✓ ${num(f.jm_aciertos)} · ✗ ${num(f.jm_fallos)} · Voz ${num(f.part_vol)}</span>`;
+  $('#vEtq').innerHTML = etqHTML(VIC);
+}
+
+// ---------- Llegada tarde ----------
+function abrirTarde() {
+  const aus = FILAS.filter(f => f.asistencia === 'Ausente');
+  $('#tLista').innerHTML = aus.length ? aus.map(f => `<button class="chip Ausente" onclick="marcarTarde(${f.id})"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)} · AUSENTE → tocar para marcar TARDE</small></button>`).join('') : '<div class="empty">No hay ausentes registrados. Marca la asistencia en Inicio.</div>';
+  $('#mTarde').classList.remove('hide');
+}
+async function marcarTarde(id) {
+  const f = FILAS.find(x => x.id === id), hora = new Date().toTimeString().slice(0, 5);
+  const { error } = await sb.from('detalle').update({ asistencia: 'Tarde', hora_llegada: hora }).eq('id', id);
+  if (error) { toast('No se guardó: ' + error.message, true); return; }
+  f.asistencia = 'Tarde'; f.hora_llegada = hora; pintar(); abrirTarde(); toast(`${f.jugadores?.alias} llegó tarde (${hora})`);
+}
+
+// ---------- Eventos ----------
+$('#btnVictima').onclick = elegirVictima;
+$('#vOtra').onclick = elegirVictima;
+$('#btnDeshacer').onclick = deshacer;
+$('#btnTarde').onclick = abrirTarde;
+$('#buscar').oninput = pintar;
+$('#btnMudos').onclick = () => { soloMudos = !soloMudos; $('#btnMudos').classList.toggle('on', soloMudos); $('#btnMudos').textContent = soloMudos ? 'Ver a todos' : 'Solo los que no han hablado'; pintar(); };
+document.querySelectorAll('#mVictima .big3 button').forEach(b => b.onclick = () => sumar(VIC, b.dataset.campo, 1));
+document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => { b.closest('.modal').classList.add('hide'); VIC = null; ETQ_ALUMNO = null; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal').forEach(m => m.classList.add('hide')); });
+iniciar();
+</script>
+</body>
+</html>
