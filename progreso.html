@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Progreso</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="pix">SISOPE ARENA · DOCENTE</div>
+  <div class="pills"><span>Progreso y seguimiento</span><span id="semAct"></span></div>
+  <div class="who"><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
+</header>
+<nav class="tabs" id="nav"></nav>
+<main>
+  <div class="prog">
+    <aside class="plist">
+      <div class="pfil">
+        <button data-f="" class="on">Todos <b id="cTodos"></b></button>
+        <button data-f="Crítico" class="crit">⛔ Críticos <b id="cCrit"></b></button>
+        <button data-f="En riesgo" class="ries">⚠ En riesgo <b id="cRies"></b></button>
+        <button data-f="Bien" class="bien">✓ Bien <b id="cBien"></b></button>
+      </div>
+      <input id="buscar" placeholder="Buscar nombre o alias">
+      <div class="plorden">Ordenados del más crítico al mejor</div>
+      <div id="lista"><div class="empty">Cargando…</div></div>
+    </aside>
+    <section id="panel" class="ppanel"><div class="empty">Elige un alumno de la lista.</div></section>
+  </div>
+  <section class="leyenda"><h3 class="pix">CÓMO SE CALCULA EL NIVEL</h3><div class="ley">
+    <div><span class="niv crit">⛔ Crítico</span><p>5 puntos de alerta o más. Prioridad para conversar esta semana.</p></div>
+    <div><span class="niv ries">⚠ En riesgo</span><p>3 o 4 puntos de alerta. Seguimiento cercano.</p></div>
+    <div><span class="niv bien">✓ Bien</span><p>0 a 2 puntos de alerta.</p></div>
+    <div class="ancho"><span class="tag" style="background:#eef1f7;color:var(--ink)">Alertas</span><p><b>+3</b> necesita más de 20 en el EF · <b>+2</b> necesita más de 14 en el EF · <b>+2</b> rinde menos del 60% del promedio de la clase (<b>+1</b> si es menos del 80%) · <b>+2</b> 3 o más semanas sin hablar (<b>+1</b> si son 2) · <b>+1</b> 2 o más ausencias · <b>+1</b> algún laboratorio no cumplido · <b>+1</b> alguna falta · <b>+1</b> sus últimas 3 semanas van peor que antes · <b>+1</b> 2 o más etiquetas “por mejorar”.</p></div>
+    <div><span class="tag" style="background:#efe7fb;color:#5a2fa6">Radar</span><p>Cada eje compara su promedio semanal con <b>el mejor de la clase (100%)</b>. Morado = alumno, naranja punteado = promedio de la clase.</p></div>
+  </div></section>
+</main>
+<div class="tip hide" id="tip"></div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/comun.js"></script>
+<script>
+const C_AL = '#6f3cc3', C_CL = '#e0742a';
+const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
+const VOZ_GR = { 'Lideró': 3, 'Apoyó': 2, 'Habló': 1, 'Intentando': 0.5 };
+let J = [], DET = [], NOT = {}, OBS = [], ETQ = {}, SEMS = {}, CFG = {}, ACT = 1, FIL = '', SEL = null, RES = {};
+const n = v => Number(v || 0), r1 = v => String(Math.round(v * 10) / 10), r2 = v => (Math.round(v * 100) / 100).toFixed(2);
+
+async function iniciar() {
+  const ses = await sesionORedirigir(); if (!ses) return;
+  if (!(await esDocente())) { location.replace('alumno.html'); return; }
+  $('#quien').textContent = ses.user.email;
+  const q = await Promise.all([
+    sb.from('jugadores').select('id, nombre, alias, consultora, rol_consultora').eq('activo', true).order('nombre'),
+    sb.from('detalle').select('*').order('semana'),
+    sb.from('v_notas').select('*'),
+    sb.from('observaciones').select('jugador_id, semana, etiquetas'),
+    sb.from('etiquetas').select('nombre, tipo, emoji'),
+    sb.from('semanas').select('semana, tema, practica, kahoot_podio'),
+    sb.from('config').select('clave, valor')
+  ]);
+  const e = q.find(x => x.error); if (e) { toast('Error al cargar: ' + e.error.message, true); return; }
+  [J, DET] = [q[0].data, q[1].data];
+  NOT = Object.fromEntries(q[2].data.map(x => [x.jugador_id, x])); OBS = q[3].data;
+  ETQ = Object.fromEntries(q[4].data.map(x => [x.nombre, x])); SEMS = Object.fromEntries(q[5].data.map(x => [x.semana, x]));
+  CFG = Object.fromEntries(q[6].data.map(x => [x.clave, x.valor])); ACT = parseInt(CFG.SemanaActual, 10) || 1;
+  $('#semAct').textContent = 'Semana actual ' + ACT;
+  calcular(); pintarLista();
+  const prim = ordenados()[0]; if (prim) elegir(prim.id);
+}
+
+// ---------- Cálculos por alumno ----------
+function partes(d) {
+  const k = n(d.kahoot_pos), podio = SEMS[d.semana]?.kahoot_podio || 3, c = x => Number(CFG[x]);
+  const kah = !k || k >= 99 ? 0 : k === 1 ? (c('KahootP1') || 2) : k === 2 ? (c('KahootP2') || 1) : k === 3 ? (c('KahootP3') || 0.5) : k <= podio ? (c('KahootExtra') || 0.5) : 0;
+  return { jm: n(d.jm_aciertos) * (c('JMAcierto') || 0.5) - n(d.jm_fallos) * (c('JMFallo') || 0.5), gr: n(d.gr_comunicacion) + n(d.gr_tecnico) + n(d.gr_analisis) + n(d.extra) - n(d.falta), lab: n(d.lab), foro: n(d.foro_tecnico) + n(d.foro_analisis) + n(d.foro_bonus), quiz: n(d.quiz), kah };
+}
+const voz = d => n(d.jm_aciertos) + n(d.part_vol) + (VOZ_GR[d.participacion_grupal] || 0);
+const total = p => Object.values(p).reduce((a, b) => a + b, 0);
+
+function calcular() {
+  const semanas = [...new Set(DET.map(d => d.semana))].sort((a, b) => a - b);
+  const prom = {}; semanas.forEach(s => { const fs = DET.filter(d => d.semana === s); prom[s] = fs.reduce((a, d) => a + total(partes(d)), 0) / (fs.length || 1); });
+  const promTot = semanas.reduce((a, s) => a + prom[s], 0);
+  RES = {};
+  J.forEach(j => {
+    const fs = DET.filter(d => d.jugador_id === j.id), nt = NOT[j.id] || {};
+    const sem = fs.map(d => ({ s: d.semana, p: partes(d), t: total(partes(d)), v: voz(d), as: d.asistencia, cl: prom[d.semana] }));
+    const tot = sem.reduce((a, x) => a + x.t, 0), rend = promTot > 0 ? tot / promTot : 1;
+    const silencio = sem.filter(x => x.s <= ACT && x.as !== 'Ausente' && x.v === 0).length;
+    const aus = sem.filter(x => x.as === 'Ausente').length, labNo = fs.filter(d => n(d.lab) < 0).length, faltas = fs.filter(d => n(d.falta) > 0).length;
+    const ult = sem.slice(-3), ant = sem.slice(0, -3);
+    const baja = ant.length >= 2 && ult.length === 3 && (ult.reduce((a, x) => a + x.t - x.cl, 0) / 3) < (ant.reduce((a, x) => a + x.t - x.cl, 0) / ant.length) - 0.5;
+    const etqNeg = OBS.filter(o => o.jugador_id === j.id).flatMap(o => o.etiquetas || []).filter(e => ETQ[e]?.tipo !== 'Positivo').length;
+    const efMin = Number(nt.ef_minimo ?? 0), aprob = nt.condicion === 'APROBADO';
+    const al = [];
+    if (!aprob && efMin > 20) al.push([3, `Necesita ${r2(efMin)} en el EF: ya no le alcanza solo con el final`]);
+    else if (!aprob && efMin > 14) al.push([2, `Necesita ${r2(efMin)} en el EF`]);
+    if (sem.length && rend < 0.6) al.push([2, `Rinde el ${Math.round(rend * 100)}% del promedio de la clase`]); else if (sem.length && rend < 0.8) al.push([1, `Rinde el ${Math.round(rend * 100)}% del promedio de la clase`]);
+    if (silencio >= 3) al.push([2, `${silencio} semanas sin hablar`]); else if (silencio === 2) al.push([1, '2 semanas sin hablar']);
+    if (aus >= 2) al.push([1, `${aus} ausencias`]);
+    if (labNo) al.push([1, `${labNo} laboratorio(s) no cumplido(s)`]);
+    if (faltas) al.push([1, `${faltas} semana(s) con falta en grupo`]);
+    if (baja) al.push([1, 'Sus últimas 3 semanas van peor que antes']);
+    if (etqNeg >= 2) al.push([1, `${etqNeg} etiquetas por mejorar`]);
+    const pts = al.reduce((a, x) => a + x[0], 0);
+    RES[j.id] = { j, sem, tot, rend, silencio, aus, labNo, faltas, al, pts, nivel: pts >= 5 ? 'Crítico' : pts >= 3 ? 'En riesgo' : 'Bien', nt, vozTot: sem.reduce((a, x) => a + x.v, 0) };
+  });
+}
+const ordenados = () => Object.values(RES).sort((a, b) => b.pts - a.pts || a.rend - b.rend).map(x => x.j);
+const NIV = { 'Crítico': ['crit', '⛔'], 'En riesgo': ['ries', '⚠'], 'Bien': ['bien', '✓'] };
+
+function pintarLista() {
+  const q = $('#buscar').value.trim().toLowerCase(), todos = Object.values(RES);
+  $('#cTodos').textContent = todos.length; $('#cCrit').textContent = todos.filter(x => x.nivel === 'Crítico').length;
+  $('#cRies').textContent = todos.filter(x => x.nivel === 'En riesgo').length; $('#cBien').textContent = todos.filter(x => x.nivel === 'Bien').length;
+  const vis = ordenados().map(j => RES[j.id]).filter(x => (!FIL || x.nivel === FIL) && (!q || (x.j.nombre + ' ' + x.j.alias).toLowerCase().includes(q)));
+  $('#lista').innerHTML = vis.length ? vis.map(x => `<button class="pitem ${SEL === x.j.id ? 'sel' : ''}" onclick="elegir('${x.j.id}')">
+    <span class="niv ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span><b>${esc(x.j.nombre)}</b><small>${esc(x.j.alias)} · ${x.al.length ? esc(x.al[0][1]) : 'sin alertas'}</small></button>`).join('') : '<div class="empty">Nadie en este filtro.</div>';
+}
+
+// ---------- Panel del alumno ----------
+async function elegir(id) {
+  SEL = id; pintarLista(); const x = RES[id], j = x.j, nt = x.nt;
+  const asis = x.sem.length ? Math.round(100 * x.sem.filter(s => s.as !== 'Ausente').length / x.sem.length) : 0;
+  const etq = OBS.filter(o => o.jugador_id === id && (o.etiquetas || []).length).sort((a, b) => a.semana - b.semana);
+  $('#panel').innerHTML = `
+    <div class="phead"><div><div class="nom2">${esc(j.nombre)}</div><div class="sub2">${esc(j.alias)}${j.consultora ? ' · ' + esc(j.consultora) : ''}${j.rol_consultora ? ' · ' + esc(j.rol_consultora) : ''}</div></div><span class="niv big ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span></div>
+    ${x.al.length ? `<div class="alertas">${x.al.map(a => `<span><b>+${a[0]}</b> ${esc(a[1])}</span>`).join('')}</div>` : '<div class="alertas ok"><span>Sin alertas: va bien.</span></div>'}
+    <div class="kpis">
+      ${kpi('PE (prácticas)', r2(nt.pe ?? 0), '/ 20')}${kpi('PF actual', r2(nt.pf ?? 0), nt.condicion || '')}${kpi('EF mínimo', nt.condicion === 'APROBADO' ? '—' : Number(nt.ef_minimo) > 20 ? '> 20' : r2(nt.ef_minimo ?? 0), 'para aprobar')}
+      ${kpi('Rendimiento', Math.round(x.rend * 100) + '%', 'vs. promedio clase')}${kpi('Asistencia', asis + '%', x.aus + ' ausencia(s)')}${kpi('Voz total', r1(x.vozTot), x.silencio + ' sem. en silencio')}
+    </div>
+    <div class="charts">
+      <div class="chart"><h4>Fortalezas por actividad</h4><div class="lg"><span><i style="background:${C_AL}"></i>Alumno</span><span><i class="dash" style="border-color:${C_CL}"></i>Promedio clase</span></div>${radar(id)}</div>
+      <div class="chart"><h4>Puntos por semana</h4><div class="lg"><span><i style="background:${C_AL}"></i>Alumno</span><span><i class="dash" style="border-color:${C_CL}"></i>Promedio clase</span></div>${linea(x)}</div>
+      <div class="chart ancho2"><h4>Voz por semana <small>(cuánto habló: aciertos + voluntarias + participación grupal)</small></h4>${barras(x)}</div>
+    </div>
+    <div class="pfila">
+      <div class="pbox"><h4>Etiquetas registradas</h4>${etq.length ? etq.map(o => `<div class="etqs-s"><b>S${o.semana}</b>${o.etiquetas.map(e => `<span class="tag ${ETQ[e]?.tipo === 'Positivo' ? 'okt' : 'et'}">${esc(ETQ[e]?.emoji || '')} ${esc(e)}</span>`).join('')}</div>`).join('') : '<div class="vac2">Sin etiquetas.</div>'}</div>
+      <div class="pbox fb"><h4>Feedback para el alumno</h4>
+        <textarea id="fbTxt" rows="3" placeholder="Ej.: Participaste más en el debate, sigue así. Revisa el laboratorio de DNS y pregúntame tus dudas."></textarea>
+        <div class="fbacc"><label><input type="checkbox" id="fbVis"> Visible para el alumno en su perfil</label><button class="btn green" onclick="guardarFb()">Guardar feedback</button></div>
+        <div id="fbLista"><div class="vac2">Cargando…</div></div>
+      </div>
+    </div>`;
+  activarTips(); cargarFb();
+}
+const kpi = (t, v, s) => `<div class="kpi"><small>${t}</small><b>${v}</b><span>${esc(s)}</span></div>`;
+
+// ---------- Gráficos (SVG) ----------
+function radar(id) {
+  const prom = (jid, k) => { const s = RES[jid].sem; return s.length ? s.reduce((a, x) => a + x.p[k], 0) / s.length : 0; };
+  const maxs = CAT.map(([k]) => Math.max(0.0001, ...Object.keys(RES).map(j => prom(j, k))));
+  const al = CAT.map(([k], i) => Math.max(0, prom(id, k) / maxs[i]));
+  const cl = CAT.map(([k], i) => Math.max(0, Object.keys(RES).reduce((a, j) => a + prom(j, k), 0) / Object.keys(RES).length / maxs[i]));
+  const W = 380, cx = 190, cy = 150, R = 95, ang = i => -Math.PI / 2 + i * 2 * Math.PI / 6;
+  const pt = (v, i) => [cx + R * Math.min(1, v) * Math.cos(ang(i)), cy + R * Math.min(1, v) * Math.sin(ang(i))];
+  const poly = vals => vals.map((v, i) => pt(v, i).map(r1).join(',')).join(' ');
+  let g = [0.25, 0.5, 0.75, 1].map(f => `<polygon points="${poly(Array(6).fill(f))}" fill="none" stroke="#dde2ee" stroke-width="1"/>`).join('');
+  g += CAT.map((c, i) => { const [x, y] = pt(1, i), lx = cx + R * 1.28 * Math.cos(ang(i)), ly = cy + R * 1.2 * Math.sin(ang(i)); return `<line x1="${cx}" y1="${cy}" x2="${r1(x)}" y2="${r1(y)}" stroke="#dde2ee"/><text x="${r1(lx)}" y="${r1(ly)}" text-anchor="middle" dominant-baseline="middle" class="rl">${c[1]}</text>`; }).join('');
+  g += `<polygon points="${poly(cl)}" fill="${C_CL}" fill-opacity=".10" stroke="${C_CL}" stroke-width="2" stroke-dasharray="5 4"/>`;
+  g += `<polygon points="${poly(al)}" fill="${C_AL}" fill-opacity=".28" stroke="${C_AL}" stroke-width="2"/>`;
+  g += al.map((v, i) => { const [x, y] = pt(v, i); return `<circle cx="${r1(x)}" cy="${r1(y)}" r="4" fill="${C_AL}" stroke="#fff" stroke-width="2"/><circle cx="${r1(x)}" cy="${r1(y)}" r="14" fill="transparent" data-tip="${CAT[i][1]}: alumno ${Math.round(v * 100)}% · clase ${Math.round(cl[i] * 100)}%"/>`; }).join('');
+  return `<svg viewBox="0 0 ${W} 300" class="svg" role="img" aria-label="Radar de fortalezas por actividad">${g}</svg>`;
+}
+function linea(x) {
+  const s = x.sem; if (!s.length) return '<div class="vac2">Aún no hay semanas registradas.</div>';
+  const W = 460, H = 240, L = 34, Rr = 12, T = 14, B = 30, vals = s.flatMap(e => [e.t, e.cl]);
+  const lo = Math.min(0, ...vals), hi = Math.max(1, ...vals), X = i => L + (s.length === 1 ? (W - L - Rr) / 2 : i * (W - L - Rr) / (s.length - 1)), Y = v => T + (hi - v) * (H - T - B) / (hi - lo);
+  const tk = [...new Set([lo, (lo + hi) / 2, hi].map(v => Math.round(v)))];
+  let g = tk.map(v => `<line x1="${L}" x2="${W - Rr}" y1="${r1(Y(v))}" y2="${r1(Y(v))}" stroke="${v === 0 ? '#b7bfd3' : '#edf0f6'}"/><text x="${L - 6}" y="${r1(Y(v))}" text-anchor="end" dominant-baseline="middle" class="ax">${v}</text>`).join('');
+  g += s.map((e, i) => `<text x="${r1(X(i))}" y="${H - 10}" text-anchor="middle" class="ax">S${e.s}</text>`).join('');
+  const path = k => s.map((e, i) => `${i ? 'L' : 'M'}${r1(X(i))},${r1(Y(e[k]))}`).join(' ');
+  g += `<path d="${path('cl')}" fill="none" stroke="${C_CL}" stroke-width="2" stroke-dasharray="5 4"/>`;
+  g += `<path d="${path('t')}" fill="none" stroke="${C_AL}" stroke-width="2"/>`;
+  g += s.map((e, i) => `<circle cx="${r1(X(i))}" cy="${r1(Y(e.t))}" r="4" fill="${e.as === 'Ausente' ? '#fff' : C_AL}" stroke="${C_AL}" stroke-width="2"/>`).join('');
+  g += s.map((e, i) => `<rect x="${r1(X(i) - 14)}" y="${T}" width="28" height="${H - T - B}" fill="transparent" data-tip="S${e.s}${SEMS[e.s]?.tema ? ' · ' + esc(SEMS[e.s].tema) : ''}: alumno ${r1(e.t)} · clase ${r1(e.cl)}${e.as === 'Ausente' ? ' · ausente' : ''}"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" class="svg" role="img" aria-label="Puntos por semana">${g}</svg>`;
+}
+function barras(x) {
+  const s = x.sem; if (!s.length) return '<div class="vac2">Aún no hay semanas registradas.</div>';
+  const W = 900, H = 150, L = 30, T = 10, B = 26, hi = Math.max(3, ...s.map(e => e.v)), bw = Math.min(40, (W - L) / s.length - 8), X = i => L + 4 + i * (W - L) / s.length, Y = v => T + (hi - v) * (H - T - B) / hi;
+  let g = [0, Math.round(hi / 2), hi].map(v => `<line x1="${L}" x2="${W}" y1="${r1(Y(v))}" y2="${r1(Y(v))}" stroke="${v ? '#edf0f6' : '#b7bfd3'}"/><text x="${L - 6}" y="${r1(Y(v))}" text-anchor="end" dominant-baseline="middle" class="ax">${v}</text>`).join('');
+  g += s.map((e, i) => {
+    const x0 = X(i), h = Y(0) - Y(e.v), lab = `<text x="${r1(x0 + bw / 2)}" y="${H - 8}" text-anchor="middle" class="ax">S${e.s}</text>`;
+    if (e.as === 'Ausente') return `<text x="${r1(x0 + bw / 2)}" y="${r1(Y(0) - 8)}" text-anchor="middle" class="ax aus">aus.</text>${lab}<rect x="${r1(x0)}" y="${T}" width="${r1(bw)}" height="${H - T - B}" fill="transparent" data-tip="S${e.s}: ausente"/>`;
+    if (!e.v) return `<text x="${r1(x0 + bw / 2)}" y="${r1(Y(0) - 8)}" text-anchor="middle" class="ax mudo">0</text>${lab}<rect x="${r1(x0)}" y="${T}" width="${r1(bw)}" height="${H - T - B}" fill="transparent" data-tip="S${e.s}: no habló"/>`;
+    return `<path d="M${r1(x0)},${r1(Y(0))} V${r1(Y(e.v) + 4)} q0,-4 4,-4 H${r1(x0 + bw - 4)} q4,0 4,4 V${r1(Y(0))} Z" fill="${C_AL}"/>${lab}<rect x="${r1(x0)}" y="${T}" width="${r1(bw)}" height="${H - T - B}" fill="transparent" data-tip="S${e.s}: voz ${r1(e.v)}"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" class="svg" role="img" aria-label="Voz por semana">${g}</svg>`;
+}
+function activarTips() {
+  const tip = $('#tip');
+  document.querySelectorAll('#panel [data-tip]').forEach(el => {
+    el.addEventListener('mousemove', ev => { tip.textContent = el.dataset.tip; tip.classList.remove('hide'); tip.style.left = (ev.clientX + 14) + 'px'; tip.style.top = (ev.clientY + 14) + 'px'; });
+    el.addEventListener('mouseleave', () => tip.classList.add('hide'));
+  });
+}
+
+// ---------- Feedback ----------
+async function cargarFb() {
+  const id = SEL, { data, error } = await sb.from('feedback').select('*').eq('jugador_id', id).order('creado', { ascending: false });
+  if (id !== SEL) return;
+  if (error) { $('#fbLista').innerHTML = `<div class="vac2">No se pudo leer el feedback: ${esc(error.message)}</div>`; return; }
+  $('#fbLista').innerHTML = (data || []).length ? data.map(f => `<div class="fbit"><div><small>${new Date(f.creado).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}${f.semana ? ' · semana ' + f.semana : ''} · ${f.visible_alumno ? '👁 visible para el alumno' : '🔒 solo docente'}</small><p>${esc(f.texto)}</p></div><button class="sbtn" title="Borrar" onclick="borrarFb(${f.id})">🗑</button></div>`).join('') : '<div class="vac2">Aún no hay feedback para este alumno.</div>';
+}
+async function guardarFb() {
+  const t = $('#fbTxt').value.trim(); if (!t) { toast('Escribe el feedback primero', true); return; }
+  const { error } = await sb.from('feedback').insert({ jugador_id: SEL, semana: ACT, texto: t, visible_alumno: $('#fbVis').checked });
+  if (error) { toast('No se guardó: ' + error.message, true); return; }
+  $('#fbTxt').value = ''; toast('Feedback guardado'); cargarFb();
+}
+async function borrarFb(id) {
+  if (!confirm('¿Borrar este feedback?')) return;
+  const { error } = await sb.from('feedback').delete().eq('id', id);
+  if (error) { toast('No se borró: ' + error.message, true); return; } cargarFb();
+}
+
+document.querySelectorAll('.pfil button').forEach(b => b.onclick = () => { FIL = b.dataset.f; document.querySelectorAll('.pfil button').forEach(x => x.classList.toggle('on', x === b)); pintarLista(); });
+$('#buscar').oninput = pintarLista;
+iniciar();
+</script>
+</body>
+</html>
