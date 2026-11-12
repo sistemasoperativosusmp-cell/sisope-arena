@@ -235,3 +235,4 @@ nav.menu a.on{color:#fff}
 .grhead,.grrow{grid-template-columns:190px 320px repeat(3,minmax(125px,1fr)) 40px 180px}
 .jmc{width:fit-content}.jmc button:disabled{opacity:.45}
 .c-gold{background:#b8860b!important;border-color:#b8860b!important}
+.nomn{display:flex;align-items:center;gap:10px}.nro{min-width:24px;height:24px;border-radius:6px;background:#eef1f7;color:var(--mute);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}

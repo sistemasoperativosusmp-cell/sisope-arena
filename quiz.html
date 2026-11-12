@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Quiz y Kahoot</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112032">
+<link rel="stylesheet" href="assets/app.css?v=202611112036">
 </head>
 <body>
 <header class="top">
@@ -21,22 +21,22 @@
   </div>
   <div class="grhead" id="cab"></div>
   <div class="grlist" id="lista"><div class="empty">Cargando…</div></div>
-  <section class="leyenda"><h3 class="pix">LEYENDA</h3><div class="ley"><div><span class="seg mini2"><button>2.5</button><button class="on">3</button></span><p><b>Quiz:</b> de 0 a 3 puntos, en pasos de 0.5 (nota del cuestionario de la semana).</p></div>
+  <section class="leyenda"><h3 class="pix">LEYENDA</h3><div class="ley"><div><span class="seg mini2"><button>2.5</button><button class="on">3</button></span><p><b>Quiz:</b> de 0 a 3 puntos en pasos de 0.5; <b>3.5 y 4</b> solo cuando el quiz es de <b>certificación</b>.</p></div>
       <div><span class="seg mini2"><button class="on">🥇 1°</button><button>🥈 2°</button><button>🥉 3°</button></span><p><b>Kahoot:</b> el podio (1°, 2° o 3°) suma <b>1 punto</b>. “Participó” no suma, pero queda registrado que jugó.</p></div>
       <div><span class="seg mini2"><button>0</button><button class="on">1</button></span><p><b>Tocar de nuevo</b> la opción marcada la borra (queda <b>pendiente</b>, distinto de 0).</p></div>
-      <div><span class="seg mini2 bulk"><i>Todos</i><button>3</button></span><p><b>Todos:</b> pone la misma nota a toda la consultora; luego ajustas a quien corresponda.</p></div>
+      <div><span class="seg mini2 bulk"><i>Todos</i><button>3</button></span><p><b>Todos:</b> pone la misma nota a toda la clase (o solo a los que filtraste con Buscar); luego ajustas a quien corresponda.</p></div>
       <div><span class="tag" style="background:#fff1c2;color:#7a5a00">pendiente</span><p>Aún sin calificar. Arriba ves el avance “N de M calificados”. Se califica aunque haya faltado a clase.</p></div></div></section>
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112032"></script>
-<script src="assets/comun.js?v=202611112032"></script>
-<script src="assets/casa.js?v=202611112032"></script>
+<script src="assets/config.js?v=202611112036"></script>
+<script src="assets/comun.js?v=202611112036"></script>
+<script src="assets/casa.js?v=202611112036"></script>
 <script>
 window.CASA = {
-  campos: 'quiz, kahoot_pos', max: 4, grid: '240px minmax(420px,1fr) minmax(330px,1fr) 80px',
+  campos: 'quiz, kahoot_pos', max: 5, grid: '260px minmax(470px,1fr) minmax(330px,1fr) 80px',
   cols: [
-    { campo: 'quiz', titulo: 'Quiz', sub: '0 a 3 puntos', opciones: [0, 0.5, 1, 1.5, 2, 2.5, 3], masivo: [0, 2, 2.5, 3] },
+    { campo: 'quiz', titulo: 'Quiz', sub: '0 a 3 puntos · hasta 4 si es certificación', opciones: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4], masivo: [0, 3, 4] },
     { campo: 'kahoot_pos', titulo: 'Kahoot', sub: 'Podio (1°–3°) suma 1 punto', opciones: [[1, '🥇 1°'], [2, '🥈 2°'], [3, '🥉 3°'], [4, 'Participó']], masivo: [4] }
   ],
   total: f => (nv(f.quiz) || 0) + (nv(f.kahoot_pos) >= 1 && nv(f.kahoot_pos) <= 3 ? 1 : 0),

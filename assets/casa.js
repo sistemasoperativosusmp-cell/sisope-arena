@@ -53,21 +53,19 @@ function pintarCasa() {
   $('#cab').innerHTML = `<div>Alumno</div>${CASA.cols.map(c => `<div><b>${c.titulo}</b>${c.sub ? '<br>' + c.sub : ''}</div>`).join('')}<div style="text-align:right"><b>Puntos / ${CASA.max}</b></div>`;
   if (!FILAS.length) { $('#lista').innerHTML = `<div class="empty">No hay filas para la semana ${SEM}.</div>`; return; }
   const vis = FILAS.filter(f => !FILTRO || (f.jugadores?.nombre + ' ' + f.jugadores?.alias).toLowerCase().includes(FILTRO));
-  const grupos = {}; vis.forEach(f => { const g = f.jugadores?.consultora || 'SIN CONSULTORA'; (grupos[g] = grupos[g] || []).push(f); });
   const calif = FILAS.filter(f => CASA.calificado(f)).length;
   $('#avance').textContent = `${calif} de ${FILAS.length} calificados`;
-  $('#lista').innerHTML = Object.keys(grupos).sort().map(g => {
-    const fs = grupos[g], prom = fs.reduce((s, f) => s + CASA.total(f), 0) / fs.length;
-    return `<div class="grupo">
-      <div class="grrow grcab" style="${grid}"><div class="pix" style="font-size:11px">${esc(g.toUpperCase())}<small>Promedio ${f1(prom)} / ${CASA.max}</small></div>
-        ${CASA.cols.map(c => c.masivo ? `<span class="seg bulk"><i>Todos</i>${c.masivo.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c.campo}", ${JSON.stringify(v)})'>${esc(v < 0 ? 'No cumplió' : (c.campo === 'kahoot_pos' && v === 4) ? 'Participó' : String(v))}</button>`).join('')}</span>` : '<div></div>').join('')}<div></div></div>
-      ${fs.map(f => `<div class="grrow ${CASA.calificado(f) ? '' : 'pend'}" style="${grid}">
-        <div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Ausente' ? ' · faltó a clase' : ''}${CASA.calificado(f) ? '' : ' · <span class="pendt">pendiente</span>'}</small></div>
+  const prom = vis.length ? vis.reduce((s, f) => s + CASA.total(f), 0) / vis.length : 0;
+  // Lista individual por orden alfabético (apellidos), sin agrupar por consultora
+  $('#lista').innerHTML = `<div class="grupo">
+      <div class="grrow grcab" style="${grid}"><div><div class="pix" style="font-size:11px">${FILTRO ? 'FILTRADOS' : 'TODA LA CLASE'}</div><small>${vis.length} alumnos · promedio ${f1(prom)} / ${CASA.max}</small></div>
+        ${CASA.cols.map(c => c.masivo ? `<span class="seg bulk"><i>Todos</i>${c.masivo.map(v => `<button onclick='masivo(${JSON.stringify(v)}, "${c.campo}")'>${esc(v < 0 ? 'No cumplió' : (c.campo === 'kahoot_pos' && v === 4) ? 'Participó' : String(v))}</button>`).join('')}</span>` : '<div></div>').join('')}<div></div></div>
+      ${vis.length ? vis.map((f, i) => `<div class="grrow ${CASA.calificado(f) ? '' : 'pend'}" style="${grid}">
+        <div class="nomn"><span class="nro">${i + 1}</span><div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Ausente' ? ' · faltó a clase' : ''}${CASA.calificado(f) ? '' : ' · <span class="pendt">pendiente</span>'}</small></div></div>
         ${CASA.cols.map(c => celda(f, c)).join('')}
         <div class="tot">${f1(CASA.total(f))}</div>
-      </div>`).join('')}
+      </div>`).join('') : '<div class="empty">Nadie coincide con la búsqueda.</div>'}
     </div>`;
-  }).join('');
 }
 
 async function poner(id, campo, valor) {
@@ -88,10 +86,11 @@ async function contar(id, campo, delta) {
   const { error } = await sb.from('detalle').update({ [campo]: antes + delta }).eq('id', id);
   if (error) { f[campo] = antes; pintarCasa(); toast('No se guardó: ' + error.message, true); }
 }
-async function masivo(g, campo, valor) {
-  const fs = FILAS.filter(f => (f.jugadores?.consultora || 'SIN CONSULTORA') === g); if (!fs.length) return;
+async function masivo(valor, campo) {   // a todos los visibles (toda la clase o los filtrados)
+  const fs = FILAS.filter(f => !FILTRO || (f.jugadores?.nombre + ' ' + f.jugadores?.alias).toLowerCase().includes(FILTRO)); if (!fs.length) return;
+  if (fs.length > 3 && !confirm(`¿Poner ${valor < 0 ? 'No cumplió' : valor} a ${fs.length} alumnos?`)) return;
   const antes = fs.map(f => f[campo]); fs.forEach(f => f[campo] = valor); pintarCasa();
   const { error } = await sb.from('detalle').update({ [campo]: valor }).in('id', fs.map(f => f.id));
   if (error) { fs.forEach((f, i) => f[campo] = antes[i]); pintarCasa(); toast('No se guardó: ' + error.message, true); return; }
-  toast(`${g}: ${valor} para ${fs.length} alumnos`);
+  toast(`${valor < 0 ? 'No cumplió' : valor} para ${fs.length} alumnos`);
 }

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Laboratorio</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112032">
+<link rel="stylesheet" href="assets/app.css?v=202611112036">
 </head>
 <body>
 <header class="top">
@@ -24,14 +24,14 @@
   <section class="leyenda"><h3 class="pix">LEYENDA</h3><div class="ley"><div><span class="seg mini2"><button>2.5</button><button class="on">3</button></span><p><b>Laboratorio (individual):</b> de 0 a 3 puntos, en pasos de 0.5.</p></div>
       <div><span class="seg mini2"><button class="on neg">No cumplió −2</button></span><p><b>No cumplió:</b> no entregó o no hizo el laboratorio. <b>Resta 2 puntos</b> (distinto de 0, que es entregado pero sin logro).</p></div>
       <div><span class="seg mini2"><button>0</button><button class="on">1</button></span><p><b>Tocar de nuevo</b> la opción marcada la borra (queda <b>pendiente</b>, distinto de 0).</p></div>
-      <div><span class="seg mini2 bulk"><i>Todos</i><button>3</button></span><p><b>Todos:</b> pone la misma nota a toda la consultora; luego ajustas a quien corresponda.</p></div>
+      <div><span class="seg mini2 bulk"><i>Todos</i><button>3</button></span><p><b>Todos:</b> pone la misma nota a toda la clase (o solo a los que filtraste con Buscar); luego ajustas a quien corresponda.</p></div>
       <div><span class="tag" style="background:#fff1c2;color:#7a5a00">pendiente</span><p>Aún sin calificar. Arriba ves el avance “N de M calificados”. Se califica aunque haya faltado a clase.</p></div></div></section>
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112032"></script>
-<script src="assets/comun.js?v=202611112032"></script>
-<script src="assets/casa.js?v=202611112032"></script>
+<script src="assets/config.js?v=202611112036"></script>
+<script src="assets/comun.js?v=202611112036"></script>
+<script src="assets/casa.js?v=202611112036"></script>
 <script>
 window.CASA = {
   campos: 'lab', max: 3, grid: '260px minmax(520px,1fr) 80px',
