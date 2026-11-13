@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130948">
+<link rel="stylesheet" href="assets/app.css?v=202611130955">
 </head>
 <body>
 <header class="top">
@@ -18,6 +18,7 @@
     <button data-s="sSecc">🏫 Secciones</button>
     <button data-s="sAlumnos" class="on">👥 Alumnos y alias</button>
     <button data-s="sEquipos">🛡 Equipos</button>
+    <button data-s="sSemanas" data-h="semanas">📅 Semanas y temas</button>
     <button data-s="sConfig">⚙ Puntajes y reglas</button>
     <button data-s="sEtq">🏷 Etiquetas</button>
     <button data-s="sEnl">🔗 Enlaces</button>
@@ -82,6 +83,14 @@
     <div id="etiquetas" class="etqs" style="justify-content:flex-start;margin-top:12px"></div>
   </section>
 
+  <!-- SEMANAS -->
+  <section class="card aj hide" id="sSemanas">
+    <h2 class="pix">SEMANAS Y TEMAS</h2>
+    <p class="help">El plan del curso, compartido por todas tus aulas. Al iniciar una semana en <b>Inicio</b> se usan estos datos. Si cambias el tema, la unidad, la práctica o el tipo de trabajo de una semana ya iniciada, se actualiza también lo registrado de esa semana. Cambiar la <b>práctica</b> mueve los puntajes de esa semana a la otra práctica.</p>
+    <div class="altabla"><div class="smr alc"><div>Semana</div><div>Unidad</div><div>Práctica</div><div>Tema</div><div>Trabajo grupal</div><div>Meta XP</div><div></div></div><div id="semanas"></div></div>
+    <button class="btn green" style="margin-top:12px" onclick="agregarSemana()">+ Agregar semana</button>
+  </section>
+
   <!-- ENLACES -->
   <section class="card aj hide" id="sEnl">
     <h2 class="pix">ENLACES PARA LOS ALUMNOS</h2>
@@ -117,8 +126,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130948"></script>
-<script src="assets/comun.js?v=202611130948"></script>
+<script src="assets/config.js?v=202611130955"></script>
+<script src="assets/comun.js?v=202611130955"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -135,7 +144,7 @@ async function iniciar() {
   await cargarSeccion();
   $('#secNom').textContent = SECC ? SECC.nombre.toUpperCase() : 'SIN SECCIÓN'; document.querySelectorAll('.secNom').forEach(e => e.textContent = $('#secNom').textContent);
   await cargarEq();
-  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc(), cargarEnl()]); cargarIntentos();
+  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc(), cargarEnl(), cargarSemanas()]); cargarIntentos();
 }
 
 // ---------- Alumnos ----------
@@ -339,6 +348,37 @@ async function borrarEtq(id, nom) {
   const { error } = await sb.from('etiquetas').delete().eq('id', id); if (error) { toast('No se quitó: ' + error.message, true); return; } cargarEtq();
 }
 
+// ---------- Semanas y temas ----------
+let SEMS = [];
+const UNIDADES = ['UNIDAD I', 'UNIDAD II', 'UNIDAD III', 'UNIDAD IV'], PRACTICAS = ['Practica 1', 'Practica 2', 'Practica 3', 'Practica 4'], TIPOS_GR = ['Taller grupal', 'Juego de roles', 'TikTok', 'Responsabilidad social', 'Debate', 'Exposición', 'Examen', '—'];
+async function cargarSemanas() {
+  const [{ data, error }, { data: usadas }] = await Promise.all([sb.from('semanas').select('*').order('semana'), sb.from('sesiones').select('semana')]);
+  if (error) { $('#semanas').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  SEMS = data || []; const ini = new Set((usadas || []).map(x => x.semana));
+  const op = (lista, v) => `<option value="">—</option>` + lista.map(x => `<option ${x === v ? 'selected' : ''}>${x}</option>`).join('');
+  $('#semanas').innerHTML = SEMS.map(w => `<div class="smr" data-s="${w.semana}"><div><b>S${w.semana}</b>${ini.has(w.semana) ? ' <small class="ok" title="Ya iniciada en alguna aula">●</small>' : ''}</div>
+    <select data-c="unidad">${op(UNIDADES, w.unidad)}</select><select data-c="practica">${op(PRACTICAS, w.practica)}</select><input data-c="tema" value="${esc(w.tema || '')}" placeholder="Tema de la semana"><select data-c="tipo_grupal">${op(TIPOS_GR, w.tipo_grupal)}</select><input data-c="xp_objetivo" type="number" step="0.5" min="0" value="${w.xp_objetivo ?? ''}">
+    <button class="sbtn mini" title="${ini.has(w.semana) ? 'Ya tiene registros: no se puede borrar' : 'Borrar semana'}" ${ini.has(w.semana) ? 'disabled' : ''} onclick="borrarSemana(${w.semana})">🗑</button></div>`).join('') || '<div class="empty">Sin semanas.</div>';
+  document.querySelectorAll('#semanas [data-c]').forEach(el => el.onchange = () => guardarSemana(Number(el.closest('.smr').dataset.s), el.dataset.c, el.value, el));
+}
+async function guardarSemana(sem, campo, valor, el) {
+  const w = SEMS.find(x => x.semana === sem), antes = w[campo];
+  if (campo === 'practica' && antes && valor !== antes && !confirm(`¿Mover la semana ${sem} de ${antes} a ${valor || 'ninguna práctica'}? Sus puntajes pasarán a contar en esa práctica.`)) { el.value = antes ?? ''; return; }
+  const { error } = await sb.rpc('set_semana', { p_semana: sem, p_campo: campo, p_valor: valor });
+  if (error) { el.value = antes ?? ''; toast(/schema cache|function/i.test(error.message) ? 'Falta ejecutar el script 20 en Supabase' : 'No se guardó: ' + error.message, true); return; }
+  w[campo] = valor || null; toast(`Semana ${sem} actualizada`);
+}
+async function agregarSemana() {
+  const sig = Math.max(0, ...SEMS.map(x => x.semana)) + 1; if (sig > 20) { toast('Máximo 20 semanas', true); return; }
+  const { error } = await sb.rpc('set_semana', { p_semana: sig, p_campo: 'tema', p_valor: '' });
+  if (error) { toast(/schema cache|function/i.test(error.message) ? 'Falta ejecutar el script 20 en Supabase' : 'No se agregó: ' + error.message, true); return; }
+  await cargarSemanas(); document.querySelector(`.smr[data-s="${sig}"] [data-c="tema"]`)?.focus();
+}
+async function borrarSemana(sem) {
+  if (!confirm(`¿Borrar la semana ${sem} del plan?`)) return;
+  const { error } = await sb.rpc('borrar_semana', { p_semana: sem }); if (error) { toast(error.message, true); return; } toast(`Semana ${sem} borrada`); cargarSemanas();
+}
+
 // ---------- Enlaces ----------
 let ENL = [];
 async function cargarEnl() {
@@ -412,6 +452,7 @@ async function borrarTodo() {
 }
 
 document.querySelectorAll('.subtabs button').forEach(b => b.onclick = () => { document.querySelectorAll('.subtabs button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('section.aj').forEach(s => s.classList.toggle('hide', s.id !== b.dataset.s)); });
+{ const h = location.hash.slice(1); const b = h && document.querySelector(`.subtabs button[data-h="${h}"]`); if (b) b.click(); }
 $('#buscar').oninput = pintarAl; $('#verInact').onchange = pintarAl;
 iniciar();
 </script>

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Docente</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130948">
+<link rel="stylesheet" href="assets/app.css?v=202611130955">
 </head>
 <body>
 <header class="top">
@@ -21,10 +21,8 @@
         <label>Fecha<input id="fecha" type="date"></label>
         <label>Práctica<select id="practica"><option>Practica 1</option><option>Practica 2</option><option>Practica 3</option><option>Practica 4</option></select></label>
         <label>Unidad<select id="unidad"><option>UNIDAD I</option><option>UNIDAD II</option><option>UNIDAD III</option><option>UNIDAD IV</option></select></label>
-        <label>Tema<input id="tema" type="text"></label>
-        <label>Trabajo grupal<select id="tipo"><option>Taller grupal</option><option>Juego de roles</option><option>TikTok</option><option>Responsabilidad social</option><option>Debate</option><option>Exposición</option><option>Examen</option><option>—</option></select></label>
       </div>
-      <p class="help">Al elegir la semana se completan solos tema, unidad, práctica y tipo de trabajo según el plan del sílabo.</p>
+      <p class="help" id="plan"></p>
       <button class="btn green big pix" id="iniciar">INICIAR / CONTINUAR SEMANA</button>
       <p class="help" style="text-align:center">Solo crea las filas que faltan: nunca borra lo ya registrado.</p>
     </section>
@@ -50,8 +48,8 @@
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130948"></script>
-<script src="assets/comun.js?v=202611130948"></script>
+<script src="assets/config.js?v=202611130955"></script>
+<script src="assets/comun.js?v=202611130955"></script>
 <script>
 let SEMANAS = [], FILAS = [], SESI = {};
 const ORDEN = { Presente: 'Tarde', Tarde: 'Ausente', Ausente: 'Presente' };
@@ -78,8 +76,7 @@ function completarSesion() {
   $('#fecha').value = SESI[s.semana]?.fecha || new Date().toLocaleDateString('en-CA');
   if (s.practica) $('#practica').value = s.practica;
   if (s.unidad) $('#unidad').value = s.unidad;
-  $('#tema').value = s.tema || '';
-  if (s.tipo_grupal) $('#tipo').value = s.tipo_grupal;
+  $('#plan').innerHTML = `Tema: <b>${esc(s.tema || '—')}</b> · Trabajo grupal: <b>${esc(s.tipo_grupal || '—')}</b>. El tema se edita en <a href="ajustes.html#semanas">Ajustes → Semanas y temas</a>; el tipo de trabajo, en <a href="grupal.html">Trabajo grupal</a>.`;
   $('#iniciar').textContent = 'INICIAR / CONTINUAR SEMANA ' + semanaSel();
   $('#titulo').textContent = 'SISOPE ARENA · ' + (SECC?.nombre || '') + ' · SEMANA ' + semanaSel();
 }
@@ -120,7 +117,7 @@ $('#semana').addEventListener('change', async () => { completarSesion(); await c
 $('#iniciar').addEventListener('click', async () => {
   if (!semanaSel()) { toast('Primero elige una semana válida.', true); return; }
   const b = $('#iniciar'); b.disabled = true;
-  const { data, error } = await sb.rpc('iniciar_semana', { p_seccion: SECC.id, p_semana: semanaSel(), p_fecha: $('#fecha').value || null, p_practica: $('#practica').value, p_unidad: $('#unidad').value, p_tema: $('#tema').value, p_tipo: $('#tipo').value });
+  const { data, error } = await sb.rpc('iniciar_semana', { p_seccion: SECC.id, p_semana: semanaSel(), p_fecha: $('#fecha').value || null, p_practica: $('#practica').value, p_unidad: $('#unidad').value, p_tema: SEMANAS.find(x => x.semana === semanaSel())?.tema || null, p_tipo: SEMANAS.find(x => x.semana === semanaSel())?.tipo_grupal || null });
   b.disabled = false;
   if (error) { toast('Error: ' + error.message, true); return; }
   toast(`Semana ${semanaSel()}: ${data} filas nuevas creadas`);
