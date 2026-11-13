@@ -8,11 +8,12 @@ async function iniciarCasa() {
   const ses = await sesionORedirigir(); if (!ses) return;
   if (!(await esDocente())) { location.replace('alumno.html'); return; }
   $('#quien').textContent = ses.user.email;
-  const [{ data: sem }, { data: c }, { data: hechas }] = await Promise.all([
+  await cargarSeccion(); if (!SECC) { toast('Crea una sección en Ajustes', true); return; }
+  const [{ data: sem }, { data: hechas }] = await Promise.all([
     sb.from('semanas').select('*').order('semana'),
-    sb.from('config').select('valor').eq('clave', 'SemanaActual').maybeSingle(),
-    sb.from('detalle').select('semana')
+    sb.from('detalle').select('semana, jugadores!inner(seccion_id)').eq('jugadores.seccion_id', SECC.id)
   ]);
+  const c = { valor: SECC.semana_actual };
   const conFilas = new Set((hechas || []).map(x => x.semana));
   SEMANAS = (sem || []).filter(s => !['Examen', '—'].includes(s.tipo_grupal));
   $('#semana').innerHTML = SEMANAS.map(s => `<option value="${s.semana}" ${conFilas.has(s.semana) ? '' : 'disabled'}>Semana ${s.semana} · ${esc(s.practica || '')} · ${esc(s.tema || '')}${conFilas.has(s.semana) ? '' : ' (sin iniciar)'}</option>`).join('');
@@ -26,7 +27,7 @@ async function iniciarCasa() {
 
 async function cargarCasa() {
   if (CASA.preparar) await CASA.preparar();
-  const { data, error } = await sb.from('detalle').select(`id, asistencia, ${CASA.campos}, jugadores(nombre, alias, consultora)`).eq('semana', SEM);
+  const { data, error } = await sb.from('detalle').select(`id, asistencia, ${CASA.campos}, jugadores!inner(nombre, alias, consultora, seccion_id)`).eq('semana', SEM).eq('jugadores.seccion_id', SECC.id);
   if (error) { toast('Error al cargar: ' + error.message, true); return; }
   FILAS = (data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
   pintarCasa();

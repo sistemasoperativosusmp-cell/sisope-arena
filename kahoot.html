@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Kahoot</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112355">
+<link rel="stylesheet" href="assets/app.css?v=202611122303">
 </head>
 <body>
 <header class="top">
@@ -32,9 +32,9 @@
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112355"></script>
-<script src="assets/comun.js?v=202611112355"></script>
-<script src="assets/casa.js?v=202611112355"></script>
+<script src="assets/config.js?v=202611122303"></script>
+<script src="assets/comun.js?v=202611122303"></script>
+<script src="assets/casa.js?v=202611122303"></script>
 <script>
 let PODIO = 3, KP = { 1: 2, 2: 1, 3: 0.5, x: 0.5 };
 const ptsK = pos => !pos || pos >= 99 ? 0 : pos <= 3 ? KP[pos] : pos <= PODIO ? KP.x : 0;
@@ -45,7 +45,7 @@ window.CASA = {
   calificado: f => f.kahoot_pos !== null && f.kahoot_pos !== undefined,
   async preparar() {
     const [{ data: s }, { data: c }] = await Promise.all([
-      sb.from('semanas').select('kahoot_podio').eq('semana', SEM).maybeSingle(),
+      sb.from('sesiones').select('kahoot_podio').eq('seccion_id', SECC.id).eq('semana', SEM).maybeSingle(),
       sb.from('config').select('clave, valor').in('clave', ['KahootP1', 'KahootP2', 'KahootP3', 'KahootExtra'])
     ]);
     const m = Object.fromEntries((c || []).map(x => [x.clave, Number(x.valor)]));
@@ -64,9 +64,9 @@ function armar() {
 }
 async function cambiarPodio(d) {
   const nuevo = Math.min(10, Math.max(3, PODIO + d)); if (nuevo === PODIO) return;
-  const { error } = await sb.from('semanas').update({ kahoot_podio: nuevo }).eq('semana', SEM);
+  const { error } = await sb.from('sesiones').upsert({ seccion_id: SECC.id, semana: SEM, kahoot_podio: nuevo }, { onConflict: 'seccion_id,semana' });
   if (error) { toast('No se guardó el podio: ' + error.message, true); return; }
-  PODIO = nuevo; armar(); pintarCasa(); toast(`Semana ${SEM}: podio de ${PODIO} puestos`);
+  PODIO = nuevo; armar(); pintarCasa(); toast(`${SECC.nombre} · semana ${SEM}: podio de ${PODIO} puestos`);
 }
 iniciarCasa();
 const _p = pintarCasa; pintarCasa = function () { _p(); $('#avance').textContent = $('#avance').textContent.replace('calificados', 'registrados'); };

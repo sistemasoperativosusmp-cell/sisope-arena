@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112355">
+<link rel="stylesheet" href="assets/app.css?v=202611122303">
 </head>
 <body>
 <header class="top">
@@ -15,15 +15,24 @@
 <nav class="tabs" id="nav"></nav>
 <main>
   <div class="subtabs">
+    <button data-s="sSecc">🏫 Secciones</button>
     <button data-s="sAlumnos" class="on">👥 Alumnos y alias</button>
     <button data-s="sConfig">⚙ Puntajes y reglas</button>
     <button data-s="sEtq">🏷 Etiquetas</button>
     <button data-s="sSem" class="peligro">🧹 Nuevo semestre</button>
   </div>
 
+  <!-- SECCIONES -->
+  <section class="card aj hide" id="sSecc">
+    <h2 class="pix">SECCIONES (AULAS)</h2>
+    <p class="help">Cada sección tiene sus propios alumnos, semana actual, ranking, víctimas y podio de Kahoot. El plan de semanas, los rangos, las etiquetas y los puntajes se comparten. Elige con qué aula trabajas en el selector <b>AULA</b> del menú.</p>
+    <div class="ajform etq" style="grid-template-columns:1fr 1.4fr auto;max-width:720px"><input id="sNombre" placeholder="Nombre (ej. SISOPE 52A – Lunes)"><input id="sDesc" placeholder="Descripción (curso, horario, aula)"><button class="btn green" onclick="agregarSecc()">+ Crear sección</button></div>
+    <div class="altabla" style="margin-top:12px"><div class="sr alc"><div>Sección</div><div>Descripción</div><div>Semana actual</div><div>Alumnos</div><div>Estado</div><div></div></div><div id="secciones"></div></div>
+  </section>
+
   <!-- ALUMNOS -->
   <section class="card aj" id="sAlumnos">
-    <div class="ajhead"><h2 class="pix">ALUMNOS Y ALIAS</h2><span class="avance" id="cuenta"></span></div>
+    <div class="ajhead"><h2 class="pix">ALUMNOS Y ALIAS · <span id="secNom"></span></h2><span class="avance" id="cuenta"></span></div>
     <div class="ajform">
       <input id="nCorreo" placeholder="Correo USMP (ej. jperez@usmp.pe)">
       <input id="nNombre" placeholder="APELLIDOS, Nombres">
@@ -39,7 +48,7 @@
     </details>
     <div class="filtros" style="margin-top:12px"><label>Buscar <input id="buscar" placeholder="Nombre, alias o correo"></label><label><input type="checkbox" id="verInact"> Ver retirados</label></div>
     <div class="altabla">
-      <div class="alr alc"><div>#</div><div>Apellidos y nombres</div><div>Alias</div><div>Correo</div><div>Consultora</div><div>Rol</div><div>Estado</div><div></div></div>
+      <div class="alr alc"><div>#</div><div>Apellidos y nombres</div><div>Alias</div><div>Correo</div><div>Consultora</div><div>Rol</div><div>Sección</div><div>Estado</div><div></div></div>
       <div id="alumnos"><div class="empty">Cargando…</div></div>
     </div>
     <p class="help">Los cambios se guardan al salir de cada celda. <b>Retirar</b> lo saca de listas, ranking y sorteos sin borrar su historial. <b>🗑</b> lo elimina con todos sus puntajes.</p>
@@ -67,7 +76,7 @@
     <div class="paso"><b>1.</b> Descarga un respaldo de este ciclo (alumnos, puntajes por semana, notas, exámenes, etiquetas y feedback).
       <div class="fbacc" style="justify-content:flex-start"><button class="btn" onclick="respaldo('xlsx')">⬇ Respaldo para Excel (CSV)</button><button class="sbtn" onclick="respaldo('json')">⬇ Respaldo completo (JSON)</button></div></div>
     <div class="paso peligro"><b>2.</b> Borra todo para empezar de cero. Se eliminan <b>alumnos, asistencia, puntajes, exámenes, etiquetas puestas y feedback</b>.
-      Se conservan el plan de semanas, los rangos, las etiquetas disponibles y la configuración. La semana actual vuelve a 1.
+      Se conservan las secciones, el plan de semanas, los rangos, las etiquetas disponibles y la configuración. Todas las secciones vuelven a la semana 1.
       <div class="fbacc" style="justify-content:flex-start"><input id="conf" placeholder="Escribe: BORRAR TODO" autocomplete="off"><button class="btn red" id="btnBorrar" disabled onclick="borrarTodo()">🧹 Borrar todo y empezar nuevo semestre</button></div>
       <p class="help" style="margin:0">No se puede deshacer. Las cuentas de acceso (Authentication → Users) no se borran desde aquí: elimínalas en Supabase si ya no se usarán.</p></div>
   </section>
@@ -75,8 +84,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112355"></script>
-<script src="assets/comun.js?v=202611112355"></script>
+<script src="assets/config.js?v=202611122303"></script>
+<script src="assets/comun.js?v=202611122303"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -90,12 +99,14 @@ async function iniciar() {
   if (!(await esDocente())) { location.replace('alumno.html'); return; }
   $('#quien').textContent = ses.user.email;
   $('#nRol').innerHTML = '<option value="">Rol en la consultora</option>' + ROLES.map(r => `<option>${r}</option>`).join('');
-  await Promise.all([cargarAl(), cargarCfg(), cargarEtq()]);
+  await cargarSeccion();
+  $('#secNom').textContent = SECC ? SECC.nombre.toUpperCase() : 'SIN SECCIÓN';
+  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc()]);
 }
 
 // ---------- Alumnos ----------
 async function cargarAl() {
-  const { data, error } = await sb.from('jugadores').select('id, correo, nombre, alias, consultora, rol_consultora, activo').order('nombre');
+  const { data, error } = await sb.from('jugadores').select('id, correo, nombre, alias, consultora, rol_consultora, activo, seccion_id').eq('seccion_id', SECC?.id ?? -1).order('nombre');
   if (error) { toast('Error: ' + error.message, true); return; }
   AL = data || []; pintarAl();
 }
@@ -109,6 +120,7 @@ function pintarAl() {
     <input data-c="nombre" value="${esc(a.nombre)}"><div class="conal"><input data-c="alias" value="${esc(a.alias)}"><button class="sbtn mini" title="Otro alias" onclick="nuevoAlias('${a.id}')">🎲</button></div>
     <input data-c="correo" value="${esc(a.correo)}"><input data-c="consultora" value="${esc(a.consultora || '')}" list="consList">
     <select data-c="rol_consultora">${rolOpts(a.rol_consultora)}</select>
+    <select data-c="seccion_id" title="Mover a otra sección">${SECCIONES.map(s => `<option value="${s.id}" ${s.id === a.seccion_id ? 'selected' : ''}>${esc(s.nombre)}</option>`).join('')}</select>
     <button class="sbtn mini ${a.activo ? '' : 'gold'}" onclick="alternarActivo('${a.id}')">${a.activo ? 'Retirar' : 'Reincorporar'}</button>
     <button class="sbtn mini" title="Eliminar con todos sus puntajes" onclick="eliminar('${a.id}')">🗑</button></div>`).join('') : '<div class="empty">Aún no hay alumnos. Agrégalos arriba o pégalos desde Excel.</div>';
   document.querySelectorAll('#alumnos [data-c]').forEach(el => el.onchange = () => editar(el.closest('.alr').dataset.id, el.dataset.c, el.value, el));
@@ -117,13 +129,16 @@ async function editar(id, campo, valor, el) {
   const a = AL.find(x => x.id === id), antes = a[campo];
   let v = valor.trim(); if (campo === 'correo') v = v.toLowerCase(); if (campo === 'nombre') v = v.replace(/^([^,]+)/, m => m.toUpperCase());
   if (['nombre', 'alias', 'correo'].includes(campo) && !v) { toast('Ese dato es obligatorio', true); el.value = antes; return; }
+  if (campo === 'seccion_id') { v = Number(v); if (!confirm(`¿Mover a ${a.alias} a "${SECCIONES.find(s => s.id === v)?.nombre}"? Se lleva todos sus puntajes.`)) { el.value = antes; return; } }
   const { error } = await sb.from('jugadores').update({ [campo]: v || null }).eq('id', id);
   if (error) { el.value = antes ?? ''; toast(error.message.includes('alias') ? 'Ese alias ya lo usa otro alumno' : error.message.includes('correo') ? 'Ese correo ya existe' : 'No se guardó: ' + error.message, true); return; }
+  if (campo === 'seccion_id') { toast(`${a.alias} movido`); await cargarAl(); cargarSecc(); return; }
   a[campo] = v || null; el.classList.add('ok'); setTimeout(() => el.classList.remove('ok'), 900); if (campo === 'nombre' || campo === 'consultora') pintarAl();
 }
 async function nuevoAlias(id) { const el = document.querySelector(`.alr[data-id="${id}"] [data-c="alias"]`); el.value = aliasAzar(); await editar(id, 'alias', el.value, el); }
 async function agregar() {
-  const o = { correo: $('#nCorreo').value.trim().toLowerCase(), nombre: $('#nNombre').value.trim().replace(/^([^,]+)/, m => m.toUpperCase()), alias: $('#nAlias').value.trim() || aliasAzar(), consultora: $('#nCons').value.trim() || null, rol_consultora: $('#nRol').value || null };
+  const o = { correo: $('#nCorreo').value.trim().toLowerCase(), nombre: $('#nNombre').value.trim().replace(/^([^,]+)/, m => m.toUpperCase()), alias: $('#nAlias').value.trim() || aliasAzar(), consultora: $('#nCons').value.trim() || null, rol_consultora: $('#nRol').value || null, seccion_id: SECC?.id };
+  if (!SECC) { toast('Primero crea una sección', true); return; }
   if (!o.correo.includes('@') || !o.nombre) { toast('Completa al menos correo y apellidos y nombres', true); return; }
   const { error } = await sb.from('jugadores').insert(o);
   if (error) { toast(error.message.includes('alias') ? 'Ese alias ya existe' : error.message.includes('correo') ? 'Ese correo ya está registrado' : 'No se guardó: ' + error.message, true); return; }
@@ -144,7 +159,7 @@ async function eliminar(id) {
 }
 function leerImport() {
   return $('#impTxt').value.split(/\r?\n/).map(l => l.split(/\t|;/).map(x => x.trim())).filter(c => c[0] && c[0].includes('@'))
-    .map(c => ({ correo: c[0].toLowerCase(), nombre: (c[1] || '').replace(/^([^,]+)/, m => m.toUpperCase()), alias: c[2] || '', consultora: c[3] || null, rol_consultora: ROLES.find(r => r.toLowerCase() === (c[4] || '').toLowerCase()) || null }));
+    .map(c => ({ seccion_id: SECC?.id, correo: c[0].toLowerCase(), nombre: (c[1] || '').replace(/^([^,]+)/, m => m.toUpperCase()), alias: c[2] || '', consultora: c[3] || null, rol_consultora: ROLES.find(r => r.toLowerCase() === (c[4] || '').toLowerCase()) || null }));
 }
 $('#impTxt').oninput = () => { const f = leerImport(); $('#impPrev').textContent = f.length ? `${f.length} alumno(s) listos para importar${f.some(x => !x.nombre) ? ' · ⚠ hay filas sin nombre' : ''}` : 'Pega las filas desde Excel'; };
 async function importar() {
@@ -157,13 +172,44 @@ async function importar() {
   $('#impTxt').value = ''; $('#impPrev').textContent = ''; toast(`${f.length} alumnos importados`); await cargarAl();
 }
 
+// ---------- Secciones ----------
+async function cargarSecc() {
+  const [{ data: ss, error }, { data: js }] = await Promise.all([sb.from('secciones').select('*').order('id'), sb.from('jugadores').select('seccion_id, activo')]);
+  if (error) { $('#secciones').innerHTML = `<div class="empty">Falta ejecutar el SQL de secciones (${esc(error.message)})</div>`; return; }
+  const sems = Array.from({ length: 16 }, (_, i) => i + 1);
+  $('#secciones').innerHTML = (ss || []).map(s => `<div class="sr ${s.activa ? '' : 'inact'}" data-id="${s.id}">
+    <input data-c="nombre" value="${esc(s.nombre)}"><input data-c="descripcion" value="${esc(s.descripcion || '')}" placeholder="—">
+    <select data-c="semana_actual">${sems.map(n => `<option ${n === s.semana_actual ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    <div><b>${(js || []).filter(j => j.seccion_id === s.id && j.activo).length}</b> activos</div>
+    <button class="sbtn mini ${s.activa ? '' : 'gold'}" onclick="alternarSecc(${s.id}, ${!s.activa})">${s.activa ? 'Archivar' : 'Reactivar'}</button>
+    <button class="sbtn mini" title="Eliminar sección vacía" onclick="borrarSecc(${s.id})">🗑</button></div>`).join('') || '<div class="empty">Aún no hay secciones.</div>';
+  document.querySelectorAll('#secciones [data-c]').forEach(el => el.onchange = async () => {
+    const id = Number(el.closest('.sr').dataset.id), v = el.dataset.c === 'semana_actual' ? Number(el.value) : el.value.trim() || null;
+    if (el.dataset.c === 'nombre' && !v) { toast('El nombre es obligatorio', true); return; }
+    const { error } = await sb.from('secciones').update({ [el.dataset.c]: v }).eq('id', id);
+    if (error) { toast('No se guardó: ' + error.message, true); return; } el.classList.add('ok'); setTimeout(() => el.classList.remove('ok'), 900);
+  });
+}
+async function agregarSecc() {
+  const o = { nombre: $('#sNombre').value.trim(), descripcion: $('#sDesc').value.trim() || null }; if (!o.nombre) { toast('Escribe el nombre', true); return; }
+  const { data, error } = await sb.from('secciones').insert(o).select().single(); if (error) { toast(/unique|duplicate/.test(error.message) ? 'Ya existe una sección con ese nombre' : 'No se creó: ' + error.message, true); return; }
+  $('#sNombre').value = ''; $('#sDesc').value = ''; toast(`Sección "${data.nombre}" creada. Elígela en AULA para cargar sus alumnos.`); try { localStorage.setItem('sisope_seccion', data.id); } catch (e) {}
+  setTimeout(() => location.reload(), 1200);
+}
+async function alternarSecc(id, activa) { const { error } = await sb.from('secciones').update({ activa }).eq('id', id); if (error) { toast('No se guardó: ' + error.message, true); return; } location.reload(); }
+async function borrarSecc(id) {
+  if (!confirm('¿Eliminar esta sección? Solo se puede si no tiene alumnos.')) return;
+  const { error } = await sb.from('secciones').delete().eq('id', id);
+  if (error) { toast(/foreign|violates/.test(error.message) ? 'Tiene alumnos: muévelos o retíralos primero (o usa Archivar).' : 'No se eliminó: ' + error.message, true); return; } location.reload();
+}
+
 // ---------- Configuración ----------
 const LBL = { SemanaActual: 'Semana en curso', JMAcierto: 'Puntos por acierto', JMFallo: 'Puntos que resta no contestar', NumVictimas: 'Cuántas víctimas ve la clase', MostrarVictimas: 'Mostrar víctimas a los alumnos', KahootP1: 'Puntos del 1er puesto', KahootP2: 'Puntos del 2do puesto', KahootP3: 'Puntos del 3er puesto', KahootExtra: 'Puntos del 4° en adelante (podio extendido)', TopePractica: 'Nota máxima por práctica', NotaAprobatoria: 'Promedio final para aprobar', XPPorPunto: 'XP por cada punto', MetaXPSemana: 'Meta de XP por semana', RefrescoSegundos: 'Refresco de la Arena (segundos)' };
-const GRUPOS = [['Semana', ['SemanaActual']], ['Juego del Miedo', ['JMAcierto', 'JMFallo', 'NumVictimas', 'MostrarVictimas']], ['Kahoot', ['KahootP1', 'KahootP2', 'KahootP3', 'KahootExtra']], ['Notas', ['TopePractica', 'NotaAprobatoria']], ['Arena del alumno', ['XPPorPunto', 'MetaXPSemana', 'RefrescoSegundos']]];
+const GRUPOS = [['Juego del Miedo', ['JMAcierto', 'JMFallo', 'NumVictimas', 'MostrarVictimas']], ['Kahoot', ['KahootP1', 'KahootP2', 'KahootP3', 'KahootExtra']], ['Notas', ['TopePractica', 'NotaAprobatoria']], ['Arena del alumno', ['XPPorPunto', 'MetaXPSemana', 'RefrescoSegundos']]];
 async function cargarCfg() {
   const { data, error } = await sb.from('config').select('*'); if (error) { toast('Error: ' + error.message, true); return; }
   const m = Object.fromEntries(data.map(c => [c.clave, c])), usadas = new Set(GRUPOS.flatMap(g => g[1]));
-  const grupos = [...GRUPOS, ['Otros', data.map(c => c.clave).filter(k => !usadas.has(k) && k !== 'KahootTop3')]];
+  const grupos = [...GRUPOS, ['Otros', data.map(c => c.clave).filter(k => !usadas.has(k) && k !== 'KahootTop3' && k !== 'SemanaActual')]];
   $('#config').innerHTML = grupos.filter(g => g[1].some(k => m[k])).map(([t, ks]) => `<div class="cfgg"><h3>${t}</h3>${ks.filter(k => m[k]).map(k => `<label class="cfg"><span><b>${esc(LBL[k] || m[k].descripcion || k)}</b><small>${k}</small></span>
     ${k === 'MostrarVictimas' ? `<select data-k="${k}"><option ${m[k].valor === 'Si' ? 'selected' : ''}>Si</option><option ${m[k].valor === 'No' ? 'selected' : ''}>No</option></select>` : `<input data-k="${k}" value="${esc(m[k].valor)}" inputmode="decimal">`}</label>`).join('')}</div>`).join('');
   document.querySelectorAll('#config [data-k]').forEach(el => el.onchange = async () => {
@@ -191,15 +237,16 @@ async function borrarEtq(id, nom) {
 // ---------- Nuevo semestre ----------
 async function respaldo(tipo) {
   toast('Preparando respaldo…');
-  const tablas = ['jugadores', 'detalle', 'examenes', 'observaciones', 'feedback', 'semanas', 'config', 'etiquetas'];
+  const tablas = ['jugadores', 'detalle', 'examenes', 'observaciones', 'feedback', 'semanas', 'config', 'etiquetas', 'secciones', 'sesiones'];
   const res = await Promise.all([...tablas.map(t => sb.from(t).select('*')), sb.from('v_notas').select('*')]);
   const err = res.find(r => r.error); if (err) { toast('No se pudo leer: ' + err.error.message, true); return; }
   const fecha = new Date().toISOString().slice(0, 10), bajar = (txt, nom, mime) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: mime })); a.download = nom; a.click(); };
   if (tipo === 'json') { const o = {}; tablas.forEach((t, i) => o[t] = res[i].data); o.v_notas = res[tablas.length].data; bajar(JSON.stringify(o, null, 1), `sisope-respaldo-${fecha}.json`, 'application/json'); return; }
   const csv = (rows) => { if (!rows.length) return ''; const cols = Object.keys(rows[0]); const q = v => { const s = v === null || v === undefined ? '' : Array.isArray(v) ? v.join(' | ') : String(v); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }; return '﻿' + [cols.join(';'), ...rows.map(r => cols.map(c => q(r[c])).join(';'))].join('\n'); };
   const alias = Object.fromEntries(res[0].data.map(j => [j.id, j]));
-  const det = res[1].data.map(d => ({ alumno: alias[d.jugador_id]?.nombre, alias: alias[d.jugador_id]?.alias, ...d }));
-  bajar(csv(res[tablas.length].data), `sisope-notas-${fecha}.csv`, 'text/csv');
+  const secN = Object.fromEntries(res[8].data.map(x => [x.id, x.nombre]));
+  const det = res[1].data.map(d => ({ seccion: secN[alias[d.jugador_id]?.seccion_id], alumno: alias[d.jugador_id]?.nombre, alias: alias[d.jugador_id]?.alias, ...d }));
+  bajar(csv(res[tablas.length].data.map(r => ({ seccion: secN[r.seccion_id], ...r }))), `sisope-notas-${fecha}.csv`, 'text/csv');
   setTimeout(() => bajar(csv(det), `sisope-detalle-semanal-${fecha}.csv`, 'text/csv'), 400);
 }
 $('#conf').oninput = () => $('#btnBorrar').disabled = $('#conf').value.trim() !== 'BORRAR TODO';

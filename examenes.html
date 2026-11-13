@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Exámenes y bonus</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112355">
+<link rel="stylesheet" href="assets/app.css?v=202611122303">
 </head>
 <body>
 <header class="top">
@@ -48,8 +48,8 @@
 </div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112355"></script>
-<script src="assets/comun.js?v=202611112355"></script>
+<script src="assets/config.js?v=202611122303"></script>
+<script src="assets/comun.js?v=202611122303"></script>
 <script>
 let NOTAS = [], CAMBIOS = {}, APR = 10.5;
 const CAMPOS = ['ep', 'bonus_ep', 'ef', 'bonus_ef'];
@@ -60,6 +60,7 @@ async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
   if (!(await esDocente())) { location.replace('alumno.html'); return; }
   $('#quien').textContent = ses.user.email;
+  await cargarSeccion(); if (!SECC) { toast('Crea una sección en Ajustes', true); return; }
   const { data: c } = await sb.from('config').select('valor').eq('clave', 'NotaAprobatoria').maybeSingle();
   APR = Number(c?.valor) || 10.5; $('#nApr').textContent = APR;
   await cargar();
@@ -67,7 +68,7 @@ async function iniciar() {
   $('#cons').onchange = pintar; $('#buscar').oninput = pintar;
 }
 async function cargar() {
-  const { data, error } = await sb.from('v_notas').select('*').order('nombre');
+  const { data, error } = await sb.from('v_notas').select('*').eq('seccion_id', SECC.id).order('nombre');
   if (error) { toast('Error al cargar: ' + error.message, true); return; }
   NOTAS = data || []; CAMBIOS = {}; pintar();
 }
@@ -131,11 +132,12 @@ async function verDetalle(jid) {
   $('#dTabla').innerHTML = '<div class="empty">Cargando…</div>'; $('#mDet').classList.remove('hide');
   const [a, b, c] = await Promise.all([
     sb.from('detalle').select('*').eq('jugador_id', jid).order('semana'),
-    sb.from('semanas').select('semana, tema, kahoot_podio'),
+    sb.from('semanas').select('semana, tema'),
     sb.from('config').select('clave, valor')
   ]);
   const err = a.error || b.error || c.error; if (err) { $('#dTabla').innerHTML = `<div class="empty">Error: ${esc(err.message)}</div>`; return; }
-  const cfg = Object.fromEntries((c.data || []).map(x => [x.clave, Number(x.valor)])), sem = Object.fromEntries((b.data || []).map(x => [x.semana, x]));
+  const pod = await podiosSeccion(SECC.id);
+  const cfg = Object.fromEntries((c.data || []).map(x => [x.clave, Number(x.valor)])), sem = Object.fromEntries((b.data || []).map(x => [x.semana, { ...x, kahoot_podio: pod[x.semana]?.kahoot_podio || 3 }]));
   DET = { filas: a.data || [], cfg, sem, notas: r }; pintarDetalle();
 }
 function partes(d, cfg, sem) {

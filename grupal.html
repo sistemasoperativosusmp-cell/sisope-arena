@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Trabajo grupal</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112355">
+<link rel="stylesheet" href="assets/app.css?v=202611122303">
 </head>
 <body>
 <header class="top">
@@ -39,8 +39,8 @@
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112355"></script>
-<script src="assets/comun.js?v=202611112355"></script>
+<script src="assets/config.js?v=202611122303"></script>
+<script src="assets/comun.js?v=202611122303"></script>
 <script>
 let SEM = 1, FILAS = [];
 const PART = [['Lideró', 'Lideró'], ['Apoyó', 'Apoyó'], ['Habló', 'Habló'], ['Intentando', 'Intentando'], ['No participó', 'No part.']];
@@ -54,11 +54,11 @@ async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
   if (!(await esDocente())) { location.replace('alumno.html'); return; }
   $('#quien').textContent = ses.user.email;
-  const { data: c } = await sb.from('config').select('valor').eq('clave', 'SemanaActual').maybeSingle();
-  SEM = parseInt(c?.valor, 10) || 1;
+  await cargarSeccion(); if (!SECC) { toast('Crea una sección en Ajustes', true); return; }
+  SEM = SECC.semana_actual || 1;
   const { data: s } = await sb.from('semanas').select('*').eq('semana', SEM).maybeSingle();
-  $('#pills').innerHTML = [`Semana ${SEM}`, s?.tema, s?.tipo_grupal ? 'Grupal: ' + s.tipo_grupal : null].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
-  const { data, error } = await sb.from('detalle').select('id, asistencia, tipo_grupal, participacion_grupal, gr_comunicacion, gr_tecnico, gr_analisis, extra, falta, tema_grupal, jugadores(nombre, alias, consultora, rol_consultora)').eq('semana', SEM);
+  $('#pills').innerHTML = [SECC.nombre, `Semana ${SEM}`, s?.tema, s?.tipo_grupal ? 'Grupal: ' + s.tipo_grupal : null].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
+  const { data, error } = await sb.from('detalle').select('id, asistencia, tipo_grupal, participacion_grupal, gr_comunicacion, gr_tecnico, gr_analisis, extra, falta, tema_grupal, jugadores!inner(nombre, alias, consultora, rol_consultora, seccion_id)').eq('semana', SEM).eq('jugadores.seccion_id', SECC.id);
   if (error) { toast('Error al cargar: ' + error.message, true); return; }
   FILAS = (data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
   if (['Examen', '—'].includes(s?.tipo_grupal)) toast(`La semana ${SEM} no tiene trabajo grupal (${s.tipo_grupal}).`, true);

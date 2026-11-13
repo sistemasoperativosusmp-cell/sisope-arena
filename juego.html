@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Juego del Miedo</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112355">
+<link rel="stylesheet" href="assets/app.css?v=202611122303">
 </head>
 <body>
 <header class="top">
@@ -91,8 +91,8 @@
 
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112355"></script>
-<script src="assets/comun.js?v=202611112355"></script>
+<script src="assets/config.js?v=202611122303"></script>
+<script src="assets/comun.js?v=202611122303"></script>
 <script>
 let SEM = 1, FILAS = [], ETQ = [], OBS = {}, RADAR = {}, PA = 0.5, PF = 0.5, soloMudos = false, PILA = [], ELEGIDOS = new Set(), SEL = new Set(), VIC = null, ETQ_ALUMNO = null;
 const num = n => Number(n || 0);
@@ -106,21 +106,22 @@ async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
   if (!(await esDocente())) { location.replace('alumno.html'); return; }
   $('#quien').textContent = ses.user.email;
-  const { data: cfg } = await sb.from('config').select('clave, valor').in('clave', ['SemanaActual', 'JMAcierto', 'JMFallo']);
+  await cargarSeccion(); if (!SECC) { toast('Crea una sección en Ajustes', true); return; }
+  const { data: cfg } = await sb.from('config').select('clave, valor').in('clave', ['JMAcierto', 'JMFallo']);
   const c = Object.fromEntries((cfg || []).map(x => [x.clave, x.valor]));
-  SEM = parseInt(c.SemanaActual, 10) || 1; PA = Number(c.JMAcierto) || 0.5; PF = Number(c.JMFallo) || 0.5;
+  SEM = SECC.semana_actual || 1; PA = Number(c.JMAcierto) || 0.5; PF = Number(c.JMFallo) || 0.5;
   document.querySelectorAll('.pAc').forEach(e => e.textContent = fmt(PA)); document.querySelectorAll('.pFa').forEach(e => e.textContent = fmt(PF));
   const { data: s } = await sb.from('semanas').select('*').eq('semana', SEM).maybeSingle();
-  $('#pills').innerHTML = [`Semana ${SEM}`, s?.tema ? `${s.tema}${s.unidad ? ' · ' + s.unidad : ''}` : null, s?.practica, s?.tipo_grupal ? 'Grupal: ' + s.tipo_grupal : null].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
+  $('#pills').innerHTML = [SECC.nombre, `Semana ${SEM}`, s?.tema ? `${s.tema}${s.unidad ? ' · ' + s.unidad : ''}` : null, s?.practica, s?.tipo_grupal ? 'Grupal: ' + s.tipo_grupal : null].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
   await cargar();
 }
 
 async function cargar() {
   const [r1, r2, r3, r4] = await Promise.all([
-    sb.from('detalle').select('id, jugador_id, asistencia, hora_llegada, jm_aciertos, jm_fallos, part_vol, participacion_grupal, jugadores(nombre, alias, consultora, rol_consultora, avatar_url)').eq('semana', SEM),
+    sb.from('detalle').select('id, jugador_id, asistencia, hora_llegada, jm_aciertos, jm_fallos, part_vol, participacion_grupal, jugadores!inner(nombre, alias, consultora, rol_consultora, avatar_url, seccion_id)').eq('semana', SEM).eq('jugadores.seccion_id', SECC.id),
     sb.from('etiquetas').select('*').order('id'),
     sb.from('observaciones').select('jugador_id, etiquetas').eq('semana', SEM),
-    sb.from('v_radar').select('jugador_id, voz_ciclo, semanas_silencio')
+    sb.from('v_radar').select('jugador_id, voz_ciclo, semanas_silencio').eq('seccion_id', SECC.id)
   ]);
   const err = r1.error || r2.error || r3.error || r4.error;
   if (err) { toast('Error al cargar: ' + err.message, true); return; }

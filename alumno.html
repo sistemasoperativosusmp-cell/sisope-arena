@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112355">
+<link rel="stylesheet" href="assets/app.css?v=202611122303">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -60,8 +60,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112355"></script>
-<script src="assets/comun.js?v=202611112355"></script>
+<script src="assets/config.js?v=202611122303"></script>
+<script src="assets/comun.js?v=202611122303"></script>
 <script>
 let CONS = [], SK = null, YO = null, R = [], NOTAS = null, DET = [], SEMS = {}, CFG = {}, FILTRO = 'Todas';
 const n = v => Number(v || 0), f1 = v => String(Math.round(v * 100) / 100), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + f1(Math.abs(v));
@@ -72,11 +72,11 @@ async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
   const doc = await esDocente();
   $('#quien').innerHTML = doc ? '<a href="docente.html" style="color:#f2b705">Panel docente</a>' : '';
-  const { data: yo } = await sb.from('jugadores').select('id, alias, nombre, consultora, rol_consultora, avatar_url').eq('correo', ses.user.email.toLowerCase()).maybeSingle();
+  const { data: yo } = await sb.from('jugadores').select('id, alias, nombre, consultora, rol_consultora, avatar_url, seccion_id').eq('correo', ses.user.email.toLowerCase()).maybeSingle();
   YO = yo;
-  const [{ data: s }, { data: c }] = await Promise.all([sb.from('semanas').select('semana, tema, practica, kahoot_podio'), sb.from('config').select('clave, valor')]);
-  SEMS = Object.fromEntries((s || []).map(x => [x.semana, x])); CFG = Object.fromEntries((c || []).map(x => [x.clave, x.valor]));
-  $('#vivo').textContent = `EN VIVO · semana ${CFG.SemanaActual || 1}`;
+  const [{ data: s }, { data: c }, { data: sec }, pod] = await Promise.all([sb.from('semanas').select('semana, tema, practica'), sb.from('config').select('clave, valor'), YO ? sb.from('secciones').select('nombre, semana_actual').eq('id', YO.seccion_id).maybeSingle() : { data: null }, YO ? podiosSeccion(YO.seccion_id) : {}]);
+  SEMS = Object.fromEntries((s || []).map(x => [x.semana, { ...x, kahoot_podio: pod[x.semana]?.kahoot_podio || 3 }])); CFG = Object.fromEntries((c || []).map(x => [x.clave, x.valor]));
+  $('#vivo').textContent = `EN VIVO · ${sec ? sec.nombre + ' · ' : ''}semana ${sec?.semana_actual || 1}`;
   window.addEventListener('hashchange', mostrar); mostrar();
   await refrescar();
   sb.channel('pulso').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pulso' }, refrescar).subscribe();
@@ -89,8 +89,8 @@ function mostrar() {
 }
 async function refrescar() {
   const q = await Promise.all([
-    sb.from('v_ranking').select('*').order('posicion'),
-    sb.from('v_ranking_consultoras').select('*').order('posicion'),
+    YO ? sb.from('v_ranking').select('*').eq('seccion_id', YO.seccion_id).order('posicion') : sb.from('v_ranking').select('*').order('posicion'),
+    YO ? sb.from('v_ranking_consultoras').select('*').eq('seccion_id', YO.seccion_id).order('posicion') : sb.from('v_ranking_consultoras').select('*').order('posicion'),
     YO ? sb.from('v_notas').select('*').eq('jugador_id', YO.id).maybeSingle() : { data: null },
     YO ? sb.from('detalle').select('*').eq('jugador_id', YO.id).order('semana') : { data: [] },
     YO ? sb.from('feedback').select('texto, creado, semana').eq('jugador_id', YO.id).eq('visible_alumno', true).order('creado', { ascending: false }) : { data: [] }

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112355">
+<link rel="stylesheet" href="assets/app.css?v=202611122303">
 </head>
 <body>
 <header class="top">
@@ -39,8 +39,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112355"></script>
-<script src="assets/comun.js?v=202611112355"></script>
+<script src="assets/config.js?v=202611122303"></script>
+<script src="assets/comun.js?v=202611122303"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -52,21 +52,22 @@ async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
   if (!(await esDocente())) { location.replace('alumno.html'); return; }
   $('#quien').textContent = ses.user.email;
+  await cargarSeccion(); if (!SECC) { toast('Crea una sección en Ajustes', true); return; }
   const q = await Promise.all([
-    sb.from('jugadores').select('id, nombre, alias, consultora, rol_consultora').eq('activo', true).order('nombre'),
-    sb.from('detalle').select('*').order('semana'),
-    sb.from('v_notas').select('*'),
+    sb.from('jugadores').select('id, nombre, alias, consultora, rol_consultora').eq('activo', true).eq('seccion_id', SECC.id).order('nombre'),
+    sb.from('detalle').select('*, jugadores!inner(seccion_id)').eq('jugadores.seccion_id', SECC.id).order('semana'),
+    sb.from('v_notas').select('*').eq('seccion_id', SECC.id),
     sb.from('observaciones').select('jugador_id, semana, etiquetas'),
     sb.from('etiquetas').select('nombre, tipo, emoji'),
-    sb.from('semanas').select('semana, tema, practica, kahoot_podio'),
+    sb.from('semanas').select('semana, tema, practica'),
     sb.from('config').select('clave, valor')
   ]);
   const e = q.find(x => x.error); if (e) { toast('Error al cargar: ' + e.error.message, true); return; }
   [J, DET] = [q[0].data, q[1].data];
   NOT = Object.fromEntries(q[2].data.map(x => [x.jugador_id, x])); OBS = q[3].data;
-  ETQ = Object.fromEntries(q[4].data.map(x => [x.nombre, x])); SEMS = Object.fromEntries(q[5].data.map(x => [x.semana, x]));
-  CFG = Object.fromEntries(q[6].data.map(x => [x.clave, x.valor])); ACT = parseInt(CFG.SemanaActual, 10) || 1;
-  $('#semAct').textContent = 'Semana actual ' + ACT;
+  ETQ = Object.fromEntries(q[4].data.map(x => [x.nombre, x])); const pod = await podiosSeccion(SECC.id); SEMS = Object.fromEntries(q[5].data.map(x => [x.semana, { ...x, kahoot_podio: pod[x.semana]?.kahoot_podio || 3 }]));
+  CFG = Object.fromEntries(q[6].data.map(x => [x.clave, x.valor])); ACT = SECC.semana_actual || 1;
+  $('#semAct').textContent = SECC.nombre + ' · semana ' + ACT;
   calcular(); pintarLista();
   const prim = ordenados()[0]; if (prim) elegir(prim.id);
 }

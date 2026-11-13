@@ -7,6 +7,29 @@ async function sesionORedirigir() { const { data } = await sb.auth.getSession();
 async function esDocente() { const { data, error } = await sb.rpc('es_docente'); return !error && data === true; }
 // Avatar: guarda la ruta 'avatares/archivo.webp?v=…' y arma la URL pública de Supabase Storage
 function avatarSrc(u) { return !u ? '' : /^https?:/.test(u) ? u : `${window.SISOPE_CONFIG.SUPABASE_URL}/storage/v1/object/public/${u}`; }
+// ---------- Secciones (aulas): la elegida se recuerda en este navegador ----------
+let SECC = null, SECCIONES = [];
+async function cargarSeccion() {
+  const { data } = await sb.from('secciones').select('*').order('id');
+  SECCIONES = (data || []).filter(s => s.activa);
+  let id = null; try { id = Number(localStorage.getItem('sisope_seccion')); } catch (e) {}
+  SECC = SECCIONES.find(s => s.id === id) || SECCIONES[0] || null;
+  try { if (SECC) localStorage.setItem('sisope_seccion', SECC.id); } catch (e) {}
+  pintarSelector();
+  return SECC;
+}
+function pintarSelector() {
+  const n = document.getElementById('nav'); if (!n || !SECCIONES.length || document.getElementById('secSel')) return;
+  const d = document.createElement('div'); d.className = 'mg secc';
+  d.innerHTML = `<span class="mgt">AULA</span><select id="secSel" title="Sección con la que trabajas">${SECCIONES.map(s => `<option value="${s.id}" ${s.id === SECC?.id ? 'selected' : ''}>${esc(s.nombre)}</option>`).join('')}</select>`;
+  n.prepend(d);
+  d.querySelector('select').onchange = e => { try { localStorage.setItem('sisope_seccion', e.target.value); } catch (x) {} location.reload(); };
+}
+// Podio del Kahoot por semana de la sección elegida
+async function podiosSeccion(secId) {
+  const { data } = await sb.from('sesiones').select('semana, kahoot_podio, fecha').eq('seccion_id', secId);
+  return Object.fromEntries((data || []).map(x => [x.semana, x]));
+}
 async function salir() { await sb.auth.signOut(); location.replace('index.html'); }
 
 // Menú docente agrupado (se pinta en <nav id="nav">)
@@ -21,5 +44,6 @@ function pintarNav() {
   n.className = 'tabs menu';
   n.innerHTML = MENU.map(([g, items]) => `<div class="mg"><span class="mgt">${g}</span>${items.map(([href, txt, color]) =>
     href ? `<a href="${href}" class="${href === actual ? 'on c-' + color : ''}">${txt}</a>` : `<a class="off" title="Próximamente">${txt}</a>`).join('')}</div>`).join('');
+  if (typeof pintarSelector === 'function') pintarSelector();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pintarNav); else pintarNav();

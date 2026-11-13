@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Docente</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611112355">
+<link rel="stylesheet" href="assets/app.css?v=202611122303">
 </head>
 <body>
 <header class="top">
@@ -50,20 +50,19 @@
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611112355"></script>
-<script src="assets/comun.js?v=202611112355"></script>
+<script src="assets/config.js?v=202611122303"></script>
+<script src="assets/comun.js?v=202611122303"></script>
 <script>
-let SEMANAS = [], FILAS = [];
+let SEMANAS = [], FILAS = [], SESI = {};
 const ORDEN = { Presente: 'Tarde', Tarde: 'Ausente', Ausente: 'Presente' };
 
 async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
   if (!(await esDocente())) { location.replace('alumno.html'); return; }
   $('#quien').textContent = ses.user.email;
-  const [{ data: sem, error: e1 }, { data: cfg, error: e2 }] = await Promise.all([
-    sb.from('semanas').select('*').order('semana'),
-    sb.from('config').select('valor').eq('clave', 'SemanaActual').maybeSingle()
-  ]);
+  await cargarSeccion(); if (!SECC) { toast('Crea una sección en Ajustes', true); return; }
+  const [{ data: sem, error: e1 }, ses2] = await Promise.all([sb.from('semanas').select('*').order('semana'), podiosSeccion(SECC.id)]);
+  SESI = ses2; const e2 = null, cfg = { valor: SECC.semana_actual };
   if (e1 || e2) { console.error('semanas/config', e1, e2); toast('No se pudo leer semanas/config: ' + (e1 || e2).message, true); }
   SEMANAS = sem || [];
   if (!SEMANAS.length) { toast('La tabla "semanas" llegó vacía. Revisa el diagnóstico en Supabase.', true); }
@@ -76,17 +75,17 @@ async function iniciar() {
 function semanaSel() { return Number($('#semana').value); }
 function completarSesion() {
   const s = SEMANAS.find(x => x.semana === semanaSel()) || {};
-  $('#fecha').value = s.fecha || new Date().toLocaleDateString('en-CA');
+  $('#fecha').value = SESI[s.semana]?.fecha || new Date().toLocaleDateString('en-CA');
   if (s.practica) $('#practica').value = s.practica;
   if (s.unidad) $('#unidad').value = s.unidad;
   $('#tema').value = s.tema || '';
   if (s.tipo_grupal) $('#tipo').value = s.tipo_grupal;
   $('#iniciar').textContent = 'INICIAR / CONTINUAR SEMANA ' + semanaSel();
-  $('#titulo').textContent = 'SISOPE ARENA · DOCENTE · SEMANA ' + semanaSel();
+  $('#titulo').textContent = 'SISOPE ARENA · ' + (SECC?.nombre || '') + ' · SEMANA ' + semanaSel();
 }
 
 async function cargarAsistencia() {
-  const { data, error } = await sb.from('detalle').select('id, asistencia, hora_llegada, jugadores(nombre, alias, consultora)').eq('semana', semanaSel());
+  const { data, error } = await sb.from('detalle').select('id, asistencia, hora_llegada, jugadores!inner(nombre, alias, consultora, seccion_id)').eq('semana', semanaSel()).eq('jugadores.seccion_id', SECC.id);
   if (error) { toast('Error al leer asistencia: ' + error.message, true); return; }
   FILAS = (data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
   pintarAsistencia();
@@ -110,8 +109,8 @@ async function cambiarAsistencia(id) {
 
 async function cargarStats() {
   const [{ data: d }, { data: v }] = await Promise.all([
-    sb.from('detalle').select('semana'),
-    sb.from('v_ranking').select('alias').eq('victima', true)
+    sb.from('detalle').select('semana, jugadores!inner(seccion_id)').eq('jugadores.seccion_id', SECC.id),
+    sb.from('v_ranking').select('alias').eq('victima', true).eq('seccion_id', SECC.id)
   ]);
   $('#stSem').textContent = new Set((d || []).map(x => x.semana)).size + ' / 14';
   $('#stVic').textContent = (v || []).length;
@@ -121,11 +120,11 @@ $('#semana').addEventListener('change', async () => { completarSesion(); await c
 $('#iniciar').addEventListener('click', async () => {
   if (!semanaSel()) { toast('Primero elige una semana válida.', true); return; }
   const b = $('#iniciar'); b.disabled = true;
-  const { data, error } = await sb.rpc('iniciar_semana', { p_semana: semanaSel(), p_fecha: $('#fecha').value || null, p_practica: $('#practica').value, p_unidad: $('#unidad').value, p_tema: $('#tema').value, p_tipo: $('#tipo').value });
+  const { data, error } = await sb.rpc('iniciar_semana', { p_seccion: SECC.id, p_semana: semanaSel(), p_fecha: $('#fecha').value || null, p_practica: $('#practica').value, p_unidad: $('#unidad').value, p_tema: $('#tema').value, p_tipo: $('#tipo').value });
   b.disabled = false;
   if (error) { toast('Error: ' + error.message, true); return; }
   toast(`Semana ${semanaSel()}: ${data} filas nuevas creadas`);
-  const { data: sem } = await sb.from('semanas').select('*').order('semana'); SEMANAS = sem || SEMANAS;
+  const { data: sem } = await sb.from('semanas').select('*').order('semana'); SEMANAS = sem || SEMANAS; SESI = await podiosSeccion(SECC.id); SECC.semana_actual = semanaSel();
   await cargarAsistencia(); await cargarStats();
 });
 iniciar();

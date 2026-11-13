@@ -404,3 +404,10 @@ input.ok,select.ok{border-color:var(--green)!important;background:#eef8ea!import
 /* Foto de perfil */
 .avup{position:relative;cursor:pointer;display:block}.avup span{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);background:#0f1733cc;color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:4px 10px;white-space:nowrap;opacity:0;transition:opacity .15s}
 .avup:hover span,.avup:focus-within span{opacity:1}@media(hover:none){.avup span{opacity:1}}
+/* Secciones */
+nav.menu .mg.secc select{padding:5px 8px;border-radius:10px;border:2px solid var(--navy);font-weight:800;color:var(--navy);background:#e7efff;max-width:220px}
+.alr{grid-template-columns:34px minmax(190px,2fr) minmax(140px,1.2fr) minmax(180px,1.5fr) minmax(120px,1fr) minmax(140px,1.2fr) minmax(120px,1fr) 104px 44px;min-width:1180px}
+.sr{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(220px,2fr) 110px 110px 104px 44px;gap:6px;padding:6px 10px;border-bottom:1px solid #edf0f6;align-items:center;min-width:820px}
+.sr.alc{background:var(--navy);color:#fff;font-size:12px;font-weight:800}.sr.inact{opacity:.5}
+.sr input,.sr select{padding:6px 8px;border-radius:10px;border:2px solid var(--line);font-size:13px;width:100%;min-width:0}
+nav.menu{flex-wrap:wrap;row-gap:8px}
