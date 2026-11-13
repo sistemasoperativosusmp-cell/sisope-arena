@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Juego del Miedo</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611122326">
+<link rel="stylesheet" href="assets/app.css?v=202611122332">
 </head>
 <body>
 <header class="top">
@@ -43,6 +43,7 @@
       <div><span class="tag rojo">Sin hablar</span> <span class="tag">Voz 2</span><p><b>Voz</b> = aciertos + participaciones voluntarias + participación en el trabajo grupal (Lideró 3 · Apoyó 2 · Habló 1 · Intentando 0.5). En rojo: aún no habla hoy.</p></div>
       <div><span class="tag xp">✓2 · ✗1</span><p>Cuántas veces acertó y cuántas no contestó hoy.</p></div>
       <div><span class="fila aus" style="padding:2px 8px;border:0;display:inline-block;background:#eee;border-radius:6px;font-weight:800;font-size:12px">AUSENTE</span><p>En gris: no participa ni sale en el sorteo. Si llega, usa <b>Registrar llegada tarde</b>.</p></div>
+      <div><span class="ab med mini2" style="display:inline-flex;align-items:center;justify-content:center">🏅</span><p><b>Medallas:</b> otórgale una (⭐ Estrella, 🤝 Mentor, 🦁 Valiente…). 🔥 On fire, 🏔️ En la cima y 🎯 Francotirador se ganan solas. El alumno las ve en su Arena.</p></div>
       <div><span class="tag" style="background:var(--ink);color:#fff">Deshacer</span><p>Revierte el último toque (o la última acción en grupo) que hiciste en esta pantalla.</p></div>
     </div>
   </section>
@@ -81,6 +82,16 @@
   <button class="sbtn" data-cerrar>Listo</button>
 </div></div>
 
+<!-- Medallas -->
+<div class="modal hide" id="mMed"><div class="box plain">
+  <h2 class="pix" style="color:var(--navy)">DAR MEDALLA</h2>
+  <div class="nom" style="font-size:22px" id="mdNom"></div>
+  <div class="medgrid" id="mdLista"></div>
+  <input id="mdNota" placeholder="Motivo (opcional; obligatorio para Medalla especial)" style="width:100%;padding:10px;border-radius:10px;border:2px solid var(--line)">
+  <div class="help" style="margin:0">🔥 On fire, 🏔️ En la cima y 🎯 Francotirador se otorgan solas cada semana.</div>
+  <button class="sbtn" data-cerrar>Cerrar</button>
+</div></div>
+
 <!-- Llegada tarde -->
 <div class="modal hide" id="mTarde"><div class="box plain">
   <h2 class="pix" style="color:var(--navy)">REGISTRAR LLEGADA TARDE</h2>
@@ -91,8 +102,8 @@
 
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611122326"></script>
-<script src="assets/comun.js?v=202611122326"></script>
+<script src="assets/config.js?v=202611122332"></script>
+<script src="assets/comun.js?v=202611122332"></script>
 <script>
 let SEM = 1, FILAS = [], ETQ = [], OBS = {}, RADAR = {}, PA = 0.5, PF = 0.5, soloMudos = false, PILA = [], ELEGIDOS = new Set(), SEL = new Set(), VIC = null, ETQ_ALUMNO = null;
 const num = n => Number(n || 0);
@@ -156,6 +167,7 @@ function filaHTML(f) {
       <button ${dis} class="mas" title="Acertó: +${fmt(PA)}" onclick="sumar(['${f.jugador_id}'],'jm_aciertos',1)">+${fmt(PA)}</button>
     </div>
     <div class="cnt voz"><button ${dis || (num(f.part_vol) ? '' : 'disabled')} title="Quitar participación" onclick="sumar(['${f.jugador_id}'],'part_vol',-1)">−</button><button ${dis} title="Participación voluntaria" onclick="sumar(['${f.jugador_id}'],'part_vol',1)">Voz ${num(f.part_vol)}</button></div>
+    <button class="ab med" title="Dar medalla" onclick="abrirMed('${f.jugador_id}')">🏅</button>
     <button class="ab et" title="Etiquetas" onclick="abrirEtq('${f.jugador_id}')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1b2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></button>
   </div>`;
 }
@@ -241,6 +253,22 @@ function pintarVictima() {
     + (num(rd.semanas_silencio) ? `<span class="tag" style="font-size:13px;padding:4px 12px;background:#fde8e8;color:#a02424">${num(rd.semanas_silencio)} semana(s) en silencio</span>` : '')
     + `<span class="tag xp" style="font-size:13px;padding:4px 12px">Juego del Miedo hoy: ${xpJM(f) > 0 ? '+' : xpJM(f) < 0 ? '−' : ''}${fmt1(Math.abs(xpJM(f)))} · Voz ${num(f.part_vol)}</span>`;
   $('#vEtq').innerHTML = etqHTML(VIC);
+}
+
+// ---------- Medallas ----------
+let MED_ALUMNO = null;
+function abrirMed(jid) {
+  const f = FILAS.find(x => x.jugador_id === jid); MED_ALUMNO = jid; $('#mdNota').value = '';
+  $('#mdNom').textContent = `${f.jugadores?.nombre} · ${f.jugadores?.alias}`;
+  $('#mdLista').innerHTML = Object.entries(MEDALLAS).filter(([, m]) => m[3] !== 'auto').map(([k, m]) => `<button class="medb" onclick="darMed('${k}')" title="${esc(m[2])}"><span>${m[0]}</span><b>${esc(m[1])}</b><small>${esc(m[2])}</small></button>`).join('');
+  $('#mMed').classList.remove('hide');
+}
+async function darMed(tipo) {
+  const nota = $('#mdNota').value.trim() || null, f = FILAS.find(x => x.jugador_id === MED_ALUMNO);
+  if (tipo === 'especial' && !nota) { toast('Escribe el motivo de la medalla especial', true); $('#mdNota').focus(); return; }
+  const { error } = await sb.from('medallas').insert({ jugador_id: MED_ALUMNO, semana: SEM, tipo, nota });
+  if (error) { toast('No se otorgó: ' + error.message, true); return; }
+  $('#mMed').classList.add('hide'); toast(`${medalla(tipo)[0]} ${medalla(tipo)[1]} para ${f.jugadores?.alias}`);
 }
 
 // ---------- Llegada tarde ----------

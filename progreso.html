@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611122326">
+<link rel="stylesheet" href="assets/app.css?v=202611122332">
 </head>
 <body>
 <header class="top">
@@ -43,8 +43,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611122326"></script>
-<script src="assets/comun.js?v=202611122326"></script>
+<script src="assets/config.js?v=202611122332"></script>
+<script src="assets/comun.js?v=202611122332"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -216,6 +216,7 @@ async function elegir(id) {
       <div class="pbox"><h4>Competencias del sílabo y objetivos formativos <small>(meta: 70% = Logrado)</small></h4><div class="comps">${COMP.map(([k, t, d]) => { const v = x.comp[k], [lv, cl] = nivelLogro(v); return `<div class="comp" data-tip="${esc(d)}"><span class="ck ${k.startsWith('SO') ? 'so' : 'tr'}">${k}</span><span class="ct">${esc(t)}</span><div class="cbar"><i class="${cl}" style="width:${v === null ? 0 : Math.round(v * 100)}%"></i><em style="left:70%"></em></div><b class="${cl}">${v === null ? '—' : Math.round(v * 100) + '%'}</b><small class="${cl}">${lv}</small></div>`; }).join('')}</div></div>
     </div>
     <div class="pfila">
+      <div class="pbox"><h4>Medallas <small>(automáticas y otorgadas por ti)</small></h4><div id="medPanel"><div class="vac2">Cargando…</div></div></div>
       <div class="pbox"><h4>Etiquetas registradas</h4>${etq.length ? etq.map(o => `<div class="etqs-s"><b>S${o.semana}</b>${o.etiquetas.map(e => `<span class="tag ${ETQ[e]?.tipo === 'Positivo' ? 'okt' : 'et'}">${esc(ETQ[e]?.emoji || '')} ${esc(e)}</span>`).join('')}</div>`).join('') : '<div class="vac2">Sin etiquetas.</div>'}</div>
       <div class="pbox fb"><h4>Feedback para el alumno</h4>
         <textarea id="fbTxt" rows="3" placeholder="Ej.: Participaste más en el debate, sigue así. Revisa el laboratorio de DNS y pregúntame tus dudas."></textarea>
@@ -223,7 +224,7 @@ async function elegir(id) {
         <div id="fbLista"><div class="vac2">Cargando…</div></div>
       </div>
     </div>`;
-  activarTips(); cargarFb();
+  activarTips(); cargarFb(); cargarMed();
 }
 const kpi = (t, v, s) => `<div class="kpi"><small>${t}</small><b>${v}</b><span>${esc(s)}</span></div>`;
 
@@ -276,6 +277,16 @@ function activarTips() {
     el.addEventListener('mouseleave', () => tip.classList.add('hide'));
   });
 }
+
+// ---------- Medallas ----------
+async function cargarMed() {
+  const id = SEL, al = RES[id].j.alias, { data, error } = await sb.from('v_medallas').select('*').eq('alias', al).order('semana', { ascending: false });
+  if (id !== SEL) return; if (error) { $('#medPanel').innerHTML = `<div class="vac2">Falta el SQL de medallas (${esc(error.message)})</div>`; return; }
+  const cnt = {}; (data || []).forEach(m => cnt[m.tipo] = (cnt[m.tipo] || 0) + 1);
+  $('#medPanel').innerHTML = (data || []).length ? `<div class="medres">${Object.entries(cnt).map(([t, c]) => `<span title="${esc(medalla(t)[2])}">${medalla(t)[0]} ${esc(medalla(t)[1])} <b>×${c}</b></span>`).join('')}</div>
+    <div class="medhist">${data.map(m => `<div><span>${medalla(m.tipo)[0]}</span><b>S${m.semana ?? '—'}</b> ${esc(medalla(m.tipo)[1])}${m.nota ? ` · <i>${esc(m.nota)}</i>` : ''}${m.origen === 'docente' ? ` <button class="x" title="Quitar" onclick="quitarMed(${m.id})">✕</button>` : ' <small>auto</small>'}</div>`).join('')}</div>` : '<div class="vac2">Aún no tiene medallas.</div>';
+}
+async function quitarMed(id) { if (!confirm('¿Quitar esta medalla?')) return; const { error } = await sb.from('medallas').delete().eq('id', id); if (error) { toast('No se quitó: ' + error.message, true); return; } cargarMed(); }
 
 // ---------- Feedback ----------
 async function cargarFb() {

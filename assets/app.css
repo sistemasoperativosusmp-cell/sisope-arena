@@ -447,3 +447,20 @@ nav.menu{flex-wrap:wrap;row-gap:8px}
 .cbar{height:10px;background:#eef1f7;border-radius:999px;position:relative}.cbar i{display:block;height:100%;border-radius:999px}.cbar em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.5}
 i.nl4,.cbar i.nl4{background:#2f7d16}i.nl3{background:#6cb34f}i.nl2{background:#e0a400}i.nl1{background:#d33b3b}
 b.nl4,small.nl4{color:#24600f}b.nl3,small.nl3{color:#3c7a22}b.nl2,small.nl2{color:#8a6500}b.nl1,small.nl1{color:#b02a2a}
+/* Medallas */
+.ab.med{background:#efe7fb;min-width:44px;font-size:18px}
+.medgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+.medb{border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.medb:hover{border-color:var(--purple);background:#f7f2ff}.medb span{font-size:28px}.medb b{font-size:12px}.medb small{font-size:10px;color:var(--mute);font-weight:700}
+.medres{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.medres span{background:#f7f2ff;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700}
+.medhist{display:flex;flex-direction:column;gap:4px;font-size:13px;max-height:180px;overflow:auto}.medhist i{color:var(--mute)}.medhist small{color:var(--mute);font-size:10px;font-weight:800}
+.medhist .x{border:0;background:transparent;cursor:pointer;color:#c23030;font-weight:800}
+.pfila{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))!important}.pfila .fb{grid-column:span 2}@media(max-width:1100px){.pfila .fb{grid-column:auto}}
+.medr i{font-style:normal;margin-left:3px;font-size:15px}
+.banner{display:flex;gap:12px;flex-wrap:wrap;background:linear-gradient(90deg,#3a1c05,#5c1a24);border:3px solid var(--gold);border-radius:16px;padding:12px 16px;animation:brillo 2s ease-in-out infinite alternate}
+.banner div{display:flex;flex-direction:column}.banner span{font-size:30px}.banner b{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--gold);margin-top:4px}.banner small{color:#ffd9b0;font-weight:700;font-size:12px}
+@keyframes brillo{from{box-shadow:0 0 0 #f2b70500}to{box-shadow:0 0 22px #f2b70566}}
+@media(prefers-reduced-motion:reduce){.banner{animation:none}}
+.vitrina{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.vm{position:relative;background:#0f1733;border:2px solid #2a3766;border-radius:12px;font-size:24px;text-align:center;padding:8px 0;filter:grayscale(1);opacity:.35;cursor:help}
+.vm.ok{filter:none;opacity:1;border-color:var(--gold)}.vm b{position:absolute;right:4px;bottom:2px;font-size:10px;color:var(--gold)}
+.medlog{margin-top:10px;font-size:13px;display:flex;flex-direction:column;gap:3px;color:#d6dcf2}

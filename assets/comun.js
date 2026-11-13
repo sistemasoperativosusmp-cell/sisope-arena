@@ -5,6 +5,23 @@ const esc = (t) => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<':
 function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.classList.toggle('err', !!err); t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
 async function sesionORedirigir() { const { data } = await sb.auth.getSession(); if (!data.session) { location.replace('index.html'); return null; } return data.session; }
 async function esDocente() { const { data, error } = await sb.rpc('es_docente'); return !error && data === true; }
+// Medallas: las 'auto' las calcula la base cada semana; las demás las otorga la docente
+const MEDALLAS = {
+  on_fire: ['🔥', '¡Estás on fire!', 'Superó la meta de XP de la semana', 'auto'],
+  cima: ['🏔️', '¡En la cima!', 'Mejor puntaje de la semana en su aula', 'auto'],
+  francotirador: ['🎯', 'Francotirador', '3 o más aciertos sin fallar en el Juego del Miedo', 'auto'],
+  estrella: ['⭐', 'Estrella de la clase', 'Destacó en la sesión de hoy'],
+  mentor: ['🤝', 'Mentor', 'Ayudó a sus compañeros'],
+  idea: ['💡', 'Idea brillante', 'Propuso una solución creativa'],
+  investigador: ['🔬', 'Investigador', 'Fue más allá investigando por su cuenta'],
+  remontada: ['🚀', 'Remontada', 'Mejoró muchísimo respecto a semanas anteriores'],
+  relampago: ['⚡', 'Respuesta relámpago', 'Respondió primero y bien'],
+  valiente: ['🦁', 'Valiente', 'Se animó a participar aunque le cuesta'],
+  companero: ['💖', 'Buen compañero', 'Actitud solidaria con su equipo'],
+  especial: ['🏅', 'Medalla especial', 'Motivo escrito por la docente']
+};
+const medalla = t => MEDALLAS[t] || ['🏅', t, ''];
+
 // Avatar: guarda la ruta 'avatares/archivo.webp?v=…' y arma la URL pública de Supabase Storage
 function avatarSrc(u) { return !u ? '' : /^https?:/.test(u) ? u : `${window.SISOPE_CONFIG.SUPABASE_URL}/storage/v1/object/public/${u}`; }
 // ---------- Secciones (aulas): la elegida se recuerda en este navegador ----------
