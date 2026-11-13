@@ -313,7 +313,7 @@ nav.menu a.on{color:#fff}
 .imp{margin-top:12px;border:2px dashed var(--line);border-radius:12px;padding:10px 14px}.imp summary{font-weight:800;cursor:pointer}
 .imp textarea{width:100%;border:2px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:13px}
 .altabla{border:2px solid var(--line);border-radius:12px;overflow:auto;margin-top:8px}
-.alr{display:grid;grid-template-columns:34px minmax(200px,2fr) minmax(150px,1.2fr) minmax(190px,1.5fr) minmax(130px,1fr) minmax(150px,1.2fr) 104px 80px;gap:6px;padding:6px 10px;border-bottom:1px solid #edf0f6;align-items:center;min-width:1050px}
+.alr{display:grid;grid-template-columns:34px 40px minmax(200px,2fr) minmax(150px,1.2fr) minmax(190px,1.5fr) minmax(130px,1fr) minmax(150px,1.2fr) 104px 80px;gap:6px;padding:6px 10px;border-bottom:1px solid #edf0f6;align-items:center;min-width:1096px}
 .alr.alc{background:var(--navy);color:#fff;font-size:12px;font-weight:800}.alr.inact{opacity:.5}
 .alr input,.alr select{padding:6px 8px;font-size:13px;border-color:transparent;background:transparent}.alr input:hover,.alr select:hover{border-color:var(--line)}
 .alr input:focus{border-color:var(--blue);background:#fff;outline:0}
@@ -406,7 +406,7 @@ input.ok,select.ok{border-color:var(--green)!important;background:#eef8ea!import
 .avup:hover span,.avup:focus-within span{opacity:1}@media(hover:none){.avup span{opacity:1}}
 /* Secciones */
 nav.menu .mg.secc select{padding:5px 8px;border-radius:10px;border:2px solid var(--navy);font-weight:800;color:var(--navy);background:#e7efff;max-width:220px}
-.alr{grid-template-columns:34px minmax(190px,2fr) minmax(140px,1.2fr) minmax(180px,1.5fr) minmax(120px,1fr) minmax(140px,1.2fr) minmax(120px,1fr) 104px 80px;min-width:1210px}
+.alr{grid-template-columns:34px 40px minmax(190px,2fr) minmax(140px,1.2fr) minmax(180px,1.5fr) minmax(120px,1fr) minmax(140px,1.2fr) minmax(120px,1fr) 104px 80px;min-width:1256px}
 .sr{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(220px,2fr) 110px 110px 104px 80px;gap:6px;padding:6px 10px;border-bottom:1px solid #edf0f6;align-items:center;min-width:820px}
 .sr.alc{background:var(--navy);color:#fff;font-size:12px;font-weight:800}.sr.inact{opacity:.5}
 .sr input,.sr select{padding:6px 8px;border-radius:10px;border:2px solid var(--line);font-size:13px;width:100%;min-width:0}
@@ -531,3 +531,4 @@ html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:1
 
 .login .nota{margin:14px 0 0;font-size:13px;text-align:center;color:#8fb3a2}
 .alr .acc{display:flex;gap:4px;justify-content:flex-end}
+.alav{width:36px;height:36px;border-radius:10px;object-fit:cover;border:2px solid var(--line);background:#efe7fb}.alav.ini{display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P',monospace;font-size:9px;color:#5a2fa6}

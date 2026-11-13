@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130929">
+<link rel="stylesheet" href="assets/app.css?v=202611130934">
 </head>
 <body>
 <header class="top">
@@ -50,11 +50,11 @@
     </details>
     <div class="filtros" style="margin-top:12px"><label>Buscar <input id="buscar" placeholder="Nombre, alias o correo"></label><label><input type="checkbox" id="verInact"> Ver retirados</label></div>
     <div class="altabla">
-      <div class="alr alc"><div>#</div><div>Apellidos y nombres</div><div>Alias</div><div>Correo</div><div>Consultora</div><div>Rol</div><div>Sección</div><div>Estado</div><div></div></div>
+      <div class="alr alc"><div>#</div><div></div><div>Apellidos y nombres</div><div>Alias</div><div>Correo</div><div>Consultora</div><div>Rol</div><div>Sección</div><div>Estado</div><div></div></div>
       <div id="alumnos"><div class="empty">Cargando…</div></div>
     </div>
     <p class="help">Los cambios se guardan al salir de cada celda. <b>Retirar</b> lo saca de listas, ranking y sorteos sin borrar su historial. <b>🗑</b> lo elimina con todos sus puntajes.</p>
-    <p class="help">Para que el alumno pueda entrar, su cuenta en <b>Supabase → Authentication → Users</b> debe tener el <b>mismo correo</b>. (La creación masiva de cuentas con envío de contraseña la haremos al final.)</p>
+    <p class="help"><b>🔑</b> da una contraseña temporal al alumno y crea su cuenta de acceso si aún no la tiene; al ingresar, el sistema le pide crear la suya. La foto la sube cada alumno desde <b>Mi perfil</b>.</p>
   </section>
 
   <!-- EQUIPOS -->
@@ -108,8 +108,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130929"></script>
-<script src="assets/comun.js?v=202611130929"></script>
+<script src="assets/config.js?v=202611130934"></script>
+<script src="assets/comun.js?v=202611130934"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -131,7 +131,7 @@ async function iniciar() {
 
 // ---------- Alumnos ----------
 async function cargarAl() {
-  const { data, error } = await sb.from('jugadores').select('id, correo, nombre, alias, consultora, rol_consultora, activo, seccion_id').eq('seccion_id', SECC?.id ?? -1).order('nombre');
+  const { data, error } = await sb.from('jugadores').select('id, correo, nombre, alias, consultora, rol_consultora, activo, seccion_id, avatar_url').eq('seccion_id', SECC?.id ?? -1).order('nombre');
   if (error) { toast('Error: ' + error.message, true); return; }
   AL = data || []; pintarAl(); pintarEq();
 }
@@ -141,7 +141,7 @@ function pintarAl() {
   $('#cuenta').textContent = `${AL.filter(a => a.activo).length} activos${AL.some(a => !a.activo) ? ' · ' + AL.filter(a => !a.activo).length + ' retirados' : ''}`;
   $('#consList').innerHTML = [...new Set(AL.map(a => a.consultora).filter(Boolean))].sort().map(c => `<option value="${esc(c)}">`).join('');
   $('#alumnos').innerHTML = vis.length ? vis.map((a, i) => `<div class="alr ${a.activo ? '' : 'inact'}" data-id="${a.id}">
-    <div class="nro">${i + 1}</div>
+    <div class="nro">${i + 1}</div>${a.avatar_url ? `<img class="alav" src="${esc(avatarSrc(a.avatar_url))}" alt="" loading="lazy" title="${esc(a.alias)}">` : `<div class="alav ini" title="Sin foto">${esc(a.alias.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase())}</div>`}
     <input data-c="nombre" value="${esc(a.nombre)}"><div class="conal"><input data-c="alias" value="${esc(a.alias)}"><button class="sbtn mini" title="Otro alias" onclick="nuevoAlias('${a.id}')">🎲</button></div>
     <input data-c="correo" value="${esc(a.correo)}"><select data-c="consultora">${eqOpts(a.consultora)}</select>
     <select data-c="rol_consultora">${rolOpts(a.rol_consultora)}</select>
