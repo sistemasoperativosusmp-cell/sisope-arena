@@ -47,7 +47,7 @@ $('#fr').addEventListener('submit', async (e) => {
   const destinoReset = location.href.replace(/[^/]*([?#].*)?$/, '') + 'reset.html';
   const { error } = await sb.auth.resetPasswordForEmail($('#remail').value.trim().toLowerCase(), { redirectTo: destinoReset });
   $('#rgo').disabled = false;
-  if (error) { $('#rmsg').classList.remove('ok'); $('#rmsg').textContent = /rate|seconds/i.test(error.message) ? 'Espera unos minutos antes de pedir otro enlace.' : 'No se pudo enviar: ' + error.message; return; }
+  if (error) { $('#rmsg').classList.remove('ok'); $('#rmsg').textContent = /rate|seconds/i.test(error.message) ? 'Espera unos minutos antes de pedir otro enlace.' : /504|timeout|sending/i.test(error.message + error.status) ? 'El servicio de correo no responde en este momento. Pide a tu docente que restablezca tu contraseña.' : 'No se pudo enviar: ' + error.message; console.warn('reset', error); return; }
   $('#rmsg').classList.add('ok'); $('#rmsg').textContent = 'Si el correo está registrado, te llegará un enlace en unos minutos. Revisa también la carpeta de spam.';
 });
 </script>
