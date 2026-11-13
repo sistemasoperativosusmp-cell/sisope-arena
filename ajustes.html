@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130006">
+<link rel="stylesheet" href="assets/app.css?v=202611130847">
 </head>
 <body>
 <header class="top">
@@ -20,6 +20,7 @@
     <button data-s="sEquipos">🛡 Equipos</button>
     <button data-s="sConfig">⚙ Puntajes y reglas</button>
     <button data-s="sEtq">🏷 Etiquetas</button>
+    <button data-s="sSeg">🔒 Seguridad</button>
     <button data-s="sSem" class="peligro">🧹 Nuevo semestre</button>
   </div>
 
@@ -80,6 +81,19 @@
     <div id="etiquetas" class="etqs" style="justify-content:flex-start;margin-top:12px"></div>
   </section>
 
+  <!-- SEGURIDAD -->
+  <section class="card aj hide" id="sSeg">
+    <div class="ajhead"><h2 class="pix">SEGURIDAD</h2><button class="sbtn" onclick="cargarIntentos()">↻ Actualizar</button></div>
+    <div class="capas">
+      <div><b>1 · Base de datos (RLS)</b><span>La protección real. Cada alumno solo puede leer sus propios puntajes, notas, feedback visible y el ranking de su aula por alias. No puede ver nombres reales, etiquetas ni notas ajenas, ni modificar nada aunque cambie la dirección o use herramientas del navegador.</span></div>
+      <div><b>2 · Páginas docentes ocultas</b><span>Si un alumno escribe la dirección de una página docente, la página no se muestra: se le devuelve a su Arena y el intento queda registrado aquí abajo.</span></div>
+      <div><b>3 · Funciones protegidas</b><span>Iniciar semana, sumar puntos, borrar el semestre o dar medallas verifican en el servidor que seas docente.</span></div>
+      <div><b>4 · Fuera de buscadores</b><span>El sitio indica a Google y otros buscadores que no lo indexen.</span></div>
+    </div>
+    <h3 class="sub3">Intentos de acceso a páginas docentes</h3>
+    <div id="intentos"><div class="empty">Cargando…</div></div>
+  </section>
+
   <!-- NUEVO SEMESTRE -->
   <section class="card aj hide" id="sSem">
     <h2 class="pix" style="color:#c23030">NUEVO SEMESTRE</h2>
@@ -94,8 +108,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130006"></script>
-<script src="assets/comun.js?v=202611130006"></script>
+<script src="assets/config.js?v=202611130847"></script>
+<script src="assets/comun.js?v=202611130847"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -112,7 +126,7 @@ async function iniciar() {
   await cargarSeccion();
   $('#secNom').textContent = SECC ? SECC.nombre.toUpperCase() : 'SIN SECCIÓN'; document.querySelectorAll('.secNom').forEach(e => e.textContent = $('#secNom').textContent);
   await cargarEq();
-  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc()]);
+  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc()]); cargarIntentos();
 }
 
 // ---------- Alumnos ----------
@@ -306,6 +320,15 @@ async function borrarEtq(id, nom) {
   if (!confirm(`¿Quitar la etiqueta "${nom}"? Lo ya registrado se conserva en el historial.`)) return;
   const { error } = await sb.from('etiquetas').delete().eq('id', id); if (error) { toast('No se quitó: ' + error.message, true); return; } cargarEtq();
 }
+
+// ---------- Seguridad ----------
+async function cargarIntentos() {
+  const { data, error } = await sb.from('intentos').select('*').order('creado', { ascending: false }).limit(200);
+  if (error) { $('#intentos').innerHTML = `<div class="empty">Falta ejecutar el SQL de seguridad (${esc(error.message)})</div>`; return; }
+  const al = Object.fromEntries(AL.map(a => [a.correo, a]));
+  $('#intentos').innerHTML = (data || []).length ? `<div class="altabla"><div class="ir alc"><div>Fecha y hora</div><div>Alumno</div><div>Correo</div><div>Página que intentó abrir</div><div></div></div>${data.map(i => `<div class="ir"><div>${new Date(i.creado).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div><div><b>${esc(al[i.correo]?.nombre || '—')}</b> <small>${esc(al[i.correo]?.alias || '')}</small></div><div>${esc(i.correo || '')}</div><div><code>${esc(i.pagina)}</code></div><button class="sbtn mini" title="Borrar" onclick="borrarIntento(${i.id})">🗑</button></div>`).join('')}</div>` : '<div class="empty">Sin intentos registrados. 👍</div>';
+}
+async function borrarIntento(id) { const { error } = await sb.from('intentos').delete().eq('id', id); if (error) { toast('No se borró: ' + error.message, true); return; } cargarIntentos(); }
 
 // ---------- Nuevo semestre ----------
 async function respaldo(tipo) {

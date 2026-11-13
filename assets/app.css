@@ -522,3 +522,9 @@ body.arena{--neo-bg:#050807;--neo-panel:#0b1411;--neo-panel2:#0f1c17;--neo-line:
 html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:100vh}
 .vitrina{grid-template-columns:repeat(auto-fill,minmax(46px,1fr))}
 .mr.ms{border-bottom-color:var(--neo-line)}
+/* Seguridad */
+.capas{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:8px 0 16px}
+.capas div{border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:#f7f8fc}.capas b{display:block;font-size:13px;color:var(--navy)}.capas span{font-size:12px;color:var(--mute);font-weight:700}
+.sub3{font-size:14px;margin:6px 0}
+.ir{display:grid;grid-template-columns:150px minmax(200px,1.5fr) minmax(180px,1.3fr) minmax(140px,1fr) 44px;gap:8px;padding:7px 10px;border-bottom:1px solid #edf0f6;align-items:center;font-size:13px;min-width:760px}
+.ir.alc{background:var(--navy);color:#fff;font-weight:800;font-size:12px}.ir small{color:var(--mute)}.ir code{background:#fde8e8;color:#a02424;padding:2px 6px;border-radius:6px}

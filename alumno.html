@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130006">
+<link rel="stylesheet" href="assets/app.css?v=202611130847">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -64,8 +64,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130006"></script>
-<script src="assets/comun.js?v=202611130006"></script>
+<script src="assets/config.js?v=202611130847"></script>
+<script src="assets/comun.js?v=202611130847"></script>
 <script>
 let MED = [], SEMACT = 1, CONS = [], SK = null, YO = null, R = [], NOTAS = null, DET = [], SEMS = {}, CFG = {}, FILTRO = 'Todas';
 const n = v => Number(v || 0), f1 = v => String(Math.round(v * 100) / 100), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + f1(Math.abs(v));
@@ -82,6 +82,7 @@ async function iniciar() {
   SEMS = Object.fromEntries((s || []).map(x => [x.semana, { ...x, kahoot_podio: pod[x.semana]?.kahoot_podio || 3 }])); CFG = Object.fromEntries((c || []).map(x => [x.clave, x.valor]));
   SEMACT = sec?.semana_actual || 1; $('#vivo').textContent = `EN VIVO · ${sec ? sec.nombre + ' · ' : ''}semana ${SEMACT}`;
   window.addEventListener('hashchange', mostrar); mostrar();
+  if (new URLSearchParams(location.search).get('bloqueado')) { history.replaceState(null, '', 'alumno.html' + location.hash); toast('Esa sección es solo para la docente. El intento quedó registrado.', true); }
   await refrescar();
   sb.channel('pulso').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pulso' }, refrescar).subscribe();
   setInterval(refrescar, Math.max(20, Number(CFG.RefrescoSegundos || 60)) * 1000);

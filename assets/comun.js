@@ -1,5 +1,22 @@
 // Funciones compartidas por todas las páginas
 const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, window.SISOPE_CONFIG.SUPABASE_KEY);
+// ---------- Guardia de páginas docentes ----------
+// La seguridad real está en la base de datos (RLS): un alumno no puede leer ni modificar datos ajenos aunque abra estas páginas.
+// Esta guardia además oculta la página hasta confirmar el rol y registra el intento si un alumno entra cambiando la dirección.
+const PAGINAS_DOCENTE = ['docente.html', 'juego.html', 'grupal.html', 'lab.html', 'foro.html', 'quiz.html', 'kahoot.html', 'examenes.html', 'progreso.html', 'ajustes.html'];
+(function guardia() {
+  const pag = location.pathname.split('/').pop() || 'index.html';
+  if (!PAGINAS_DOCENTE.includes(pag)) return;
+  document.documentElement.style.visibility = 'hidden';
+  (async () => {
+    const { data } = await sb.auth.getSession();
+    if (!data.session) { location.replace('index.html'); return; }
+    const { data: ok, error } = await sb.rpc('es_docente');
+    if (error || ok !== true) { try { await sb.rpc('registrar_intento', { p_pagina: pag }); } catch (e) {} location.replace('alumno.html?bloqueado=1'); return; }
+    document.documentElement.style.visibility = '';
+  })();
+})();
+
 const $ = (s) => document.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.classList.toggle('err', !!err); t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
