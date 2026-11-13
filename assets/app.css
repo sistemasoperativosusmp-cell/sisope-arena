@@ -498,7 +498,7 @@ body.arena{--neo-bg:#050807;--neo-panel:#0b1411;--neo-panel2:#0f1c17;--neo-line:
 .pr{background:var(--neo-green)}.ta{background:var(--neo-gold)}.au{background:#ff3b5c}.astrip span.pr{color:#021a07}
 .vm{border-color:var(--neo-line)}.vm.ok{border-color:var(--neo-gold);box-shadow:0 0 10px #ffd23f44}.vm b{color:var(--neo-gold)}.medlog{color:var(--neo-txt)}
 .banner{background:linear-gradient(90deg,#1d1602,#05211a);border-color:var(--neo-gold)}.banner b{color:var(--neo-gold)}.banner small{color:#d9ffe6}
-.tip{background:#000;border:1px solid var(--neo-green);color:var(--neo-txt)}
+.arena .tip{background:#000;border:1px solid var(--neo-green);color:var(--neo-txt)}
 .login{background:#050807 radial-gradient(circle at 50% 0%,#0d2a1b,transparent 60%)}.login .box{background:#0b1411;border-color:#39ff14;box-shadow:0 0 30px #39ff1433}
 .login h1{color:#39ff14;text-shadow:0 0 10px #39ff1488}.login p{color:#8fb3a2}.login label{color:#cfeedd}.login input{background:#050807;border-color:#1d3a2c;color:#e8fff0}
 .login input:focus{border-color:#00e5ff;outline:0;box-shadow:0 0 0 3px #00e5ff33}.login .btn{background:#ffd23f;color:#050807}.login .olvide{color:#00e5ff}
@@ -603,3 +603,4 @@ html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:1
 .rec .rx{border:0;background:transparent;color:var(--neo-mute);cursor:pointer;font-size:14px;font-weight:800;padding:2px 6px}.rec .rx:hover{color:var(--neo-txt)}
 .kcamp{position:relative}.kcamp .kx{position:absolute;top:8px;right:10px;border:0;background:transparent;color:var(--neo-gold);font-size:16px;font-weight:800;cursor:pointer;padding:2px 6px;opacity:.8}.kcamp .kx:hover{opacity:1}
 .ausk{justify-self:start;font-size:13px;font-weight:800;color:var(--mute);background:#f3f4f8;border:2px dashed #d5d9e4;border-radius:10px;padding:6px 12px;display:inline-block}
+.tip{white-space:pre-line}.imini{cursor:help}

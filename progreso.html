@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131215">
+<link rel="stylesheet" href="assets/app.css?v=202611131219">
 </head>
 <body>
 <header class="top">
@@ -46,9 +46,9 @@
 <div class="modal hide" id="mIns" onclick="if (event.target === this) cerrarIns()"><div class="box plain det"><div class="dethead"><h2 class="pix" style="color:var(--navy)">INSIGNIAS DEL AULA</h2><button class="sbtn" onclick="cerrarIns()">✕ Cerrar</button></div><div id="mInsCuerpo" style="width:100%"></div></div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131215"></script>
-<script src="assets/insignias.js?v=202611131215"></script>
-<script src="assets/comun.js?v=202611131215"></script>
+<script src="assets/config.js?v=202611131219"></script>
+<script src="assets/insignias.js?v=202611131219"></script>
+<script src="assets/comun.js?v=202611131219"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -196,7 +196,7 @@ function necesitaFb(x) {
   return { mot, ult, dias };
 }
 // ---------- Insignias (misma regla que el portal del alumno) ----------
-const insMini = ([img, t, r, como, ok]) => `<div class="imini ${ok ? 'ok ' + r : ''}" title="${esc(t)} · ${RAREZA[r]}${ok ? ' ✓ ganada' : ''}\n${esc(como)}"><img src="assets/insignias/${img}${ok ? '' : '-bloq'}.webp" alt="" loading="lazy"><small>${esc(t)}</small></div>`;
+const insMini = ([img, t, r, como, ok]) => `<div class="imini ${ok ? 'ok ' + r : ''}" data-tip="${esc(`${ok ? '✅' : '🔒'} ${t} · ${RAREZA[r]}\nCómo se obtiene: ${como}${ok ? '\n¡Ya la ganó!' : '\nAún no la gana.'}`)}"><img src="assets/insignias/${img}${ok ? '' : '-bloq'}.webp" alt="" loading="lazy"><small>${esc(t)}</small></div>`;
 function verInsignias() {
   const todos = Object.values(RES), def = todos[0]?.ins || calcInsignias({});
   const filas = def.map((d, k) => { const quien = todos.filter(x => x.ins[k][4]); return { d, quien }; });
@@ -205,7 +205,7 @@ function verInsignias() {
   $('#mInsCuerpo').innerHTML = `<div class="kpis mini"><div class="kpi"><b>${ganadas}</b><span>Insignias ganadas en el aula</span></div><div class="kpi"><b>${todos.filter(x => x.ins.some(i => i[4])).length}<small> / ${todos.length}</small></b><span>Alumnos con al menos una</span></div><div class="kpi"><b>${filas.filter(f => !f.quien.length).length}</b><span>Insignias que nadie tiene aún</span></div></div>
     ${top.length ? `<p><b>Coleccionistas:</b> ${top.map(t => `${esc(t.x.j.alias)} (${t.c})`).join(' · ')}</p>` : ''}
     <div class="aulains">${filas.map(({ d, quien }) => `<div class="aitem ${quien.length ? '' : 'nadie'}">${insMini([d[0], d[1], d[2], d[3], quien.length > 0])}<div><b>${quien.length}</b> <small>de ${todos.length}</small><div class="aq">${quien.length ? quien.map(x => `<span onclick="cerrarIns(); elegir('${x.j.id}')" title="${esc(x.j.nombre)}">${esc(x.j.alias)}</span>`).join('') : '<i>Nadie todavía</i>'}</div></div></div>`).join('')}</div>`;
-  $('#mIns').classList.remove('hide');
+  $('#mIns').classList.remove('hide'); activarTips();
 }
 function cerrarIns() { $('#mIns').classList.add('hide'); }
 function irFeedback() { const t = $('#fbTxt'); if (!t) return; t.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => t.focus(), 400); }
@@ -329,7 +329,7 @@ function barras(x) {
 }
 function activarTips() {
   const tip = $('#tip');
-  document.querySelectorAll('#panel [data-tip]').forEach(el => {
+  document.querySelectorAll('#panel [data-tip], #mInsCuerpo [data-tip]').forEach(el => {
     el.addEventListener('mousemove', ev => { tip.textContent = el.dataset.tip; tip.classList.remove('hide'); tip.style.left = (ev.clientX + 14) + 'px'; tip.style.top = (ev.clientY + 14) + 'px'; });
     el.addEventListener('mouseleave', () => tip.classList.add('hide'));
   });
