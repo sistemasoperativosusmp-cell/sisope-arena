@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131206">
+<link rel="stylesheet" href="assets/app.css?v=202611131212">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -71,9 +71,9 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131206"></script>
-<script src="assets/insignias.js?v=202611131206"></script>
-<script src="assets/comun.js?v=202611131206"></script>
+<script src="assets/config.js?v=202611131212"></script>
+<script src="assets/insignias.js?v=202611131212"></script>
+<script src="assets/comun.js?v=202611131212"></script>
 <script>
 let EQ = [], ENL = [], INSR = {};
 // Insignias visibles en el ranking: solo las que NO dependen de notas (las de nota se ven únicamente en el perfil propio)
@@ -151,7 +151,9 @@ function pintarKahoot() {
   const ks = MED.filter(m => m.tipo === 'kahoot'); if (!ks.length) { $('#kahootCamp').innerHTML = ''; return; }
   const sem = ks.some(m => m.semana === SEMACT) ? SEMACT : Math.max(...ks.map(m => m.semana));
   const c = ks.filter(m => m.semana === sem).map(m => R.find(x => x.alias === m.alias) || { alias: m.alias });
-  $('#kahootCamp').innerHTML = `<div class="kcamp">${c.map(x => avatar(x, 'kav')).join('')}<div class="kt"><small class="pix">🏆 CAMPEÓN KAHOOT · SEMANA ${sem}</small><b>${c.map(x => esc(x.alias)).join(' · ')}</b><span>${sem === SEMACT ? '¡Ganó el Kahoot de esta semana!' : 'Último Kahoot jugado'}${c.some(x => x.alias === YO?.alias) ? ' — ¡eres tú! 🎉' : ''}</span></div></div>`;
+  const clave = `sisope_kcamp_${YO?.seccion_id || 0}_${sem}`; let cerrado = false; try { cerrado = localStorage.getItem(clave) === '1'; } catch (e) {}
+  if (cerrado) { $('#kahootCamp').innerHTML = ''; return; }
+  $('#kahootCamp').innerHTML = `<div class="kcamp"><button class="kx" title="Cerrar anuncio" onclick="cerrarKahoot('${clave}')">✕</button>${c.map(x => avatar(x, 'kav')).join('')}<div class="kt"><small class="pix">🏆 CAMPEÓN KAHOOT · SEMANA ${sem}</small><b>${c.map(x => esc(x.alias)).join(' · ')}</b><span>${sem === SEMACT ? '¡Ganó el Kahoot de esta semana!' : 'Último Kahoot jugado'}${c.some(x => x.alias === YO?.alias) ? ' — ¡eres tú! 🎉' : ''}</span></div></div>`;
 }
 // ---------- Recordatorios personales (solo con sus propios datos; tono motivador) ----------
 function recordatorios() {
@@ -181,6 +183,7 @@ function pintarRecordatorios() {
 }
 function ocultarRec(txt) { OCULTOS.add(txt); try { sessionStorage.setItem('sisope_rec', JSON.stringify([...OCULTOS])); } catch (e) {} pintarRecordatorios(); }
 
+function cerrarKahoot(clave) { try { localStorage.setItem(clave, '1'); } catch (e) {} $('#kahootCamp').innerHTML = ''; }
 function pintarMedallas() {
   pintarKahoot();
   if (!YO) return;
