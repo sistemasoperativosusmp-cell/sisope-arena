@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131028">
+<link rel="stylesheet" href="assets/app.css?v=">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -13,6 +13,7 @@
   <div class="who"><a href="reset.html" class="cambiar">🔑 Contraseña</a><span class="live"><i></i><span id="vivo">EN VIVO</span></span><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
 </header>
 <main class="amain">
+  <div id="vbanner"></div>
   <!-- A1 · RANKING -->
   <section class="vista" id="v-ranking">
     <div class="acol">
@@ -69,8 +70,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131028"></script>
-<script src="assets/comun.js?v=202611131028"></script>
+<script src="assets/config.js?v="></script>
+<script src="assets/comun.js?v="></script>
 <script>
 let EQ = [], ENL = [];
 // Registro de actividad para el reporte de la docente (la base ignora repeticiones seguidas y a los docentes)
@@ -129,8 +130,9 @@ function pintarRanking(cons) {
   $('#podio').innerHTML = orden.map(p => p ? `<div class="pod p${p.posicion} ${p.alias === YO?.alias ? 'yo' : ''}">${avatar(p, 'pav')}<div class="ppos pix" style="color:${col[p.posicion] || '#fff'}">${p.posicion}°</div><b>${esc(p.alias)}</b><small>${esc(p.rango)}</small><div class="pxp">${f1(p.xp)} XP</div><div class="phoy">${sg(n(p.xp_hoy))} hoy</div></div>` : '<div class="pod vacio"></div>').join('');
   const maxXp = Math.max(1, ...R.map(x => n(x.xp)));
   $('#ranking').innerHTML = R.length ? R.map(x => `<div class="rank ${x.alias === YO?.alias ? 'yo' : ''}"><span class="pos">${x.posicion}</span>${avatar(x, 'rav')}<span class="al">${esc(x.alias)}<span class="medr">${medHoy(x.alias)}</span></span><span class="rg">${esc(x.rango)}</span><span class="hoy">${sg(n(x.xp_hoy))} hoy</span><span class="mbar"><i style="width:${Math.max(0, n(x.xp)) / maxXp * 100}%"></i></span><span class="xp">${f1(x.xp)} XP</span></div>`).join('') : '<div class="empty">Aún no hay jugadores.</div>';
-  const v = R.filter(x => x.victima);
-  $('#victimas').innerHTML = v.length ? v.map(x => `<div class="vit ${x.alias === YO?.alias ? 'yo' : ''}">${avatar(x, 'vav')}<b>${esc(x.alias)}</b>${x.alias === YO?.alias ? '<small>¡eres tú! participa hoy</small>' : ''}</div>`).join('') : '<div class="gris">Nadie por ahora. 🎉</div>';
+  const v = R.filter(x => x.victima), soyV = v.some(x => x.alias === YO?.alias);
+  $('#vbanner').innerHTML = soyV ? `<div class="vban"><span class="vsk">💀</span><div><b class="pix">¡ERES VÍCTIMA DEL JUEGO DEL MIEDO!</b><small>Serás de los primeros en recibir preguntas. Participa HOY para salir de la lista.</small></div><span class="vsk">💀</span></div>` : '';
+  $('#victimas').innerHTML = v.length ? v.map(x => `<div class="vit ${x.alias === YO?.alias ? 'yo' : ''}">${avatar(x, 'vav')}<b title="${esc(x.alias)}">${esc(x.alias)}</b>${x.alias === YO?.alias ? '<button class="calav" data-tip="¡Eres tú! Participa HOY para salir de la lista" onclick="toast(\'💀 ¡Eres tú! Participa HOY para salir de la lista\', true)">💀</button>' : ''}</div>`).join('') : '<div class="gris">Nadie por ahora. 🎉</div>';
   $('#consultoras').innerHTML = cons.map(c => `<div class="rank ${c.consultora === YO?.consultora ? 'yo' : ''}"><span class="pos">${c.posicion}</span><span class="al">${esc(c.consultora)}</span><span class="xp">${f1(c.xp)} XP</span></div>`).join('') || '<div class="gris">Sin consultoras.</div>';
 }
 

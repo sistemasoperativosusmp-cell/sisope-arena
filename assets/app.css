@@ -566,3 +566,10 @@ html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:1
 .getq{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}.gchip{font-size:11px;font-weight:800;border-radius:999px;padding:2px 8px;background:#fdeaea;color:#a12b2b;border:1px solid #f1b9b9}.gchip.pos{background:#eaf7ec;color:#1f6b2a;border-color:#a8dbb1}
 .gadd{font-size:11px;font-weight:800;border:1px dashed #b7c0d6;background:#fff;color:var(--mute);border-radius:999px;padding:2px 8px;cursor:pointer}.gadd:hover{border-color:var(--navy);color:var(--navy)}
 .metq{display:flex;flex-direction:column;gap:8px;width:100%}.metq .lbl{font-size:12px;font-weight:800;color:var(--mute);text-transform:uppercase}.metq .etqs{justify-content:flex-start}
+.vit{min-width:0}.vit b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.calav{flex-shrink:0;border:0;background:transparent;font-size:20px;cursor:pointer;line-height:1;padding:2px;animation:latido 1.4s ease-in-out infinite}.calav:hover{transform:scale(1.25)}
+@keyframes latido{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+.vban{display:flex;align-items:center;gap:14px;justify-content:center;text-align:center;margin-bottom:18px;padding:12px 18px;border-radius:14px;border:2px solid #ff3b5c;background:linear-gradient(90deg,#2a0610,#14060a 50%,#2a0610);box-shadow:0 0 22px #ff3b5c55}
+.vban b{color:#ff5c7a;font-size:13px;text-shadow:0 0 8px #ff3b5c99;display:block;line-height:1.6}.vban small{color:#ffd0d8;font-weight:700;font-size:14px}.vban .vsk{font-size:30px;animation:latido 1.4s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.calav,.vban .vsk{animation:none}}
+.vit.yo{grid-column:1 / -1}
