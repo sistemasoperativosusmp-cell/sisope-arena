@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131133">
+<link rel="stylesheet" href="assets/app.css?v=202611131147">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -70,8 +70,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131133"></script>
-<script src="assets/comun.js?v=202611131133"></script>
+<script src="assets/config.js?v=202611131147"></script>
+<script src="assets/comun.js?v=202611131147"></script>
 <script>
 let EQ = [], ENL = [];
 // Registro de actividad para el reporte de la docente (la base ignora repeticiones seguidas y a los docentes)
@@ -182,18 +182,17 @@ function insignias(yo) {
     ['red-accion', 'Red en Acción', 'legendaria', 'Saca 16 o más en la Práctica 3 (Servicios de red)', n(nt.p3) >= 16],
     ['virtualizacion-total', 'Virtualización Total', 'secreta', 'Saca 18 o más en la Práctica 1 (Virtualización)', n(nt.p1) >= 18],
     ['nucleo-supremo', 'Núcleo Supremo', 'secreta', 'Alcanza el nivel 10', !!yo && yo.nivel >= 10],
-    // Nuevas (arte provisional con emoji hasta tener la imagen)
-    ['arranque-sistema', 'Arranque del Sistema', 'comun', 'Sube tu foto de perfil', !!YO?.avatar_url, '⏻'],
-    ['daemon-puntual', 'Daemon Puntual', 'comun', 'Asiste 4 semanas seguidas sin tardanza', seguidas(d => d.asistencia === 'Presente') >= 4, '⏱️'],
-    ['kernel-panic', 'Kernel Panic Superado', 'rara', 'En una misma clase falla en el Juego del Miedo y luego acierta', D.some(d => n(d.jm_fallos) >= 1 && n(d.jm_aciertos) >= 1), '💥'],
-    ['escritor-logs', 'Escritor de Logs', 'rara', 'Nota completa en el foro 3 veces', D.filter(d => n(d.foro_tecnico) + n(d.foro_analisis) >= 2).length >= 3, '📜'],
-    ['velocista-kahoot', 'Velocista Kahoot', 'rara', 'Gana el 1.er puesto en 2 Kahoots', D.filter(d => n(d.kahoot_pos) === 1).length >= 2, '⚡'],
-    ['investigador-root', 'Investigador Root', 'epica', 'Gana bonificación en 3 laboratorios por investigar algo adicional', D.filter(d => n(d.lab_bonus) > 0).length >= 3, '🔎'],
-    ['cluster-imparable', 'Clúster Imparable', 'epica', 'Tu consultora llega al 1.er puesto del ranking de consultoras', !!YO?.consultora && CONS.some(c => c.consultora === YO.consultora && c.posicion === 1), '🛡️'],
-    ['certificado-azure', 'Certificado Azure', 'legendaria', `Aprueba la certificación de Azure (quiz de la semana ${Number(CFG.SemanaCertAzure || 12)})`, D.some(d => d.semana === Number(CFG.SemanaCertAzure || 12) && n(d.quiz) >= 4), '☁️'],
-    ['arquitecto-cloud', 'Arquitecto Cloud', 'legendaria', 'Saca 16 o más en la Práctica 4 (Plataformas empresariales)', n(nt.p4) >= 16, '👑'],
-    ['uptime', 'Uptime 99.9%', 'legendaria', 'Asistencia completa en todo el ciclo (mínimo 12 semanas)', D.length >= 12 && D.every(d => d.asistencia !== 'Ausente'), '📈'],
-    ['modo-dios', 'Modo Dios', 'secreta', 'Saca 20 en las 4 prácticas', [1, 2, 3, 4].every(i => n(nt['p' + i]) >= 20), '👁️']
+    ['arranque-sistema', 'Arranque del Sistema', 'comun', 'Sube tu foto de perfil', !!YO?.avatar_url],
+    ['daemon-puntual', 'Daemon Puntual', 'comun', 'Asiste 4 semanas seguidas sin tardanza', seguidas(d => d.asistencia === 'Presente') >= 4],
+    ['kernel-panic', 'Kernel Panic Superado', 'rara', 'En una misma clase falla en el Juego del Miedo y luego acierta', D.some(d => n(d.jm_fallos) >= 1 && n(d.jm_aciertos) >= 1)],
+    ['escritor-logs', 'Escritor de Logs', 'rara', 'Nota completa en el foro 3 veces', D.filter(d => n(d.foro_tecnico) + n(d.foro_analisis) >= 2).length >= 3],
+    ['velocista-kahoot', 'Velocista Kahoot', 'rara', 'Gana el 1.er puesto en 2 Kahoots', D.filter(d => n(d.kahoot_pos) === 1).length >= 2],
+    ['investigador-root', 'Investigador Root', 'epica', 'Gana bonificación en 3 laboratorios por investigar algo adicional', D.filter(d => n(d.lab_bonus) > 0).length >= 3],
+    ['cluster-imparable', 'Clúster Imparable', 'epica', 'Tu consultora llega al 1.er puesto del ranking de consultoras', !!YO?.consultora && CONS.some(c => c.consultora === YO.consultora && c.posicion === 1)],
+    ['certificado-azure', 'Certificado Azure', 'legendaria', `Aprueba la certificación de Azure (quiz de la semana ${Number(CFG.SemanaCertAzure || 12)})`, D.some(d => d.semana === Number(CFG.SemanaCertAzure || 12) && n(d.quiz) >= 4)],
+    ['arquitecto-cloud', 'Arquitecto Cloud', 'legendaria', 'Saca 16 o más en la Práctica 4 (Plataformas empresariales)', n(nt.p4) >= 16],
+    ['uptime', 'Uptime 99.9%', 'legendaria', 'Asistencia completa en todo el ciclo (mínimo 12 semanas)', D.length >= 12 && D.every(d => d.asistencia !== 'Ausente')],
+    ['modo-dios', 'Modo Dios', 'secreta', 'Saca 20 en las 4 prácticas', [1, 2, 3, 4].every(i => n(nt['p' + i]) >= 20)]
   ];
 }
 function pintarPerfil(fb) {
