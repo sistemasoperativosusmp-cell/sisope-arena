@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130941">
+<link rel="stylesheet" href="assets/app.css?v=202611130947">
 </head>
 <body>
 <header class="top">
@@ -20,6 +20,7 @@
     <button data-s="sEquipos">🛡 Equipos</button>
     <button data-s="sConfig">⚙ Puntajes y reglas</button>
     <button data-s="sEtq">🏷 Etiquetas</button>
+    <button data-s="sEnl">🔗 Enlaces</button>
     <button data-s="sSeg">🔒 Seguridad</button>
     <button data-s="sSem" class="peligro">🧹 Nuevo semestre</button>
   </div>
@@ -81,6 +82,14 @@
     <div id="etiquetas" class="etqs" style="justify-content:flex-start;margin-top:12px"></div>
   </section>
 
+  <!-- ENLACES -->
+  <section class="card aj hide" id="sEnl">
+    <h2 class="pix">ENLACES PARA LOS ALUMNOS</h2>
+    <p class="help">Aparecen en el portal del alumno, pestaña <b>Enlaces</b>, agrupados por categoría. Elige si el enlace es para <b>todas las aulas</b> o solo para el aula seleccionada. Con 👁 lo ocultas sin borrarlo.</p>
+    <div class="ajform enl"><input id="lTit" placeholder="Título (ej. Laboratorio 5 · Hyper-V)"><input id="lUrl" placeholder="https://…"><input id="lCat" list="lCats" placeholder="Categoría (ej. Laboratorios)"><datalist id="lCats"><option>Laboratorios</option><option>Lecturas</option><option>Videos</option><option>Herramientas</option><option>Foros</option><option>Certificaciones</option><option>Kahoot</option></datalist><select id="lSec"></select><input id="lDesc" placeholder="Descripción breve (opcional)"><button class="btn green" onclick="agregarEnl()">+ Agregar</button></div>
+    <div class="altabla" style="margin-top:12px"><div class="enr alc"><div>Orden</div><div>Título</div><div>Enlace</div><div>Categoría</div><div>Descripción</div><div>Para</div><div></div></div><div id="enlaces"></div></div>
+  </section>
+
   <!-- SEGURIDAD -->
   <section class="card aj hide" id="sSeg">
     <div class="ajhead"><h2 class="pix">SEGURIDAD</h2><button class="sbtn" onclick="cargarIntentos()">↻ Actualizar</button></div>
@@ -108,8 +117,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130941"></script>
-<script src="assets/comun.js?v=202611130941"></script>
+<script src="assets/config.js?v=202611130947"></script>
+<script src="assets/comun.js?v=202611130947"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -126,7 +135,7 @@ async function iniciar() {
   await cargarSeccion();
   $('#secNom').textContent = SECC ? SECC.nombre.toUpperCase() : 'SIN SECCIÓN'; document.querySelectorAll('.secNom').forEach(e => e.textContent = $('#secNom').textContent);
   await cargarEq();
-  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc()]); cargarIntentos();
+  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc(), cargarEnl()]); cargarIntentos();
 }
 
 // ---------- Alumnos ----------
@@ -329,6 +338,46 @@ async function borrarEtq(id, nom) {
   if (!confirm(`¿Quitar la etiqueta "${nom}"? Lo ya registrado se conserva en el historial.`)) return;
   const { error } = await sb.from('etiquetas').delete().eq('id', id); if (error) { toast('No se quitó: ' + error.message, true); return; } cargarEtq();
 }
+
+// ---------- Enlaces ----------
+let ENL = [];
+async function cargarEnl() {
+  $('#lSec').innerHTML = `<option value="">Todas las aulas</option>${SECC ? `<option value="${SECC.id}" selected>Solo ${esc(SECC.nombre)}</option>` : ''}`;
+  const { data, error } = await sb.from('enlaces').select('*').or(`seccion_id.is.null${SECC ? ',seccion_id.eq.' + SECC.id : ''}`).order('categoria').order('orden').order('id');
+  if (error) { $('#enlaces').innerHTML = `<div class="empty">${/relation|schema cache/i.test(error.message) ? 'Falta ejecutar el script 19 en Supabase.' : esc(error.message)}</div>`; return; }
+  ENL = data || []; pintarEnl();
+}
+function pintarEnl() {
+  $('#enlaces').innerHTML = ENL.length ? ENL.map((e, i) => `<div class="enr ${e.visible ? '' : 'inact'}" data-id="${e.id}">
+    <div class="ord"><button class="sbtn mini" title="Subir" onclick="moverEnl(${e.id}, -1)">▲</button><button class="sbtn mini" title="Bajar" onclick="moverEnl(${e.id}, 1)">▼</button></div>
+    <input data-c="titulo" value="${esc(e.titulo)}"><input data-c="url" value="${esc(e.url)}"><input data-c="categoria" list="lCats" value="${esc(e.categoria)}"><input data-c="descripcion" value="${esc(e.descripcion || '')}" placeholder="—">
+    <select data-c="seccion_id"><option value="">Todas</option>${SECC ? `<option value="${SECC.id}" ${e.seccion_id === SECC.id ? 'selected' : ''}>${esc(SECC.nombre)}</option>` : ''}</select>
+    <div class="acc"><a class="sbtn mini" href="${esc(e.url)}" target="_blank" rel="noopener" title="Probar enlace">↗</a><button class="sbtn mini ${e.visible ? '' : 'gold'}" title="${e.visible ? 'Ocultar' : 'Mostrar'}" onclick="editarEnl(${e.id}, 'visible', ${!e.visible})">${e.visible ? '👁' : '🚫'}</button><button class="sbtn mini" title="Borrar" onclick="borrarEnl(${e.id})">🗑</button></div></div>`).join('') : '<div class="empty">Aún no hay enlaces. Agrega el primero arriba.</div>';
+  document.querySelectorAll('#enlaces [data-c]').forEach(el => el.onchange = () => editarEnl(Number(el.closest('.enr').dataset.id), el.dataset.c, el.value, el));
+}
+const urlOk = u => /^https?:\/\/\S+\.\S+/i.test(u);
+async function agregarEnl() {
+  let url = $('#lUrl').value.trim(); if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+  const o = { titulo: $('#lTit').value.trim(), url, categoria: $('#lCat').value.trim() || 'General', descripcion: $('#lDesc').value.trim() || null, seccion_id: $('#lSec').value ? Number($('#lSec').value) : null, orden: ENL.length + 1 };
+  if (!o.titulo || !urlOk(o.url)) { toast('Escribe un título y un enlace válido', true); return; }
+  const { error } = await sb.from('enlaces').insert(o); if (error) { toast('No se guardó: ' + error.message, true); return; }
+  ['#lTit', '#lUrl', '#lDesc'].forEach(x => $(x).value = ''); toast('Enlace agregado'); cargarEnl(); $('#lTit').focus();
+}
+async function editarEnl(id, campo, valor, el) {
+  let v = valor; const e = ENL.find(x => x.id === id);
+  if (campo === 'seccion_id') v = valor ? Number(valor) : null;
+  if (campo === 'url') { v = String(v).trim(); if (v && !/^https?:\/\//i.test(v)) v = 'https://' + v; if (!urlOk(v)) { toast('Enlace no válido', true); el.value = e.url; return; } }
+  if (['titulo', 'categoria'].includes(campo) && !String(v).trim()) { toast('Ese dato es obligatorio', true); el.value = e[campo]; return; }
+  if (campo === 'descripcion') v = String(v).trim() || null;
+  const { error } = await sb.from('enlaces').update({ [campo]: v }).eq('id', id); if (error) { toast('No se guardó: ' + error.message, true); return; }
+  e[campo] = v; if (campo === 'visible' || campo === 'categoria' || campo === 'url') pintarEnl(); toast('Guardado');
+}
+async function moverEnl(id, d) {
+  const e = ENL.find(x => x.id === id), grupo = ENL.filter(x => x.categoria === e.categoria), i = grupo.indexOf(e), o = grupo[i + d]; if (!o) return;
+  grupo.splice(i, 1); grupo.splice(i + d, 0, e);
+  const r = await Promise.all(grupo.map((x, k) => sb.from('enlaces').update({ orden: k + 1 }).eq('id', x.id))); if (r.some(x => x.error)) { toast('No se reordenó', true); return; } cargarEnl();
+}
+async function borrarEnl(id) { if (!confirm('¿Borrar este enlace?')) return; const { error } = await sb.from('enlaces').delete().eq('id', id); if (error) { toast('No se borró: ' + error.message, true); return; } cargarEnl(); }
 
 // ---------- Seguridad ----------
 async function cargarIntentos() {

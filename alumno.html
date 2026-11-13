@@ -4,12 +4,12 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130941">
+<link rel="stylesheet" href="assets/app.css?v=202611130947">
 </head>
 <body class="arena">
 <header class="top atop">
   <div class="pix">SISOPE ARENA</div>
-  <nav class="anav"><a href="#ranking" data-v="ranking">Ranking</a><a href="#perfil" data-v="perfil">Mi perfil</a><a href="#puntajes" data-v="puntajes">Mis puntajes</a></nav>
+  <nav class="anav"><a href="#ranking" data-v="ranking">Ranking</a><a href="#perfil" data-v="perfil">Mi perfil</a><a href="#puntajes" data-v="puntajes">Mis puntajes</a><a href="#enlaces" data-v="enlaces">Enlaces</a></nav>
   <div class="who"><a href="reset.html" class="cambiar">🔑 Contraseña</a><span class="live"><i></i><span id="vivo">EN VIVO</span></span><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
 </header>
 <main class="amain">
@@ -60,13 +60,19 @@
       <div class="panel"><h2 class="pix">EXÁMENES</h2><div id="examenes"></div></div>
     </div>
   </section>
+
+  <!-- A4 · ENLACES -->
+  <section class="vista hide" id="v-enlaces">
+    <div class="acol" style="grid-column:1 / -1"><div id="enlaces"><div class="empty">Cargando…</div></div></div>
+  </section>
 </main>
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130941"></script>
-<script src="assets/comun.js?v=202611130941"></script>
+<script src="assets/config.js?v=202611130947"></script>
+<script src="assets/comun.js?v=202611130947"></script>
 <script>
+let EQ = [], ENL = [];
 let MED = [], SEMACT = 1, CONS = [], SK = null, YO = null, R = [], NOTAS = null, DET = [], SEMS = {}, CFG = {}, FILTRO = 'Todas';
 const n = v => Number(v || 0), f1 = v => String(Math.round(v * 100) / 100), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + f1(Math.abs(v));
 const PRACS = ['Practica 1', 'Practica 2', 'Practica 3', 'Practica 4'];
@@ -100,8 +106,12 @@ async function refrescar() {
     YO ? sb.from('v_notas').select('*').eq('jugador_id', YO.id).maybeSingle() : { data: null },
     YO ? sb.from('detalle').select('*').eq('jugador_id', YO.id).order('semana') : { data: [] },
     YO ? sb.from('v_medallas').select('*').eq('seccion_id', YO.seccion_id) : { data: [] },
-    YO ? sb.from('feedback').select('texto, creado, semana').eq('jugador_id', YO.id).eq('visible_alumno', true).order('creado', { ascending: false }) : { data: [] }
+    YO ? sb.from('feedback').select('texto, creado, semana').eq('jugador_id', YO.id).eq('visible_alumno', true).order('creado', { ascending: false }) : { data: [] },
+    YO ? sb.rpc('mi_equipo') : { data: [] },
+    sb.from('enlaces').select('titulo, url, descripcion, categoria, orden').order('categoria').order('orden').order('id')
   ]);
+  EQ = q[6].error ? [] : q[6].data || []; ENL = q[7].error ? [] : q[7].data || []; pintarEnlaces();
+  const yoEq = EQ.find(x => x.es_yo); if (YO && yoEq) YO.rol_consultora = yoEq.rol_consultora;
   if (q[0].error) { toast('Error al leer el ranking: ' + q[0].error.message, true); return; }
   R = q[0].data || []; NOTAS = q[2].data; DET = q[3].data || [];
   MED = q[4].data || []; CONS = q[1].data || []; pintarRanking(CONS); pintarPerfil(q[5].data || []); pintarMedallas(); pintarPuntajes(); pintarSkills();
@@ -219,8 +229,8 @@ function pintarExtras() {
   const tema = DET.slice().reverse().find(d => d.tema_grupal)?.tema_grupal;
   const guardC = guardarEditor('consEd', 'nuevaCons');
   $('#equipo').innerHTML = mio ? `<div class="eqh"><div><b>${esc(mio)}</b> <button class="abtn mini" title="Cambiar el nombre de tu consultora" onclick="editarCons()">✏️ Renombrar</button><div id="consEd"></div>${tema ? `<small>Tema actual: ${esc(tema)}</small>` : ''}</div><div class="eqp"><span class="pix">${c ? c.posicion + '°' : '—'}</span><small>${c ? f1(c.xp) + ' XP' : ''}</small></div></div>
-    ${miembros.map(m => `<div class="rank ${m.alias === YO.alias ? 'yo' : ''}">${avatar(m, 'rav')}<span class="al" style="flex:1">${esc(m.alias)}<small class="rol">${esc(m.rol_consultora || 'sin rol')}</small></span><span class="xp">${f1(m.xp)} XP</span></div>`).join('')}
-    <div class="gris">Puesto ${c ? c.posicion : '—'} de ${CONS.length} consultoras. Sumen XP en los trabajos grupales.</div>` : '<div class="gris">Aún no tienes equipo asignado.</div>';
+    ${(EQ.length ? EQ : miembros.map(m => ({ alias: m.alias, rol_consultora: m.rol_consultora, es_yo: m.alias === YO.alias }))).map(m => { const r = R.find(x => x.alias === m.alias) || m; return `<div class="rank ${m.es_yo ? 'yo' : ''}">${avatar(r, 'rav')}<span class="al" style="flex:1">${esc(m.alias)}${m.nombre ? `<small class="nreal">${esc(nombreCorto(m.nombre))}</small>` : ''}${m.es_yo ? rolSelect(m.rol_consultora) : `<small class="rol">${esc(m.rol_consultora || 'sin rol')}</small>`}</span><span class="xp">${f1(n(r.xp))} XP</span></div>`; }).join('')}
+    <div class="gris">Puesto ${c ? c.posicion : '—'} de ${CONS.length} consultoras. Sumen XP en los trabajos grupales. Cada integrante elige <b>un rol</b> y no se puede repetir dentro del equipo.</div>` : '<div class="gris">Aún no tienes equipo asignado.</div>';
   guardC();
 }
 // ---------- Nombre de jugador y consultora ----------
@@ -228,6 +238,22 @@ function pintarExtras() {
 function guardarEditor(caja, campo) {
   const html = document.getElementById(caja)?.innerHTML, el = document.getElementById(campo), val = el?.value, foco = document.activeElement === el;
   return () => { if (!html) return; const c = document.getElementById(caja); if (!c) return; c.innerHTML = html; const e = document.getElementById(campo); if (e) { e.value = val; if (foco) e.focus(); } };
+}
+const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
+const titulo = t => String(t).toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()), nombreCorto = nm => { const [ap, no] = String(nm).split(','); return no ? `${titulo(no.trim())} ${titulo(ap.trim())}` : titulo(nm); };
+function rolSelect(actual) {
+  const ocup = Object.fromEntries(EQ.filter(m => !m.es_yo && m.rol_consultora).map(m => [m.rol_consultora, m.alias]));
+  return `<select class="rolsel" title="Elige tu rol en la consultora" onchange="cambiarRol(this)"><option value="">— elige tu rol —</option>${ROLES.map(r => `<option value="${esc(r)}" ${r === actual ? 'selected' : ''} ${ocup[r] ? 'disabled' : ''}>${esc(r)}${ocup[r] ? ' · ocupado por ' + esc(ocup[r]) : ''}</option>`).join('')}</select>`;
+}
+async function cambiarRol(sel) {
+  const { data, error } = await sb.rpc('cambiar_mi_rol', { p_rol: sel.value });
+  if (error) { toast(error.message, true); await refrescar(); return; }
+  YO.rol_consultora = data || null; toast(data ? `Ahora eres ${data}` : 'Quitaste tu rol'); await refrescar();
+}
+function pintarEnlaces() {
+  if (!ENL.length) { $('#enlaces').innerHTML = '<div class="panel"><div class="gris">Tu docente aún no ha publicado enlaces.</div></div>'; return; }
+  const cats = [...new Set(ENL.map(e => e.categoria))], dom = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
+  $('#enlaces').innerHTML = cats.map(c => `<div class="panel"><h2 class="pix">${esc(c.toUpperCase())}</h2><div class="enls">${ENL.filter(e => e.categoria === c).map(e => `<a class="enl" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer"><b>🔗 ${esc(e.titulo)}</b>${e.descripcion ? `<span>${esc(e.descripcion)}</span>` : ''}<small>${esc(dom(e.url))} ↗</small></a>`).join('')}</div></div>`).join('');
 }
 function editarAlias() {
   if ($('#aliasEd').innerHTML) { $('#aliasEd').innerHTML = ''; return; }

@@ -537,3 +537,14 @@ html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:1
 .arena .edl{display:flex;gap:6px;align-items:center;margin-top:8px;width:100%;box-sizing:border-box}.arena .edl input{flex:1;width:0}.arena .edl .abtn.mini{margin:0}
 .arena .edl input{background:#050807;border:2px solid var(--neo-line);color:var(--neo-txt);border-radius:10px;padding:8px 10px;font:inherit;font-size:14px;min-width:0}
 .arena .edl input:focus{border-color:var(--neo-cyan);outline:0}
+.ajform.enl{display:grid;grid-template-columns:2fr 2fr 1.2fr 1.3fr 2fr auto;gap:8px}
+.enr{display:grid;grid-template-columns:64px minmax(180px,2fr) minmax(200px,2fr) minmax(120px,1fr) minmax(160px,1.6fr) minmax(110px,1fr) 112px;gap:6px;padding:6px 10px;border-bottom:1px solid #edf0f6;align-items:center;min-width:1050px}
+.enr.alc{background:var(--navy);color:#fff;font-size:12px;font-weight:800}.enr.inact{opacity:.5}
+.enr input,.enr select{padding:6px 8px;font-size:13px;border:2px solid transparent;border-radius:10px;background:transparent;min-width:0;width:100%;color:var(--ink);font:inherit}.enr input:hover,.enr select:hover{border-color:var(--line)}.enr input:focus{border-color:var(--blue);background:#fff;outline:0}
+.enr .ord{display:flex;gap:2px}.enr .acc{display:flex;gap:4px;justify-content:flex-end}.enr a.sbtn{text-decoration:none;display:inline-flex;align-items:center}
+.arena .nreal{display:block;color:var(--neo-txt);font-size:12px;font-weight:700;opacity:.85}
+.arena .rolsel{display:block;margin-top:4px;background:#050807;border:2px solid var(--neo-cyan);color:var(--neo-cyan);border-radius:8px;padding:3px 6px;font:inherit;font-size:12px;font-weight:800;max-width:100%}
+.arena .rolsel option:disabled{color:#5d7a6c}
+.arena #v-enlaces{display:block}.arena #v-enlaces.hide{display:none}.arena #enlaces{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;align-items:start}
+.arena .enls{display:flex;flex-direction:column;gap:8px}.arena .enl{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:2px solid var(--neo-line);border-radius:12px;background:#071009;text-decoration:none;color:var(--neo-txt);transition:.15s}
+.arena .enl:hover{border-color:var(--neo-cyan);box-shadow:0 0 12px #00e5ff44;transform:translateY(-1px)}.arena .enl b{color:var(--neo-gold)}.arena .enl span{font-size:13px}.arena .enl small{color:var(--neo-cyan);font-weight:800;font-size:11px}
