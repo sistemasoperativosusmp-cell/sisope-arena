@@ -3,7 +3,7 @@ const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, windo
 // ---------- Guardia de páginas docentes ----------
 // La seguridad real está en la base de datos (RLS): un alumno no puede leer ni modificar datos ajenos aunque abra estas páginas.
 // Esta guardia además oculta la página hasta confirmar el rol y registra el intento si un alumno entra cambiando la dirección.
-const PAGINAS_DOCENTE = ['docente.html', 'juego.html', 'grupal.html', 'lab.html', 'foro.html', 'quiz.html', 'kahoot.html', 'examenes.html', 'progreso.html', 'ajustes.html'];
+const PAGINAS_DOCENTE = ['docente.html', 'juego.html', 'grupal.html', 'lab.html', 'foro.html', 'quiz.html', 'kahoot.html', 'examenes.html', 'progreso.html', 'buzon.html', 'ajustes.html'];
 (function guardia() {
   const pag = location.pathname.split('/').pop() || 'index.html';
   if (!PAGINAS_DOCENTE.includes(pag)) return;
@@ -41,6 +41,7 @@ const MEDALLAS = {
 const medalla = t => MEDALLAS[t] || ['🏅', t, ''];
 
 // Avatar: guarda la ruta 'avatares/archivo.webp?v=…' y arma la URL pública de Supabase Storage
+function nombreAzar(usados = []) { const A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'], B = ['Kernel', 'Root', 'Ghost', 'Kitty', 'Runner', 'Day', 'Panic', 'Ninja', 'Pointer', 'Witch', 'Sam', 'Byte', 'Wolf', 'Falcon', 'Shell', 'Daemon', 'Phoenix', 'Raptor', 'Spark', 'Titan'], u = new Set(usados.map(x => String(x).toLowerCase())); for (let i = 0; i < 60; i++) { const a = A[Math.floor(Math.random() * A.length)], b = B[Math.floor(Math.random() * B.length)]; if (a !== b && !u.has((a + b).toLowerCase())) return a + b; } return 'Jugador' + Math.floor(100 + Math.random() * 900); }
 function avatarSrc(u) { return !u ? '' : /^https?:/.test(u) ? u : `${window.SISOPE_CONFIG.SUPABASE_URL}/storage/v1/object/public/${u}`; }
 // ---------- Secciones (aulas): la elegida se recuerda en este navegador ----------
 let SECC = null, SECCIONES = [];
@@ -71,7 +72,7 @@ async function salir() { await sb.auth.signOut(); location.replace('index.html')
 const MENU = [
   ['EN CLASE', [['docente.html', 'Inicio', 'navy'], ['juego.html', 'Juego del Miedo', 'red'], ['grupal.html', 'Trabajo grupal', 'purple']]],
   ['EN CASA', [['lab.html', 'Laboratorio', 'teal'], ['foro.html', 'Foro', 'blue'], ['quiz.html', 'Quiz', 'gold'], ['kahoot.html', 'Kahoot', 'pink']]],
-  ['NOTAS', [['examenes.html', 'Exámenes y bonus', 'orange'], ['progreso.html', 'Progreso', 'teal'], ['ajustes.html', 'Ajustes', 'navy']]]
+  ['NOTAS', [['examenes.html', 'Exámenes y bonus', 'orange'], ['progreso.html', 'Progreso', 'teal'], ['buzon.html', 'Buzón', 'purple'], ['ajustes.html', 'Ajustes', 'navy']]]
 ];
 function pintarNav() {
   const actual = location.pathname.split('/').pop() || 'docente.html';
@@ -80,5 +81,12 @@ function pintarNav() {
   n.innerHTML = MENU.map(([g, items]) => `<div class="mg"><span class="mgt">${g}</span>${items.map(([href, txt, color]) =>
     href ? `<a href="${href}" class="${href === actual ? 'on c-' + color : ''}">${txt}</a>` : `<a class="off" title="Próximamente">${txt}</a>`).join('')}</div>`).join('');
   if (typeof pintarSelector === 'function') pintarSelector();
+  contarBuzon();
+}
+// Globo con los mensajes sin leer de los alumnos (solo lo ve la docente: la tabla está protegida por RLS)
+async function contarBuzon() {
+  const a = document.querySelector('#nav a[href="buzon.html"]'); if (!a || typeof sb === 'undefined') return;
+  const { count, error } = await sb.from('mensajes').select('id', { count: 'exact', head: true }).eq('leido', false);
+  a.querySelector('.nb')?.remove(); if (!error && count) a.insertAdjacentHTML('beforeend', ` <span class="nb">${count}</span>`);
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pintarNav); else pintarNav();
