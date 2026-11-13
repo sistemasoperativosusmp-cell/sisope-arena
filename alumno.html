@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131154">
+<link rel="stylesheet" href="assets/app.css?v=202611131206">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -14,6 +14,7 @@
 </header>
 <main class="amain">
   <div id="vbanner"></div>
+  <div id="recordatorios"></div>
   <!-- A1 · RANKING -->
   <section class="vista" id="v-ranking">
     <div class="acol">
@@ -70,9 +71,9 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131154"></script>
-<script src="assets/insignias.js?v=202611131154"></script>
-<script src="assets/comun.js?v=202611131154"></script>
+<script src="assets/config.js?v=202611131206"></script>
+<script src="assets/insignias.js?v=202611131206"></script>
+<script src="assets/comun.js?v=202611131206"></script>
 <script>
 let EQ = [], ENL = [], INSR = {};
 // Insignias visibles en el ranking: solo las que NO dependen de notas (las de nota se ven únicamente en el perfil propio)
@@ -128,7 +129,7 @@ async function refrescar() {
   const yoEq = EQ.find(x => x.es_yo); if (YO && yoEq) YO.rol_consultora = yoEq.rol_consultora;
   if (q[0].error) { toast('Error al leer el ranking: ' + q[0].error.message, true); return; }
   R = q[0].data || []; NOTAS = q[2].data; DET = q[3].data || [];
-  MED = q[4].data || []; CONS = q[1].data || []; pintarRanking(CONS); pintarPerfil(q[5].data || []); pintarMedallas(); pintarPuntajes(); pintarSkills();
+  MED = q[4].data || []; CONS = q[1].data || []; pintarRanking(CONS); pintarPerfil(q[5].data || []); pintarMedallas(); pintarPuntajes(); pintarSkills(); pintarRecordatorios();
 }
 
 // ---------- A1 · Ranking ----------
@@ -152,6 +153,34 @@ function pintarKahoot() {
   const c = ks.filter(m => m.semana === sem).map(m => R.find(x => x.alias === m.alias) || { alias: m.alias });
   $('#kahootCamp').innerHTML = `<div class="kcamp">${c.map(x => avatar(x, 'kav')).join('')}<div class="kt"><small class="pix">🏆 CAMPEÓN KAHOOT · SEMANA ${sem}</small><b>${c.map(x => esc(x.alias)).join(' · ')}</b><span>${sem === SEMACT ? '¡Ganó el Kahoot de esta semana!' : 'Último Kahoot jugado'}${c.some(x => x.alias === YO?.alias) ? ' — ¡eres tú! 🎉' : ''}</span></div></div>`;
 }
+// ---------- Recordatorios personales (solo con sus propios datos; tono motivador) ----------
+function recordatorios() {
+  if (!YO) return [];
+  const D = DET.slice().sort((a, b) => a.semana - b.semana), pas = D.filter(d => d.semana <= SEMACT), out = [];
+  const labNo = pas.filter(d => n(d.lab) < 0);
+  if (labNo.length) out.push(['mal', '🧪', `Llevas ${labNo.length} laboratorio${labNo.length > 1 ? 's' : ''} sin completar (${labNo.map(d => 'S' + d.semana).join(', ')}). Cada laboratorio no cumplido resta 2 puntos: ¡no dejes pasar el siguiente!`]);
+  const aus = pas.filter(d => d.asistencia === 'Ausente').length, tar = pas.filter(d => d.asistencia === 'Tarde').length;
+  if (aus >= 2) out.push(['mal', '🚪', `Estás faltando mucho a clase: ${aus} ausencias. En clase se ganan los puntos del Juego del Miedo y del trabajo grupal.`]);
+  else if (aus === 1 && pas.length >= 3) out.push(['mid', '🚪', 'Tienes 1 ausencia. Procura no faltar: cada clase suma puntos.']);
+  if (tar >= 2) out.push(['mid', '⏰', `Llegaste tarde ${tar} veces. El Juego del Miedo empieza al inicio de la clase: llega a tiempo para sumar.`]);
+  const grp = pas.filter(d => d.asistencia !== 'Ausente' && d.tipo_grupal && (d.participacion_grupal === 'No participó' || (d.participacion_grupal == null && (d.gr_comunicacion != null || d.gr_tecnico != null || d.gr_analisis != null))));
+  const ultG = grp[grp.length - 1];
+  if (ultG && ultG.semana >= SEMACT - 1) out.push(['mid', '🎤', `No participaste en ${ultG.tipo_grupal === 'Exposición' ? 'la exposición' : 'el trabajo grupal (' + ultG.tipo_grupal + ')'} de la semana ${ultG.semana}. En la próxima, anímate: aunque sea una idea, suma.`]);
+  const ult2 = pas.filter(d => d.asistencia !== 'Ausente').slice(-2);
+  if (ult2.length === 2 && ult2.every(d => voz(d) === 0)) out.push(['mid', '🤐', 'En tus últimas 2 clases no hablaste. Responder en el Juego del Miedo o dar una idea en el grupo te saca de la lista de víctimas.']);
+  const nt = NOTAS || {};
+  if (nt.condicion && nt.condicion !== 'APROBADO' && Number(nt.ef_minimo) > 14 && pas.length >= 4) out.push(['mal', '📉', `Para aprobar necesitarías ${Number(nt.ef_minimo) > 20 ? 'más de 20' : Number(nt.ef_minimo).toFixed(1)} en el examen final. Aún puedes subir tus prácticas: laboratorios, foro y participación.`]);
+  const yo = R.find(x => x.alias === YO.alias);
+  if (yo?.xp_siguiente && n(yo.xp_siguiente) - n(yo.xp) <= 2 && n(yo.xp_siguiente) > n(yo.xp)) out.push(['ok', '🚀', `¡Te faltan solo ${f1(n(yo.xp_siguiente) - n(yo.xp))} XP para subir a ${yo.siguiente_rango}!`]);
+  return out;
+}
+let OCULTOS = new Set(); try { OCULTOS = new Set(JSON.parse(sessionStorage.getItem('sisope_rec') || '[]')); } catch (e) {}
+function pintarRecordatorios() {
+  const r = recordatorios().filter(x => !OCULTOS.has(x[2]));
+  $('#recordatorios').innerHTML = r.length ? `<div class="recs"><div class="rech pix">📌 RECORDATORIOS PARA TI</div>${r.map(([t, ico, txt]) => `<div class="rec ${t}"><span class="ri">${ico}</span><span class="rt">${esc(txt)}</span><button class="rx" title="Ocultar por ahora" onclick='ocultarRec(${esc(JSON.stringify(txt))})'>✕</button></div>`).join('')}</div>` : '';
+}
+function ocultarRec(txt) { OCULTOS.add(txt); try { sessionStorage.setItem('sisope_rec', JSON.stringify([...OCULTOS])); } catch (e) {} pintarRecordatorios(); }
+
 function pintarMedallas() {
   pintarKahoot();
   if (!YO) return;
