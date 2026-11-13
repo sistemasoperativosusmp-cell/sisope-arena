@@ -573,3 +573,8 @@ html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:1
 .vban b{color:#ff5c7a;font-size:13px;text-shadow:0 0 8px #ff3b5c99;display:block;line-height:1.6}.vban small{color:#ffd0d8;font-weight:700;font-size:14px}.vban .vsk{font-size:30px;animation:latido 1.4s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.calav,.vban .vsk{animation:none}}
 .vit.yo{grid-column:1 / -1}
+.etq.apo{border-color:#9fb6e6}.etq.on.apo{background:#2f6fd6;border-color:#2f6fd6;color:#fff}.gchip.apo{background:#eaf1ff;color:#1f4fa8;border-color:#b5c9f0}.tag.apo{background:#e3ecff;color:#1f4fa8}
+.pf-apo{background:#f1f5ff;border-color:#c3d3f3}
+.etr{display:grid;grid-template-columns:70px 200px 140px minmax(300px,1fr) 44px;gap:8px;padding:8px 10px;border-bottom:1px solid #edf0f6;align-items:center;min-width:820px;border-left:4px solid transparent}
+.etr.alc{background:var(--navy);color:#fff;font-size:12px;font-weight:800}.etr.t-mal{border-left-color:#e57373}.etr.t-pos{border-left-color:#66bb6a}.etr.t-apo{border-left-color:#5c8fe6}
+.etr input,.etr select,.etr textarea{padding:6px 8px;font-size:13px;border:2px solid transparent;border-radius:10px;background:transparent;min-width:0;width:100%;color:var(--ink);font:inherit;resize:vertical}.etr input:hover,.etr select:hover,.etr textarea:hover{border-color:var(--line)}.etr textarea:focus,.etr input:focus{border-color:var(--blue);background:#fff;outline:0}.etr input{text-align:center;font-size:18px}

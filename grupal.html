@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Trabajo grupal</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131033">
+<link rel="stylesheet" href="assets/app.css?v=202611131040">
 </head>
 <body>
 <header class="top">
@@ -47,8 +47,8 @@
 </div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131033"></script>
-<script src="assets/comun.js?v=202611131033"></script>
+<script src="assets/config.js?v=202611131040"></script>
+<script src="assets/comun.js?v=202611131040"></script>
 <script>
 let SEM = 1, FILAS = [];
 const PART = [['Lideró', 'Lideró'], ['Apoyó', 'Apoyó'], ['Habló', 'Habló'], ['Intentando', 'Intentando'], ['No participó', 'No part.']];
@@ -97,11 +97,11 @@ function seg(f, campo, opciones, cls) {
 let ETQ = [], OBS = {}, ETQ_J = null;
 function chipsEtq(jid) {
   const sel = OBS[jid] || [], m = n => ETQ.find(e => e.nombre === n);
-  return `<div class="getq">${sel.map(n => `<span class="gchip ${m(n)?.tipo === 'Positivo' ? 'pos' : ''}" title="${esc(n)}">${esc(m(n)?.emoji || '')} ${esc(n)}</span>`).join('')}<button class="gadd" onclick="abrirEtq('${jid}')" title="Etiquetar">🏷${sel.length ? '' : ' Etiquetar'}</button></div>`;
+  return `<div class="getq">${sel.map(n => `<span class="gchip ${m(n)?.tipo === 'Positivo' ? 'pos' : m(n)?.tipo === 'Apoyo' ? 'apo' : ''}" title="${esc(m(n)?.consejo || n)}">${esc(m(n)?.emoji || '')} ${esc(n)}</span>`).join('')}<button class="gadd" onclick="abrirEtq('${jid}')" title="Etiquetar">🏷${sel.length ? '' : ' Etiquetar'}</button></div>`;
 }
 function etqHTML(jid) {
-  const sel = OBS[jid] || [], b = tipo => ETQ.filter(e => e.tipo === tipo).map(e => `<button class="etq ${sel.includes(e.nombre) ? 'on' : ''} ${e.tipo === 'Positivo' ? 'pos' : ''}" onclick="alternarEtq('${jid}', ${esc(JSON.stringify(e.nombre))})">${esc(e.emoji || '')} ${esc(e.nombre)}</button>`).join('');
-  return `<div class="lbl">Positivas</div><div class="etqs">${b('Positivo')}</div><div class="lbl">Por mejorar</div><div class="etqs">${b('Por mejorar')}</div>`;
+  const sel = OBS[jid] || [], b = tipo => ETQ.filter(e => e.tipo === tipo).map(e => `<button class="etq ${sel.includes(e.nombre) ? 'on' : ''} ${e.tipo === 'Positivo' ? 'pos' : e.tipo === 'Apoyo' ? 'apo' : ''}" title="${esc(e.consejo || '')}" onclick="alternarEtq('${jid}', ${esc(JSON.stringify(e.nombre))})">${esc(e.emoji || '')} ${esc(e.nombre)}</button>`).join('');
+  return `<div class="lbl">Positivas</div><div class="etqs">${b('Positivo')}</div><div class="lbl">Por mejorar</div><div class="etqs">${b('Por mejorar')}</div>${ETQ.some(e => e.tipo === 'Apoyo') ? `<div class="lbl">Apoyo (no cuenta como alerta)</div><div class="etqs">${b('Apoyo')}</div>` : ''}`;
 }
 function abrirEtq(jid) { const f = FILAS.find(x => x.jugador_id === jid); ETQ_J = jid; $('#eNom').textContent = `${f.jugadores?.nombre} · ${f.jugadores?.alias}`; $('#eEtq').innerHTML = etqHTML(jid); $('#mEtq').classList.remove('hide'); }
 function cerrarEtq() { $('#mEtq').classList.add('hide'); ETQ_J = null; }

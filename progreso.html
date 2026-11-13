@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131033">
+<link rel="stylesheet" href="assets/app.css?v=202611131040">
 </head>
 <body>
 <header class="top">
@@ -43,8 +43,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131033"></script>
-<script src="assets/comun.js?v=202611131033"></script>
+<script src="assets/config.js?v=202611131040"></script>
+<script src="assets/comun.js?v=202611131040"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -62,7 +62,7 @@ async function iniciar() {
     sb.from('detalle').select('*, jugadores!inner(seccion_id)').eq('jugadores.seccion_id', SECC.id).order('semana'),
     sb.from('v_notas').select('*').eq('seccion_id', SECC.id),
     sb.from('observaciones').select('jugador_id, semana, etiquetas'),
-    sb.from('etiquetas').select('nombre, tipo, emoji'),
+    sb.from('etiquetas').select('*'),
     sb.from('semanas').select('semana, tema, practica'),
     sb.from('config').select('clave, valor')
   ]);
@@ -98,7 +98,7 @@ function calcular() {
     const aus = sem.filter(x => x.as === 'Ausente').length, labNo = fs.filter(d => n(d.lab) < 0).length, faltas = fs.filter(d => n(d.falta) > 0).length;
     const ult = sem.slice(-3), ant = sem.slice(0, -3);
     const baja = ant.length >= 2 && ult.length === 3 && (ult.reduce((a, x) => a + x.t - x.cl, 0) / 3) < (ant.reduce((a, x) => a + x.t - x.cl, 0) / ant.length) - 0.5;
-    const etqNeg = OBS.filter(o => o.jugador_id === j.id).flatMap(o => o.etiquetas || []).filter(e => ETQ[e]?.tipo !== 'Positivo').length;
+    const etqNeg = OBS.filter(o => o.jugador_id === j.id).flatMap(o => o.etiquetas || []).filter(e => (ETQ[e]?.tipo || 'Por mejorar') === 'Por mejorar').length;
     const efMin = Number(nt.ef_minimo ?? 0), aprob = nt.condicion === 'APROBADO';
     const al = [];
     if (!aprob && efMin > 20) al.push([3, `Necesita ${r2(efMin)} en el EF: ya no le alcanza solo con el final`]);
@@ -159,6 +159,14 @@ const PERF = {
   impuntual: ['⏰', 'Impuntual', 'pf-mid', 'Recuérdale que el Juego del Miedo empieza al inicio; registra la llegada tarde.'],
   copia: ['🚩', 'Revisar: posible copia', 'pf-mal', 'Su trabajo escrito es alto pero su desempeño oral/examen es bajo: pídele que explique su laboratorio en clase y varía los ejercicios por alumno. Es solo un indicio, verifícalo.']
 };
+// Tarjetas con sugerencia para cada etiqueta registrada (el consejo se edita en Ajustes → Etiquetas). Se omiten las que ya explica un perfil.
+const CUBIERTAS = { timido: ['Tímido', 'Mudo'], copia: ['Plagio'], flojo: ['Flojo'], particip: ['Buen expositor'] };
+function cartasEtq(x) {
+  const cnt = {}; OBS.filter(o => o.jugador_id === x.j.id).forEach(o => (o.etiquetas || []).forEach(e => (cnt[e] = cnt[e] || []).push(o.semana)));
+  const tapadas = new Set(x.perfiles.flatMap(p => CUBIERTAS[p.k] || []));
+  const cls = { Positivo: 'pf-ok', 'Por mejorar': 'pf-mal', Apoyo: 'pf-apo' };
+  return Object.entries(cnt).filter(([e]) => !tapadas.has(e)).sort((a, b) => b[1].length - a[1].length).map(([e, sems]) => { const t = ETQ[e] || {}; return `<div class="pfc ${cls[t.tipo] || 'pf-mid'}"><div class="pft">${esc(t.emoji || '🏷')} <b>${esc(e)}</b><small>Etiqueta ${t.tipo === 'Apoyo' ? 'de apoyo' : t.tipo === 'Positivo' ? 'positiva' : 'por mejorar'} · ${sems.length} vez/veces (${[...new Set(sems)].sort((a, b) => a - b).map(s => 'S' + s).join(', ')})</small></div><div class="pfa">💡 ${esc(t.consejo || 'Escribe una sugerencia para esta etiqueta en Ajustes → Etiquetas.')}</div></div>`; });
+}
 function perfiles(x, fs, etqs) {
   const pas = fs.filter(d => d.semana <= ACT), out = [];
   const prom = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
@@ -171,8 +179,8 @@ function perfiles(x, fs, etqs) {
   if (pas.filter(d => d.participacion_grupal === 'Lideró').length >= 2) ev('lider', `Lideró ${pas.filter(d => d.participacion_grupal === 'Lideró').length} trabajos grupales`);
   if (vozProm >= 2.5) ev('particip', `Voz promedio ${vozProm.toFixed(1)} por clase`);
   const veces = t => etqs.filter(e => e === t).length;
-  if (veces('Buen expositor') >= 2 && vozProm < 2.5) ev('particip', `etiquetado “Buen expositor” ${veces('Buen expositor')} veces`);
-  if ((veces('Tímido') + veces('Mudo')) >= 2) ev('timido', `etiquetado “Tímido/Mudo” ${veces('Tímido') + veces('Mudo')} veces`);
+  if (veces('Buen expositor') >= 1 && vozProm < 2.5) ev('particip', `etiquetado “Buen expositor” ${veces('Buen expositor')} veces`);
+  if ((veces('Tímido') + veces('Mudo')) >= 1) ev('timido', `etiquetado “Tímido/Mudo” ${veces('Tímido') + veces('Mudo')} veces`);
   else if (presentes.length >= 2 && (x.silencio >= 2 || vozProm < 0.75) && escrito !== null && escrito >= 0.65) ev('timido', `Voz ${vozProm.toFixed(1)} por clase (${x.silencio} sem. en silencio) pero su trabajo escrito va en ${Math.round(escrito * 100)}%`);
   if (x.labNo >= 1 || sinEntrega >= 2 || etqs.includes('Flojo')) ev('flojo', [x.labNo ? `${x.labNo} lab. no cumplido(s)` : '', sinEntrega >= 2 ? `${sinEntrega} semanas sin entrega de lab.` : '', etqs.includes('Flojo') ? 'etiquetado “Flojo”' : ''].filter(Boolean).join(' · '));
   if (x.aus >= 2 || (pas.length >= 4 && x.aus / pas.length >= 0.25)) ev('falta', `${x.aus} ausencia(s) de ${pas.length} clases`);
@@ -205,7 +213,7 @@ async function elegir(id) {
   $('#panel').innerHTML = `
     <div class="phead"><div><div class="nom2">${esc(j.nombre)}</div><div class="sub2">${esc(j.alias)}${j.consultora ? ' · ' + esc(j.consultora) : ''}${j.rol_consultora ? ' · ' + esc(j.rol_consultora) : ''}</div></div><span class="niv big ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span></div>
     ${x.al.length ? `<div class="alertas">${x.al.map(a => `<span><b>+${a[0]}</b> ${esc(a[1])}</span>`).join('')}</div>` : '<div class="alertas ok"><span>Sin alertas: va bien.</span></div>'}
-    <div class="perfil">${x.perfiles.length ? x.perfiles.map(p => `<div class="pfc ${PERF[p.k][2]}"><div class="pft">${PERF[p.k][0]} <b>${esc(PERF[p.k][1])}</b><small>${esc(p.txt)}</small></div><div class="pfa">💡 ${esc(PERF[p.k][3])}</div></div>`).join('') : '<div class="vac2">Sin rasgos marcados todavía (se calculan con más semanas de datos).</div>'}</div>
+    <div class="perfil">${x.perfiles.length || cartasEtq(x).length ? x.perfiles.map(p => `<div class="pfc ${PERF[p.k][2]}"><div class="pft">${PERF[p.k][0]} <b>${esc(PERF[p.k][1])}</b><small>${esc(p.txt)}</small></div><div class="pfa">💡 ${esc(PERF[p.k][3])}</div></div>`).join('') + cartasEtq(x).join('') : '<div class="vac2">Sin rasgos marcados todavía (se calculan con más semanas de datos).</div>'}</div>
     <div class="kpis">
       ${kpi('PE (prácticas)', r2(nt.pe ?? 0), '/ 20')}${kpi('PF actual', r2(nt.pf ?? 0), nt.condicion || '')}${kpi('EF mínimo', nt.condicion === 'APROBADO' ? '—' : Number(nt.ef_minimo) > 20 ? '> 20' : r2(nt.ef_minimo ?? 0), 'para aprobar')}
       ${kpi('Rendimiento', Math.round(x.rend * 100) + '%', 'vs. promedio clase')}${kpi('Asistencia', asis + '%', x.aus + ' ausencia(s)')}${kpi('Voz total', r1(x.vozTot), x.silencio + ' sem. en silencio')}
@@ -221,7 +229,7 @@ async function elegir(id) {
     </div>
     <div class="pfila">
       <div class="pbox"><h4>Medallas <small>(automáticas y otorgadas por ti)</small></h4><div id="medPanel"><div class="vac2">Cargando…</div></div></div>
-      <div class="pbox"><h4>Etiquetas registradas</h4>${etq.length ? etq.map(o => `<div class="etqs-s"><b>S${o.semana}</b>${o.etiquetas.map(e => `<span class="tag ${ETQ[e]?.tipo === 'Positivo' ? 'okt' : 'et'}">${esc(ETQ[e]?.emoji || '')} ${esc(e)}</span>`).join('')}</div>`).join('') : '<div class="vac2">Sin etiquetas.</div>'}</div>
+      <div class="pbox"><h4>Etiquetas registradas</h4>${etq.length ? etq.map(o => `<div class="etqs-s"><b>S${o.semana}</b>${o.etiquetas.map(e => `<span class="tag ${ETQ[e]?.tipo === 'Positivo' ? 'okt' : ETQ[e]?.tipo === 'Apoyo' ? 'apo' : 'et'}" title="${esc(ETQ[e]?.consejo || '')}">${esc(ETQ[e]?.emoji || '')} ${esc(e)}</span>`).join('')}</div>`).join('') : '<div class="vac2">Sin etiquetas.</div>'}</div>
       <div class="pbox fb"><h4>Feedback para el alumno</h4>
         <textarea id="fbTxt" rows="3" placeholder="Ej.: Participaste más en el debate, sigue así. Revisa el laboratorio de DNS y pregúntame tus dudas."></textarea>
         <div class="fbacc"><label><input type="checkbox" id="fbVis"> Visible para el alumno en su perfil</label><button class="btn green" onclick="guardarFb()">Guardar feedback</button></div>

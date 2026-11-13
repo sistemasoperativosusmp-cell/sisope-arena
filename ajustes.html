@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131033">
+<link rel="stylesheet" href="assets/app.css?v=202611131040">
 </head>
 <body>
 <header class="top">
@@ -78,9 +78,9 @@
   <!-- ETIQUETAS -->
   <section class="card aj hide" id="sEtq">
     <h2 class="pix">ETIQUETAS DE COMPORTAMIENTO</h2>
-    <p class="help">Solo las ves tú. Se usan en el Juego del Miedo y suman alerta en Progreso cuando son “Por mejorar”.</p>
-    <div class="ajform etq"><input id="eEmoji" placeholder="Emoji" maxlength="4"><input id="eNombre" placeholder="Nombre (ej. Impuntual)"><select id="eTipo"><option>Por mejorar</option><option>Positivo</option></select><button class="btn green" onclick="agregarEtq()">+ Agregar</button></div>
-    <div id="etiquetas" class="etqs" style="justify-content:flex-start;margin-top:12px"></div>
+    <p class="help">Solo las ves tú. Se marcan en el Juego del Miedo y en Trabajo grupal. <b>Positivo</b> y <b>Por mejorar</b> alimentan el perfil en Progreso; dos o más “Por mejorar” suman alerta. <b>Apoyo</b> es para situaciones que requieren adaptación (por ejemplo, tartamudez): se registra, pero no cuenta como alerta. La <b>sugerencia</b> aparece en Progreso como “💡 idea para trabajar con el alumno”.</p>
+    <div class="ajform etq"><input id="eEmoji" placeholder="Emoji" maxlength="4"><input id="eNombre" placeholder="Nombre (ej. Impuntual)"><select id="eTipo"><option>Por mejorar</option><option>Positivo</option><option>Apoyo</option></select><button class="btn green" onclick="agregarEtq()">+ Agregar</button></div>
+    <div class="altabla" style="margin-top:12px"><div class="etr alc"><div>Emoji</div><div>Etiqueta</div><div>Tipo</div><div>Sugerencia para trabajar con el alumno</div><div></div></div><div id="etiquetas"></div></div>
   </section>
 
   <!-- SEMANAS -->
@@ -126,8 +126,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131033"></script>
-<script src="assets/comun.js?v=202611131033"></script>
+<script src="assets/config.js?v=202611131040"></script>
+<script src="assets/comun.js?v=202611131040"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -346,7 +346,15 @@ async function cargarCfg() {
 // ---------- Etiquetas ----------
 async function cargarEtq() {
   const { data, error } = await sb.from('etiquetas').select('*').order('tipo').order('nombre'); if (error) return;
-  $('#etiquetas').innerHTML = data.map(e => `<span class="etq ${e.tipo === 'Positivo' ? 'on pos' : ''}" style="cursor:default">${esc(e.emoji || '')} ${esc(e.nombre)} <button class="x" title="Quitar" onclick="borrarEtq(${e.id}, '${esc(e.nombre)}')">✕</button></span>`).join('');
+  const orden = { 'Por mejorar': 0, Apoyo: 1, Positivo: 2 }; data.sort((a, b) => orden[a.tipo] - orden[b.tipo] || a.nombre.localeCompare(b.nombre));
+  $('#etiquetas').innerHTML = data.map(e => `<div class="etr t-${e.tipo === 'Positivo' ? 'pos' : e.tipo === 'Apoyo' ? 'apo' : 'mal'}" data-id="${e.id}"><input data-c="emoji" value="${esc(e.emoji || '')}" maxlength="4"><b>${esc(e.nombre)}</b>
+    <select data-c="tipo">${['Por mejorar', 'Positivo', 'Apoyo'].map(t => `<option ${t === e.tipo ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    <textarea data-c="consejo" rows="2" placeholder="¿Qué hacer cuando un alumno tiene esta etiqueta?">${esc(e.consejo || '')}</textarea>
+    <button class="sbtn mini" title="Quitar" onclick="borrarEtq(${e.id}, ${esc(JSON.stringify(e.nombre))})">🗑</button></div>`).join('');
+  document.querySelectorAll('#etiquetas [data-c]').forEach(el => el.onchange = async () => {
+    const v = el.value.trim() || null, { error } = await sb.from('etiquetas').update({ [el.dataset.c]: v }).eq('id', Number(el.closest('.etr').dataset.id));
+    if (error) { toast(/consejo|check/.test(error.message) ? 'Falta ejecutar el script 23 en Supabase' : 'No se guardó: ' + error.message, true); return; } toast('Guardado'); if (el.dataset.c === 'tipo') cargarEtq();
+  });
 }
 async function agregarEtq() {
   const o = { nombre: $('#eNombre').value.trim(), emoji: $('#eEmoji').value.trim() || null, tipo: $('#eTipo').value }; if (!o.nombre) return;
