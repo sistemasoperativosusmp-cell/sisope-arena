@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611122303">
+<link rel="stylesheet" href="assets/app.css?v=202611122310">
 </head>
 <body>
 <header class="top">
@@ -17,6 +17,7 @@
   <div class="subtabs">
     <button data-s="sSecc">🏫 Secciones</button>
     <button data-s="sAlumnos" class="on">👥 Alumnos y alias</button>
+    <button data-s="sEquipos">🛡 Equipos</button>
     <button data-s="sConfig">⚙ Puntajes y reglas</button>
     <button data-s="sEtq">🏷 Etiquetas</button>
     <button data-s="sSem" class="peligro">🧹 Nuevo semestre</button>
@@ -37,7 +38,7 @@
       <input id="nCorreo" placeholder="Correo USMP (ej. jperez@usmp.pe)">
       <input id="nNombre" placeholder="APELLIDOS, Nombres">
       <div class="conal"><input id="nAlias" placeholder="Alias (nombre en clave)"><button class="sbtn" title="Sugerir alias" onclick="$('#nAlias').value = aliasAzar()">🎲</button></div>
-      <input id="nCons" placeholder="Consultora (ej. Consultora A)" list="consList">
+      <select id="nCons"><option value="">Equipo / consultora</option></select>
       <select id="nRol"><option value="">Rol en la consultora</option></select>
       <button class="btn green" onclick="agregar()">+ Agregar</button>
     </div>
@@ -53,6 +54,15 @@
     </div>
     <p class="help">Los cambios se guardan al salir de cada celda. <b>Retirar</b> lo saca de listas, ranking y sorteos sin borrar su historial. <b>🗑</b> lo elimina con todos sus puntajes.</p>
     <p class="help">Para que el alumno pueda entrar, su cuenta en <b>Supabase → Authentication → Users</b> debe tener el <b>mismo correo</b>. (La creación masiva de cuentas con envío de contraseña la haremos al final.)</p>
+  </section>
+
+  <!-- EQUIPOS -->
+  <section class="card aj hide" id="sEquipos">
+    <div class="ajhead"><h2 class="pix">EQUIPOS / CONSULTORAS · <span class="secNom"></span></h2><span class="avance" id="eqCuenta"></span></div>
+    <p class="help">Crea los equipos de esta aula y asigna a cada alumno. Si renombras un equipo, sus integrantes se actualizan solos; si lo eliminas, quedan “sin equipo”.</p>
+    <div class="ajform etq" style="grid-template-columns:1fr 1.5fr 70px auto;max-width:820px"><input id="qNombre" placeholder="Nombre (ej. Consultora Alfa, Los Kernel)"><input id="qLema" placeholder="Lema (opcional)"><input id="qColor" type="color" value="#6f3cc3" title="Color"><button class="btn green" onclick="agregarEq()">+ Crear equipo</button></div>
+    <div class="fbacc" style="justify-content:flex-start;margin-top:10px"><label class="help" style="margin:0">Crear varios rápido: <input id="qN" type="number" min="2" max="12" value="4" style="width:60px;padding:6px;border-radius:8px;border:2px solid var(--line)"> equipos</label><button class="sbtn" onclick="crearVarios()">⚡ Crear</button><button class="sbtn" onclick="repartir()">🎲 Repartir al azar a los que no tienen equipo</button></div>
+    <div class="eqgrid" id="equipos"></div>
   </section>
 
   <!-- CONFIG -->
@@ -84,8 +94,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611122303"></script>
-<script src="assets/comun.js?v=202611122303"></script>
+<script src="assets/config.js?v=202611122310"></script>
+<script src="assets/comun.js?v=202611122310"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -100,7 +110,8 @@ async function iniciar() {
   $('#quien').textContent = ses.user.email;
   $('#nRol').innerHTML = '<option value="">Rol en la consultora</option>' + ROLES.map(r => `<option>${r}</option>`).join('');
   await cargarSeccion();
-  $('#secNom').textContent = SECC ? SECC.nombre.toUpperCase() : 'SIN SECCIÓN';
+  $('#secNom').textContent = SECC ? SECC.nombre.toUpperCase() : 'SIN SECCIÓN'; document.querySelectorAll('.secNom').forEach(e => e.textContent = $('#secNom').textContent);
+  await cargarEq();
   await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc()]);
 }
 
@@ -108,7 +119,7 @@ async function iniciar() {
 async function cargarAl() {
   const { data, error } = await sb.from('jugadores').select('id, correo, nombre, alias, consultora, rol_consultora, activo, seccion_id').eq('seccion_id', SECC?.id ?? -1).order('nombre');
   if (error) { toast('Error: ' + error.message, true); return; }
-  AL = data || []; pintarAl();
+  AL = data || []; pintarAl(); pintarEq();
 }
 function pintarAl() {
   const q = $('#buscar').value.trim().toLowerCase(), inact = $('#verInact').checked;
@@ -118,7 +129,7 @@ function pintarAl() {
   $('#alumnos').innerHTML = vis.length ? vis.map((a, i) => `<div class="alr ${a.activo ? '' : 'inact'}" data-id="${a.id}">
     <div class="nro">${i + 1}</div>
     <input data-c="nombre" value="${esc(a.nombre)}"><div class="conal"><input data-c="alias" value="${esc(a.alias)}"><button class="sbtn mini" title="Otro alias" onclick="nuevoAlias('${a.id}')">🎲</button></div>
-    <input data-c="correo" value="${esc(a.correo)}"><input data-c="consultora" value="${esc(a.consultora || '')}" list="consList">
+    <input data-c="correo" value="${esc(a.correo)}"><select data-c="consultora">${eqOpts(a.consultora)}</select>
     <select data-c="rol_consultora">${rolOpts(a.rol_consultora)}</select>
     <select data-c="seccion_id" title="Mover a otra sección">${SECCIONES.map(s => `<option value="${s.id}" ${s.id === a.seccion_id ? 'selected' : ''}>${esc(s.nombre)}</option>`).join('')}</select>
     <button class="sbtn mini ${a.activo ? '' : 'gold'}" onclick="alternarActivo('${a.id}')">${a.activo ? 'Retirar' : 'Reincorporar'}</button>
@@ -133,7 +144,7 @@ async function editar(id, campo, valor, el) {
   const { error } = await sb.from('jugadores').update({ [campo]: v || null }).eq('id', id);
   if (error) { el.value = antes ?? ''; toast(error.message.includes('alias') ? 'Ese alias ya lo usa otro alumno' : error.message.includes('correo') ? 'Ese correo ya existe' : 'No se guardó: ' + error.message, true); return; }
   if (campo === 'seccion_id') { toast(`${a.alias} movido`); await cargarAl(); cargarSecc(); return; }
-  a[campo] = v || null; el.classList.add('ok'); setTimeout(() => el.classList.remove('ok'), 900); if (campo === 'nombre' || campo === 'consultora') pintarAl();
+  a[campo] = v || null; el.classList.add('ok'); setTimeout(() => el.classList.remove('ok'), 900); if (campo === 'nombre' || campo === 'consultora') { pintarAl(); pintarEq(); }
 }
 async function nuevoAlias(id) { const el = document.querySelector(`.alr[data-id="${id}"] [data-c="alias"]`); el.value = aliasAzar(); await editar(id, 'alias', el.value, el); }
 async function agregar() {
@@ -167,9 +178,71 @@ async function importar() {
   if (f.some(x => !x.nombre)) { toast('Hay filas sin apellidos y nombres', true); return; }
   const usados = new Set(AL.map(a => a.alias.toLowerCase()));
   f.forEach(x => { const prev = AL.find(a => a.correo === x.correo); if (!x.alias) x.alias = prev?.alias || aliasAzar(); while (!prev && usados.has(x.alias.toLowerCase())) x.alias = aliasAzar(); usados.add(x.alias.toLowerCase()); });
+  const nuevos = [...new Set(f.map(x => x.consultora).filter(c => c && !EQ.some(e => e.nombre === c)))];
+  if (nuevos.length) { const { error: e0 } = await sb.from('equipos').insert(nuevos.map(nombre => ({ seccion_id: SECC.id, nombre }))); if (e0) { toast('No se crearon los equipos nuevos: ' + e0.message, true); return; } await cargarEq(); }
   const { error } = await sb.from('jugadores').upsert(f, { onConflict: 'correo' });
   if (error) { toast('No se importó: ' + (error.message.includes('alias') ? 'hay un alias repetido' : error.message), true); return; }
   $('#impTxt').value = ''; $('#impPrev').textContent = ''; toast(`${f.length} alumnos importados`); await cargarAl();
+}
+
+// ---------- Equipos / consultoras ----------
+let EQ = [];
+const eqOpts = sel => '<option value="">— sin equipo —</option>' + EQ.map(e => `<option ${e.nombre === sel ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('') + (sel && !EQ.some(e => e.nombre === sel) ? `<option selected>${esc(sel)}</option>` : '');
+async function cargarEq() {
+  if (!SECC) return;
+  const { data, error } = await sb.from('equipos').select('*').eq('seccion_id', SECC.id).order('nombre');
+  if (error) { $('#equipos').innerHTML = `<div class="empty">Falta ejecutar el SQL de equipos (${esc(error.message)})</div>`; return; }
+  EQ = data || []; $('#nCons').innerHTML = '<option value="">Equipo / consultora</option>' + EQ.map(e => `<option>${esc(e.nombre)}</option>`).join(''); pintarEq();
+}
+function pintarEq() {
+  if (!$('#equipos') || !EQ) return;
+  const act = AL.filter(a => a.activo), sin = act.filter(a => !a.consultora || !EQ.some(e => e.nombre === a.consultora));
+  $('#eqCuenta').textContent = `${EQ.length} equipos · ${sin.length} sin equipo`;
+  const chip = a => `<span class="mchip"><b>${esc(a.alias)}</b><small>${esc(a.nombre.split(',')[0])}</small><select onchange="asignar('${a.id}', this.value)" title="Mover a otro equipo">${eqOpts(a.consultora)}</select></span>`;
+  $('#equipos').innerHTML = EQ.map(e => { const m = act.filter(a => a.consultora === e.nombre); return `<div class="eqc" style="--c:${esc(e.color || '#6f3cc3')}">
+      <div class="eqt"><input type="color" value="${esc(e.color || '#6f3cc3')}" onchange="editarEq(${e.id}, 'color', this.value)" title="Color"><input class="eqn" value="${esc(e.nombre)}" onchange="editarEq(${e.id}, 'nombre', this.value)"><span class="cnt2">${m.length}</span><button class="sbtn mini" title="Eliminar equipo" onclick="borrarEq(${e.id}, '${esc(e.nombre)}')">🗑</button></div>
+      <input class="eql" value="${esc(e.lema || '')}" placeholder="Lema del equipo" onchange="editarEq(${e.id}, 'lema', this.value)">
+      <div class="mlist">${m.map(chip).join('') || '<div class="gris2">Sin integrantes</div>'}</div></div>`; }).join('')
+    + `<div class="eqc sin"><div class="eqt"><b>Sin equipo</b><span class="cnt2">${sin.length}</span></div><div class="mlist">${sin.map(chip).join('') || '<div class="gris2">Todos tienen equipo 🎉</div>'}</div></div>`;
+}
+async function agregarEq() {
+  const o = { seccion_id: SECC?.id, nombre: $('#qNombre').value.trim(), lema: $('#qLema').value.trim() || null, color: $('#qColor').value };
+  if (!SECC) { toast('Primero crea una sección', true); return; } if (!o.nombre) { toast('Escribe el nombre del equipo', true); return; }
+  const { error } = await sb.from('equipos').insert(o); if (error) { toast(/unique|duplicate/.test(error.message) ? 'Ya existe un equipo con ese nombre' : 'No se creó: ' + error.message, true); return; }
+  $('#qNombre').value = ''; $('#qLema').value = ''; toast(`Equipo "${o.nombre}" creado`); await cargarEq();
+}
+async function crearVarios() {
+  const n = Math.max(2, Math.min(12, Number($('#qN').value) || 4)), letras = 'ABCDEFGHIJKL', colores = ['#6f3cc3', '#2463d6', '#2f7d16', '#b45309', '#be185d', '#0f766e', '#c23030', '#475569', '#7c3aed', '#0891b2', '#ca8a04', '#65a30d'];
+  const nuevos = [...Array(n).keys()].map(i => ({ seccion_id: SECC.id, nombre: 'Consultora ' + letras[i], color: colores[i] })).filter(x => !EQ.some(e => e.nombre === x.nombre));
+  if (!nuevos.length) { toast('Esos equipos ya existen'); return; }
+  const { error } = await sb.from('equipos').insert(nuevos); if (error) { toast('No se crearon: ' + error.message, true); return; } toast(`${nuevos.length} equipos creados`); await cargarEq();
+}
+async function editarEq(id, campo, valor) {
+  const v = String(valor).trim(); if (campo === 'nombre' && !v) { toast('El nombre no puede quedar vacío', true); return cargarEq(); }
+  const { error } = await sb.from('equipos').update({ [campo]: v || null }).eq('id', id);
+  if (error) { toast(/unique|duplicate/.test(error.message) ? 'Ya existe un equipo con ese nombre' : 'No se guardó: ' + error.message, true); return cargarEq(); }
+  if (campo === 'nombre') { toast('Equipo renombrado: sus integrantes se actualizaron'); await cargarEq(); await cargarAl(); } else toast('Guardado');
+}
+async function borrarEq(id, nom) {
+  if (!confirm(`¿Eliminar el equipo "${nom}"? Sus integrantes quedarán sin equipo (no se borran puntajes).`)) return;
+  const { error } = await sb.from('equipos').delete().eq('id', id); if (error) { toast('No se eliminó: ' + error.message, true); return; }
+  await cargarEq(); await cargarAl();
+}
+async function asignar(id, equipo) {
+  const { error } = await sb.from('jugadores').update({ consultora: equipo || null }).eq('id', id); if (error) { toast('No se guardó: ' + error.message, true); return; }
+  AL.find(a => a.id === id).consultora = equipo || null; pintarEq(); pintarAl();
+}
+async function repartir() {
+  if (!EQ.length) { toast('Primero crea los equipos', true); return; }
+  const act = AL.filter(a => a.activo), sin = act.filter(a => !a.consultora || !EQ.some(e => e.nombre === a.consultora));
+  if (!sin.length) { toast('Todos ya tienen equipo'); return; }
+  if (!confirm(`¿Repartir al azar a ${sin.length} alumnos sin equipo, equilibrando los tamaños?`)) return;
+  const tam = Object.fromEntries(EQ.map(e => [e.nombre, act.filter(a => a.consultora === e.nombre).length]));
+  const mezcla = sin.map(a => [Math.random(), a]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
+  const plan = mezcla.map(a => { const eq = Object.keys(tam).sort((x, y) => tam[x] - tam[y] || Math.random() - 0.5)[0]; tam[eq]++; return [a.id, eq]; });
+  const res = await Promise.all(plan.map(([id, eq]) => sb.from('jugadores').update({ consultora: eq }).eq('id', id)));
+  const err = res.find(r => r.error); if (err) toast('Algunos no se guardaron: ' + err.error.message, true); else toast(`${plan.length} alumnos repartidos`);
+  await cargarAl();
 }
 
 // ---------- Secciones ----------
