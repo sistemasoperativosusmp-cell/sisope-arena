@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130947">
+<link rel="stylesheet" href="assets/app.css?v=202611130948">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -69,8 +69,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130947"></script>
-<script src="assets/comun.js?v=202611130947"></script>
+<script src="assets/config.js?v=202611130948"></script>
+<script src="assets/comun.js?v=202611130948"></script>
 <script>
 let EQ = [], ENL = [];
 let MED = [], SEMACT = 1, CONS = [], SK = null, YO = null, R = [], NOTAS = null, DET = [], SEMS = {}, CFG = {}, FILTRO = 'Todas';
@@ -247,7 +247,7 @@ function rolSelect(actual) {
 }
 async function cambiarRol(sel) {
   const { data, error } = await sb.rpc('cambiar_mi_rol', { p_rol: sel.value });
-  if (error) { toast(error.message, true); await refrescar(); return; }
+  if (error) { toast(/schema cache|function/i.test(error.message) ? 'Esta opción aún no está activa. Avísale a tu docente.' : error.message, true); await refrescar(); return; }
   YO.rol_consultora = data || null; toast(data ? `Ahora eres ${data}` : 'Quitaste tu rol'); await refrescar();
 }
 function pintarEnlaces() {
@@ -263,7 +263,7 @@ function editarAlias() {
 async function guardarAlias() {
   const v = $('#nuevoAlias').value.trim(); if (v === YO.alias) { $('#aliasEd').innerHTML = ''; return; }
   const { data, error } = await sb.rpc('cambiar_mi_alias', { p_alias: v });
-  if (error) { toast(error.message, true); return; }
+  if (error) { toast(/schema cache|function/i.test(error.message) ? 'Esta opción aún no está activa. Avísale a tu docente.' : error.message, true); return; }
   YO.alias = data; $('#aliasEd').innerHTML = ''; toast(`¡Ahora eres ${data}!`); await refrescar();
 }
 function editarCons() {
@@ -275,7 +275,7 @@ async function guardarCons() {
   const v = $('#nuevaCons').value.trim(); if (v === YO.consultora) { $('#consEd').innerHTML = ''; return; }
   if (!confirm(`¿Cambiar el nombre de tu consultora a "${v}"? Lo verá todo tu equipo y el aula.`)) return;
   const { data, error } = await sb.rpc('renombrar_mi_consultora', { p_nombre: v });
-  if (error) { toast(error.message, true); return; }
+  if (error) { toast(/schema cache|function/i.test(error.message) ? 'Esta opción aún no está activa. Avísale a tu docente.' : error.message, true); return; }
   YO.consultora = data; toast(`Consultora renombrada: ${data}`); await refrescar();
 }
 
