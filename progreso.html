@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131040">
+<link rel="stylesheet" href="assets/app.css?v=202611131056">
 </head>
 <body>
 <header class="top">
@@ -22,6 +22,7 @@
         <button data-f="En riesgo" class="ries">⚠ En riesgo <b id="cRies"></b></button>
         <button data-f="Bien" class="bien">✓ Bien <b id="cBien"></b></button>
       </div>
+      <button class="fbfil" id="fbFil" onclick="SOLOFB = !SOLOFB; pintarLista()">💬 Necesitan feedback <b id="cFb"></b></button>
       <div class="plorden">Perfil observado</div>
       <div class="pfil2" id="pfil2"></div>
       <input id="buscar" placeholder="Buscar nombre o alias">
@@ -43,12 +44,13 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131040"></script>
-<script src="assets/comun.js?v=202611131040"></script>
+<script src="assets/config.js?v=202611131056"></script>
+<script src="assets/comun.js?v=202611131056"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
 const VOZ_GR = { 'Lideró': 3, 'Apoyó': 2, 'Habló': 1, 'Intentando': 0.5 };
+let SOLOFB = false, FB = {};
 let FILP = '', J = [], DET = [], NOT = {}, OBS = [], ETQ = {}, SEMS = {}, CFG = {}, ACT = 1, FIL = '', SEL = null, RES = {};
 const n = v => Number(v || 0), r1 = v => String(Math.round(v * 10) / 10), r2 = v => (Math.round(v * 100) / 100).toFixed(2);
 
@@ -64,8 +66,10 @@ async function iniciar() {
     sb.from('observaciones').select('jugador_id, semana, etiquetas'),
     sb.from('etiquetas').select('*'),
     sb.from('semanas').select('semana, tema, practica'),
-    sb.from('config').select('clave, valor')
+    sb.from('config').select('clave, valor'),
+    sb.from('feedback').select('jugador_id, creado, semana, visible_alumno, jugadores!inner(seccion_id)').eq('jugadores.seccion_id', SECC.id).order('creado', { ascending: false })
   ]);
+  FB = {}; (q[7].data || []).forEach(f => (FB[f.jugador_id] = FB[f.jugador_id] || []).push(f));
   const e = q.find(x => x.error); if (e) { toast('Error al cargar: ' + e.error.message, true); return; }
   [J, DET] = [q[0].data, q[1].data];
   NOT = Object.fromEntries(q[2].data.map(x => [x.jugador_id, x])); OBS = q[3].data;
@@ -114,6 +118,7 @@ function calcular() {
     RES[j.id] = { j, sem, tot, rend, silencio, aus, labNo, faltas, al, pts, nivel: pts >= 5 ? 'Crítico' : pts >= 3 ? 'En riesgo' : 'Bien', nt, vozTot: sem.reduce((a, x) => a + x.v, 0) };
     Object.assign(RES[j.id], competencias(fs, nt));
     RES[j.id].perfiles = perfiles(RES[j.id], fs, OBS.filter(o => o.jugador_id === j.id).flatMap(o => o.etiquetas || []));
+    RES[j.id].fb = necesitaFb(RES[j.id]);
   });
 }
 // ---------- Alineación con el sílabo 2026 ----------
@@ -167,6 +172,24 @@ function cartasEtq(x) {
   const cls = { Positivo: 'pf-ok', 'Por mejorar': 'pf-mal', Apoyo: 'pf-apo' };
   return Object.entries(cnt).filter(([e]) => !tapadas.has(e)).sort((a, b) => b[1].length - a[1].length).map(([e, sems]) => { const t = ETQ[e] || {}; return `<div class="pfc ${cls[t.tipo] || 'pf-mid'}"><div class="pft">${esc(t.emoji || '🏷')} <b>${esc(e)}</b><small>Etiqueta ${t.tipo === 'Apoyo' ? 'de apoyo' : t.tipo === 'Positivo' ? 'positiva' : 'por mejorar'} · ${sems.length} vez/veces (${[...new Set(sems)].sort((a, b) => a - b).map(s => 'S' + s).join(', ')})</small></div><div class="pfa">💡 ${esc(t.consejo || 'Escribe una sugerencia para esta etiqueta en Ajustes → Etiquetas.')}</div></div>`; });
 }
+// ---------- ¿Toca darle feedback? (recomendación para la docente) ----------
+const DIA = 864e5;
+function necesitaFb(x) {
+  const fbs = FB[x.j.id] || [], ult = fbs[0] ? new Date(fbs[0].creado) : null, dias = ult ? Math.floor((Date.now() - ult) / DIA) : null;
+  const sin = d => dias === null || dias >= d, mot = [];
+  const recientes = OBS.filter(o => o.jugador_id === x.j.id && o.semana >= ACT - 1).flatMap(o => (o.etiquetas || []).map(e => ({ e, s: o.semana })));
+  const despues = s => !fbs.some(f => (f.semana || 0) >= s);
+  if (x.nivel === 'Crítico' && sin(7)) mot.push(['mal', 'Está en nivel crítico' + (ult ? ` y su último feedback fue hace ${dias} días` : ' y aún no le das feedback')]);
+  else if (x.nivel === 'En riesgo' && sin(14)) mot.push(['mal', 'Está en riesgo' + (ult ? ` y su último feedback fue hace ${dias} días` : ' y aún no le das feedback')]);
+  const neg = [...new Set(recientes.filter(r => ['Por mejorar', 'Apoyo'].includes(ETQ[r.e]?.tipo || 'Por mejorar') && despues(r.s)).map(r => r.e))];
+  if (neg.length) mot.push(['mid', `Lo etiquetaste hace poco: ${neg.join(', ')}`]);
+  const pos = [...new Set(recientes.filter(r => ETQ[r.e]?.tipo === 'Positivo' && despues(r.s)).map(r => r.e))];
+  if (pos.length) mot.push(['ok', `Reconócelo: lo etiquetaste como ${pos.join(', ')}`]);
+  else if (x.perfiles.some(p => ['habil', 'lider'].includes(p.k)) && sin(21)) mot.push(['ok', 'Va muy bien: un mensaje de reconocimiento lo motiva a seguir']);
+  if (!mot.length && !ult && ACT >= 4) mot.push(['mid', 'Aún no recibe ningún feedback en el ciclo']);
+  return { mot, ult, dias };
+}
+function irFeedback() { const t = $('#fbTxt'); if (!t) return; t.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => t.focus(), 400); }
 function perfiles(x, fs, etqs) {
   const pas = fs.filter(d => d.semana <= ACT), out = [];
   const prom = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
@@ -200,9 +223,10 @@ function pintarLista() {
   $('#cRies').textContent = todos.filter(x => x.nivel === 'En riesgo').length; $('#cBien').textContent = todos.filter(x => x.nivel === 'Bien').length;
   const cuenta = k => todos.filter(x => x.perfiles.some(p => p.k === k)).length;
   $('#pfil2').innerHTML = Object.entries(PERF).map(([k, p]) => `<button class="${FILP === k ? 'on' : ''}" onclick="FILP = FILP === '${k}' ? '' : '${k}'; pintarLista()" title="${esc(p[1])}">${p[0]} ${esc(p[1].replace('Revisar: ', ''))} <b>${cuenta(k)}</b></button>`).join('');
-  const vis = ordenados().map(j => RES[j.id]).filter(x => (!FIL || x.nivel === FIL) && (!FILP || x.perfiles.some(p => p.k === FILP)) && (!q || (x.j.nombre + ' ' + x.j.alias).toLowerCase().includes(q)));
+  $('#cFb').textContent = todos.filter(x => x.fb?.mot.length).length; $('#fbFil').classList.toggle('on', SOLOFB);
+  const vis = ordenados().map(j => RES[j.id]).filter(x => (!SOLOFB || x.fb?.mot.length) && (!FIL || x.nivel === FIL) && (!FILP || x.perfiles.some(p => p.k === FILP)) && (!q || (x.j.nombre + ' ' + x.j.alias).toLowerCase().includes(q)));
   $('#lista').innerHTML = vis.length ? vis.map(x => `<button class="pitem ${SEL === x.j.id ? 'sel' : ''}" onclick="elegir('${x.j.id}')">
-    <span class="niv ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span><span class="pemo">${x.perfiles.map(p => `<i title="${esc(PERF[p.k][1])}">${PERF[p.k][0]}</i>`).join('')}</span><b>${esc(x.j.nombre)}</b><small>${esc(x.j.alias)} · ${x.al.length ? esc(x.al[0][1]) : 'sin alertas'}</small></button>`).join('') : '<div class="empty">Nadie en este filtro.</div>';
+    <span class="niv ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span><span class="pemo">${x.fb?.mot.length ? `<i class="fbi" title="Recomendado: darle feedback">💬</i>` : ''}${x.perfiles.map(p => `<i title="${esc(PERF[p.k][1])}">${PERF[p.k][0]}</i>`).join('')}</span><b>${esc(x.j.nombre)}</b><small>${esc(x.j.alias)} · ${x.al.length ? esc(x.al[0][1]) : 'sin alertas'}</small></button>`).join('') : '<div class="empty">Nadie en este filtro.</div>';
 }
 
 // ---------- Panel del alumno ----------
@@ -213,6 +237,7 @@ async function elegir(id) {
   $('#panel').innerHTML = `
     <div class="phead"><div><div class="nom2">${esc(j.nombre)}</div><div class="sub2">${esc(j.alias)}${j.consultora ? ' · ' + esc(j.consultora) : ''}${j.rol_consultora ? ' · ' + esc(j.rol_consultora) : ''}</div></div><span class="niv big ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span></div>
     ${x.al.length ? `<div class="alertas">${x.al.map(a => `<span><b>+${a[0]}</b> ${esc(a[1])}</span>`).join('')}</div>` : '<div class="alertas ok"><span>Sin alertas: va bien.</span></div>'}
+    ${x.fb?.mot.length ? `<div class="fbrec"><span class="fbico">💬</span><div><b>Te recomendamos darle feedback</b>${x.fb.mot.map(m => `<small class="m-${m[0]}">• ${esc(m[1])}</small>`).join('')}<small class="gris2">${x.fb.ult ? `Último feedback: hace ${x.fb.dias} día(s).` : 'Todavía no le has dado feedback.'} Puedes marcarlo como visible para que lo lea en su perfil.</small></div><button class="btn green" onclick="irFeedback()">✍️ Escribir feedback</button></div>` : ''}
     <div class="perfil">${x.perfiles.length || cartasEtq(x).length ? x.perfiles.map(p => `<div class="pfc ${PERF[p.k][2]}"><div class="pft">${PERF[p.k][0]} <b>${esc(PERF[p.k][1])}</b><small>${esc(p.txt)}</small></div><div class="pfa">💡 ${esc(PERF[p.k][3])}</div></div>`).join('') + cartasEtq(x).join('') : '<div class="vac2">Sin rasgos marcados todavía (se calculan con más semanas de datos).</div>'}</div>
     <div class="kpis">
       ${kpi('PE (prácticas)', r2(nt.pe ?? 0), '/ 20')}${kpi('PF actual', r2(nt.pf ?? 0), nt.condicion || '')}${kpi('EF mínimo', nt.condicion === 'APROBADO' ? '—' : Number(nt.ef_minimo) > 20 ? '> 20' : r2(nt.ef_minimo ?? 0), 'para aprobar')}
@@ -311,7 +336,8 @@ async function guardarFb() {
   const t = $('#fbTxt').value.trim(); if (!t) { toast('Escribe el feedback primero', true); return; }
   const { error } = await sb.from('feedback').insert({ jugador_id: SEL, semana: ACT, texto: t, visible_alumno: $('#fbVis').checked });
   if (error) { toast('No se guardó: ' + error.message, true); return; }
-  $('#fbTxt').value = ''; toast('Feedback guardado'); cargarFb();
+  $('#fbTxt').value = ''; toast('Feedback guardado');
+  (FB[SEL] = FB[SEL] || []).unshift({ jugador_id: SEL, creado: new Date().toISOString(), semana: ACT, visible_alumno: $('#fbVis').checked }); RES[SEL].fb = necesitaFb(RES[SEL]); elegir(SEL);
 }
 async function borrarFb(id) {
   if (!confirm('¿Borrar este feedback?')) return;
