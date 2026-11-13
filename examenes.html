@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Exámenes y bonus</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131212">
+<link rel="stylesheet" href="assets/app.css?v=202611131215">
 </head>
 <body>
 <header class="top">
@@ -48,8 +48,8 @@
 </div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131212"></script>
-<script src="assets/comun.js?v=202611131212"></script>
+<script src="assets/config.js?v=202611131215"></script>
+<script src="assets/comun.js?v=202611131215"></script>
 <script>
 let NOTAS = [], CAMBIOS = {}, APR = 10.5;
 const CAMPOS = ['ep', 'bonus_ep', 'ef', 'bonus_ef'];
@@ -142,7 +142,7 @@ async function verDetalle(jid) {
 }
 function partes(d, cfg, sem) {
   const n = v => Number(v || 0), k = n(d.kahoot_pos), podio = sem[d.semana]?.kahoot_podio || 3;
-  const kah = !k || k >= 99 ? 0 : k === 1 ? (cfg.KahootP1 ?? 2) : k === 2 ? (cfg.KahootP2 ?? 1) : k === 3 ? (cfg.KahootP3 ?? 0.5) : k <= podio ? (cfg.KahootExtra ?? 0.5) : 0;
+  const kah = !k || k >= 99 || d.asistencia === 'Ausente' ? 0 : k === 1 ? (cfg.KahootP1 ?? 2) : k === 2 ? (cfg.KahootP2 ?? 1) : k === 3 ? (cfg.KahootP3 ?? 0.5) : k <= podio ? (cfg.KahootExtra ?? 0.5) : 0;
   return {
     jm: n(d.jm_aciertos) * (cfg.JMAcierto ?? 0.5) - n(d.jm_fallos) * (cfg.JMFallo ?? 0.5),
     gr: n(d.gr_comunicacion) + n(d.gr_tecnico) + n(d.gr_analisis) + n(d.extra) - n(d.falta),

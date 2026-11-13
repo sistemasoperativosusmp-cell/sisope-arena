@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131212">
+<link rel="stylesheet" href="assets/app.css?v=202611131215">
 </head>
 <body>
 <header class="top">
@@ -46,9 +46,9 @@
 <div class="modal hide" id="mIns" onclick="if (event.target === this) cerrarIns()"><div class="box plain det"><div class="dethead"><h2 class="pix" style="color:var(--navy)">INSIGNIAS DEL AULA</h2><button class="sbtn" onclick="cerrarIns()">✕ Cerrar</button></div><div id="mInsCuerpo" style="width:100%"></div></div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131212"></script>
-<script src="assets/insignias.js?v=202611131212"></script>
-<script src="assets/comun.js?v=202611131212"></script>
+<script src="assets/config.js?v=202611131215"></script>
+<script src="assets/insignias.js?v=202611131215"></script>
+<script src="assets/comun.js?v=202611131215"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -88,7 +88,7 @@ async function iniciar() {
 // ---------- Cálculos por alumno ----------
 function partes(d) {
   const k = n(d.kahoot_pos), podio = SEMS[d.semana]?.kahoot_podio || 3, c = x => Number(CFG[x]);
-  const kah = !k || k >= 99 ? 0 : k === 1 ? (c('KahootP1') || 2) : k === 2 ? (c('KahootP2') || 1) : k === 3 ? (c('KahootP3') || 0.5) : k <= podio ? (c('KahootExtra') || 0.5) : 0;
+  const kah = !k || k >= 99 || d.asistencia === 'Ausente' ? 0 : k === 1 ? (c('KahootP1') || 2) : k === 2 ? (c('KahootP2') || 1) : k === 3 ? (c('KahootP3') || 0.5) : k <= podio ? (c('KahootExtra') || 0.5) : 0;
   return { jm: n(d.jm_aciertos) * (c('JMAcierto') || 0.5) - n(d.jm_fallos) * (c('JMFallo') || 0.5), gr: n(d.gr_comunicacion) + n(d.gr_tecnico) + n(d.gr_analisis) + n(d.extra) - n(d.falta), lab: n(d.lab) + n(d.lab_bonus), foro: n(d.foro_tecnico) + n(d.foro_analisis) + n(d.foro_bonus), quiz: n(d.quiz), kah };
 }
 const voz = d => n(d.jm_aciertos) + n(d.part_vol) + (VOZ_GR[d.participacion_grupal] || 0);

@@ -602,3 +602,4 @@ html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:1
 .rec.mal{border-left-color:#ff5c7a;background:#1a0a10}.rec.mid{border-left-color:var(--neo-gold);background:#17140a}.rec.ok{border-left-color:var(--neo-green);background:#0a170c}
 .rec .rx{border:0;background:transparent;color:var(--neo-mute);cursor:pointer;font-size:14px;font-weight:800;padding:2px 6px}.rec .rx:hover{color:var(--neo-txt)}
 .kcamp{position:relative}.kcamp .kx{position:absolute;top:8px;right:10px;border:0;background:transparent;color:var(--neo-gold);font-size:16px;font-weight:800;cursor:pointer;padding:2px 6px;opacity:.8}.kcamp .kx:hover{opacity:1}
+.ausk{justify-self:start;font-size:13px;font-weight:800;color:var(--mute);background:#f3f4f8;border:2px dashed #d5d9e4;border-radius:10px;padding:6px 12px;display:inline-block}

@@ -4,12 +4,12 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Kahoot</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131212">
+<link rel="stylesheet" href="assets/app.css?v=202611131215">
 </head>
 <body>
 <header class="top">
   <div class="pix">SISOPE ARENA · DOCENTE</div>
-  <div class="pills"><span>Kahoot · en clase o en casa</span></div>
+  <div class="pills"><span>Kahoot · en clase</span></div>
   <div class="who"><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
 </header>
 <nav class="tabs" id="nav"></nav>
@@ -27,22 +27,23 @@
       <div class="ancho"><span class="podio mini2"><button>−</button><b>5</b><button>+</button></span><p><b>Podio extendido:</b> cuando hay poco quórum, súbelo (hasta 10). Los puestos del 4° en adelante dentro del podio suman <b class="kpx">0.5</b>. Se guarda por semana.</p></div>
       <div><span class="seg mini2"><button class="tomado" disabled>🥇 1°</button></span><p><b>Puesto ocupado:</b> cuando un puesto ya tiene dueño se bloquea para los demás. Para cambiarlo, quítaselo primero (tocándolo de nuevo).</p></div>
       <div><span class="seg mini2"><button>0</button><button class="on">1</button></span><p><b>Tocar de nuevo</b> la opción marcada la borra (queda <b>pendiente</b>, distinto de 0).</p></div>
-      <div><span class="seg mini2 bulk"><i>Todos</i><button>3</button></span><p><b>Todos → Participó:</b> marca a toda la clase (o a los filtrados) como participantes; luego asignas los puestos del podio.</p></div>
+      <div><span class="seg mini2 bulk"><i>Todos</i><button>3</button></span><p><b>Todos → Participó:</b> marca a toda la clase presente (o a los filtrados) como participantes; los <b>ausentes</b> quedan fuera porque el Kahoot se juega en clase; luego asignas los puestos del podio.</p></div>
       <div><span class="tag" style="background:#fff1c2;color:#7a5a00">pendiente</span><p>Aún sin registrar en el Kahoot de esta semana. Arriba ves el avance “N de M registrados”.</p></div></div></section>
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131212"></script>
-<script src="assets/comun.js?v=202611131212"></script>
-<script src="assets/casa.js?v=202611131212"></script>
+<script src="assets/config.js?v=202611131215"></script>
+<script src="assets/comun.js?v=202611131215"></script>
+<script src="assets/casa.js?v=202611131215"></script>
 <script>
 let PODIO = 3, KP = { 1: 2, 2: 1, 3: 0.5, x: 0.5 };
 const ptsK = pos => !pos || pos >= 99 ? 0 : pos <= 3 ? KP[pos] : pos <= PODIO ? KP.x : 0;
 window.CASA = {
+  soloPresentes: true,   // el Kahoot se juega en clase: los ausentes no participan
   campos: 'kahoot_pos', max: 2, grid: '260px minmax(560px,1fr) 80px',
   cols: [{ campo: 'kahoot_pos', titulo: 'Puesto en el Kahoot', sub: '', opciones: [], masivo: [99] }],
   total: f => ptsK(nv(f.kahoot_pos)),
-  calificado: f => f.kahoot_pos !== null && f.kahoot_pos !== undefined,
+  calificado: f => f.asistencia === 'Ausente' || (f.kahoot_pos !== null && f.kahoot_pos !== undefined),
   async preparar() {
     const [{ data: s }, { data: c }] = await Promise.all([
       sb.from('sesiones').select('kahoot_podio').eq('seccion_id', SECC.id).eq('semana', SEM).maybeSingle(),

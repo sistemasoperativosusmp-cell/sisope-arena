@@ -34,6 +34,7 @@ async function cargarCasa() {
 }
 
 function celda(f, col) {
+  if (CASA.soloPresentes && f.asistencia === 'Ausente') return `<span class="ausk">🚪 Ausente: no participa ni suma puntos</span>`;
   if (col.tipo === 'bono') {
     const v = nv(f[col.campo]) || 0;
     return `<div class="jmc"><button class="menos" ${v ? '' : 'disabled'} onclick="contar(${f.id}, '${col.campo}', -0.5)">−0.5</button><span class="neto ${v ? 'pos' : ''}">${v ? '+' + f1(v) : '0'}</span><button class="mas" onclick="contar(${f.id}, '${col.campo}', 0.5)">+0.5</button></div>`;
@@ -73,6 +74,7 @@ function pintarCasa() {
 }
 
 async function poner(id, campo, valor) {
+  if (CASA.soloPresentes && FILAS.find(x => x.id === id)?.asistencia === 'Ausente') { toast('Faltó a clase: no puede recibir puntos', true); return; }
   if (campo === 'kahoot_pos' && valor < 99 && FILAS.some(x => x.id !== id && nv(x.kahoot_pos) === valor)) { toast('Ese puesto ya está asignado', true); return; }
   const f = FILAS.find(x => x.id === id), antes = f[campo];
   const actual = typeof valor === 'number' ? nv(f[campo]) : f[campo];
@@ -88,7 +90,7 @@ async function contar(id, campo, delta) {
   if (error) { f[campo] = antes; pintarCasa(); toast('No se guardó: ' + error.message, true); }
 }
 async function masivo(valor, campo) {   // a todos los visibles (toda la clase o los filtrados)
-  const fs = FILAS.filter(f => !FILTRO || (f.jugadores?.nombre + ' ' + f.jugadores?.alias).toLowerCase().includes(FILTRO)); if (!fs.length) return;
+  const fs = FILAS.filter(f => (!FILTRO || (f.jugadores?.nombre + ' ' + f.jugadores?.alias).toLowerCase().includes(FILTRO)) && !(CASA.soloPresentes && f.asistencia === 'Ausente')); if (!fs.length) return;
   if (fs.length > 3 && !confirm(`¿Poner ${valor < 0 ? 'No cumplió' : valor} a ${fs.length} alumnos?`)) return;
   const antes = fs.map(f => f[campo]); fs.forEach(f => f[campo] = valor); pintarCasa();
   const { error } = await sb.from('detalle').update({ [campo]: valor }).in('id', fs.map(f => f.id));
