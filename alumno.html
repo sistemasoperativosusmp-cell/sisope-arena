@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131149">
+<link rel="stylesheet" href="assets/app.css?v=202611131154">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -44,7 +44,7 @@
         <div class="panel"><h2 class="pix">MIS MEDALLAS</h2><div id="mismed"></div></div>
         <div class="panel"><h2 class="pix">MIS NOTAS</h2><div id="misnotas"></div><a href="#puntajes" class="alink">Ver detalle por práctica →</a></div>
       </div>
-        <div class="panel"><h2 class="pix">INSIGNIAS <span id="insCont" class="insc"></span></h2><div class="insig2" id="insignias"></div><p class="gris">Las grises aún están bloqueadas: debajo dice cómo ganarlas. Las secretas se revelan al conseguirlas.</p></div>
+        <div class="panel"><h2 class="pix">INSIGNIAS <span id="insCont" class="insc"></span></h2><div class="insig2" id="insignias"></div><p class="gris">Las grises aún están bloqueadas: debajo dice cómo ganarlas. Las secretas se revelan al conseguirlas. En el ranking tus compañeros solo ven las insignias que no dependen de tus notas.</p></div>
 
       <div class="panel" id="fbpanel"><h2 class="pix">MENSAJES DE TU DOCENTE</h2><div id="feedback"></div></div>
     </div>
@@ -70,11 +70,16 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131149"></script>
-<script src="assets/insignias.js?v=202611131149"></script>
-<script src="assets/comun.js?v=202611131149"></script>
+<script src="assets/config.js?v=202611131154"></script>
+<script src="assets/insignias.js?v=202611131154"></script>
+<script src="assets/comun.js?v=202611131154"></script>
 <script>
-let EQ = [], ENL = [];
+let EQ = [], ENL = [], INSR = {};
+// Insignias visibles en el ranking: solo las que NO dependen de notas (las de nota se ven únicamente en el perfil propio)
+const INS_DEF = Object.fromEntries(calcInsignias({}).map(i => [i[0], i])), ORD_R = { secreta: 5, legendaria: 4, epica: 3, rara: 2, comun: 1 };
+const insDe = al => (INSR[al] || []).filter(k => INS_DEF[k]).sort((a, b) => ORD_R[INS_DEF[b][2]] - ORD_R[INS_DEF[a][2]]);
+const insChip = (k, cls) => `<img class="${cls} r-${INS_DEF[k][2]}" src="assets/insignias/${k}.webp" alt="" title="${esc(INS_DEF[k][1])} · ${RAREZA[INS_DEF[k][2]]}">`;
+const insRank = al => { const l = insDe(al); return l.length ? `<span class="rins" title="${l.length} insignia(s) visibles en el ranking">${insChip(l[0], 'rimg')}<b>🏅${l.length}</b></span>` : ''; };
 // Registro de actividad para el reporte de la docente (la base ignora repeticiones seguidas y a los docentes)
 const log = (tipo, detalle) => { try { sb.rpc('registrar_actividad', { p_tipo: tipo, p_detalle: detalle ?? null }).then(() => {}, () => {}); } catch (e) {} };
 const GANADAS = new Set();
@@ -115,8 +120,10 @@ async function refrescar() {
     YO ? sb.from('v_medallas').select('*').eq('seccion_id', YO.seccion_id) : { data: [] },
     YO ? sb.from('feedback').select('texto, creado, semana').eq('jugador_id', YO.id).eq('visible_alumno', true).order('creado', { ascending: false }) : { data: [] },
     YO ? sb.rpc('mi_equipo') : { data: [] },
-    sb.from('enlaces').select('titulo, url, descripcion, categoria, orden').order('categoria').order('orden').order('id')
+    sb.from('enlaces').select('titulo, url, descripcion, categoria, orden').order('categoria').order('orden').order('id'),
+    YO ? sb.rpc('insignias_ranking', { p_seccion: YO.seccion_id }) : { data: [] }
   ]);
+  INSR = q[8].error ? {} : Object.fromEntries((q[8].data || []).map(x => [x.alias, x.insignias || []]));
   EQ = q[6].error ? [] : q[6].data || []; ENL = q[7].error ? [] : q[7].data || []; pintarEnlaces();
   const yoEq = EQ.find(x => x.es_yo); if (YO && yoEq) YO.rol_consultora = yoEq.rol_consultora;
   if (q[0].error) { toast('Error al leer el ranking: ' + q[0].error.message, true); return; }
@@ -128,9 +135,9 @@ async function refrescar() {
 const avatar = (x, cls) => x?.avatar_url ? `<img class="${cls}" src="${esc(avatarSrc(x.avatar_url))}" alt="" loading="lazy">` : `<div class="${cls} ini">${esc((x?.alias || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase())}</div>`;
 function pintarRanking(cons) {
   const top = R.slice(0, 3), orden = [top[1], top[0], top[2]], col = { 1: '#ffd23f', 2: '#00e5ff', 3: '#39ff14' };
-  $('#podio').innerHTML = orden.map(p => p ? `<div class="pod p${p.posicion} ${p.alias === YO?.alias ? 'yo' : ''}">${avatar(p, 'pav')}<div class="ppos pix" style="color:${col[p.posicion] || '#fff'}">${p.posicion}°</div><b>${esc(p.alias)}</b><small>${esc(p.rango)}</small><div class="pxp">${f1(p.xp)} XP</div><div class="phoy">${sg(n(p.xp_hoy))} hoy</div></div>` : '<div class="pod vacio"></div>').join('');
+  $('#podio').innerHTML = orden.map(p => p ? `<div class="pod p${p.posicion} ${p.alias === YO?.alias ? 'yo' : ''}">${avatar(p, 'pav')}<div class="ppos pix" style="color:${col[p.posicion] || '#fff'}">${p.posicion}°</div><b>${esc(p.alias)}</b><small>${esc(p.rango)}</small>${insDe(p.alias).length ? `<div class="pins">${insDe(p.alias).slice(0, 3).map(k => insChip(k, 'pimg')).join('')}${insDe(p.alias).length > 3 ? `<i>+${insDe(p.alias).length - 3}</i>` : ''}</div>` : ''}<div class="pxp">${f1(p.xp)} XP</div><div class="phoy">${sg(n(p.xp_hoy))} hoy</div></div>` : '<div class="pod vacio"></div>').join('');
   const maxXp = Math.max(1, ...R.map(x => n(x.xp)));
-  $('#ranking').innerHTML = R.length ? R.map(x => `<div class="rank ${x.alias === YO?.alias ? 'yo' : ''}"><span class="pos">${x.posicion}</span>${avatar(x, 'rav')}<span class="al">${esc(x.alias)}<span class="medr">${medHoy(x.alias)}</span></span><span class="rg">${esc(x.rango)}</span><span class="hoy">${sg(n(x.xp_hoy))} hoy</span><span class="mbar"><i style="width:${Math.max(0, n(x.xp)) / maxXp * 100}%"></i></span><span class="xp">${f1(x.xp)} XP</span></div>`).join('') : '<div class="empty">Aún no hay jugadores.</div>';
+  $('#ranking').innerHTML = R.length ? R.map(x => `<div class="rank ${x.alias === YO?.alias ? 'yo' : ''}"><span class="pos">${x.posicion}</span>${avatar(x, 'rav')}<span class="al">${esc(x.alias)}<span class="medr">${medHoy(x.alias)}</span>${insRank(x.alias)}</span><span class="rg">${esc(x.rango)}</span><span class="hoy">${sg(n(x.xp_hoy))} hoy</span><span class="mbar"><i style="width:${Math.max(0, n(x.xp)) / maxXp * 100}%"></i></span><span class="xp">${f1(x.xp)} XP</span></div>`).join('') : '<div class="empty">Aún no hay jugadores.</div>';
   const v = R.filter(x => x.victima), soyV = v.some(x => x.alias === YO?.alias);
   $('#vbanner').innerHTML = soyV ? `<div class="vban"><span class="vsk">💀</span><div><b class="pix">¡ERES VÍCTIMA DEL JUEGO DEL MIEDO!</b><small>Serás de los primeros en recibir preguntas. Participa HOY para salir de la lista.</small></div><span class="vsk">💀</span></div>` : '';
   $('#victimas').innerHTML = v.length ? v.map(x => `<div class="vit ${x.alias === YO?.alias ? 'yo' : ''}">${avatar(x, 'vav')}<b title="${esc(x.alias)}">${esc(x.alias)}</b>${x.alias === YO?.alias ? '<button class="calav" data-tip="¡Eres tú! Participa HOY para salir de la lista" onclick="toast(\'💀 ¡Eres tú! Participa HOY para salir de la lista\', true)">💀</button>' : ''}</div>`).join('') : '<div class="gris">Nadie por ahora. 🎉</div>';
