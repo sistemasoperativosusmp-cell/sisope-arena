@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611122320">
+<link rel="stylesheet" href="assets/app.css?v=202611122326">
 </head>
 <body>
 <header class="top">
@@ -22,6 +22,8 @@
         <button data-f="En riesgo" class="ries">⚠ En riesgo <b id="cRies"></b></button>
         <button data-f="Bien" class="bien">✓ Bien <b id="cBien"></b></button>
       </div>
+      <div class="plorden">Perfil observado</div>
+      <div class="pfil2" id="pfil2"></div>
       <input id="buscar" placeholder="Buscar nombre o alias">
       <div class="plorden">Ordenados del más crítico al mejor</div>
       <div id="lista"><div class="empty">Cargando…</div></div>
@@ -33,19 +35,21 @@
     <div><span class="niv ries">⚠ En riesgo</span><p>3 o 4 puntos de alerta. Seguimiento cercano.</p></div>
     <div><span class="niv bien">✓ Bien</span><p>0 a 2 puntos de alerta.</p></div>
     <div class="ancho"><span class="tag" style="background:#eef1f7;color:var(--ink)">Alertas</span><p><b>+3</b> necesita más de 20 en el EF · <b>+2</b> necesita más de 14 en el EF · <b>+2</b> rinde menos del 60% del promedio de la clase (<b>+1</b> si es menos del 80%) · <b>+2</b> 3 o más semanas sin hablar (<b>+1</b> si son 2) · <b>+1</b> 2 o más ausencias · <b>+1</b> algún laboratorio no cumplido · <b>+1</b> alguna falta · <b>+1</b> sus últimas 3 semanas van peor que antes · <b>+1</b> 2 o más etiquetas “por mejorar”.</p></div>
+    <div class="ancho"><span class="tag" style="background:#e7efff;color:#1d4fb0">Perfil</span><p><b>Perfil observado</b> (indicios a partir de los datos, no diagnósticos): 🧠 Hábil · 👑 Líder · 🙋 Participativo · 🤐 Tímido (escribe bien, habla poco) · 😴 Poco compromiso (labs no cumplidos o sin entregar) · 🚪 Falta mucho · ⏰ Impuntual · 🚩 Revisar posible copia (escrito alto vs. oral o parcial bajo). Cada uno trae una sugerencia de cómo trabajar con el alumno.</p></div>
+    <div class="ancho"><span class="tag" style="background:#eef8ea;color:#24600f">Sílabo</span><p><b>Alineación con el sílabo 2026:</b> logro por unidad (I Virtualización · II Identidad y accesos · III Infraestructura de red · IV Plataformas empresariales) y competencias SO2 y SO6 (clave), SO4 (relacionada) más objetivos transversales. Niveles: En inicio &lt;55% · En proceso 55–69% · Logrado 70–89% · Destacado ≥90%.</p></div>
     <div><span class="tag" style="background:#efe7fb;color:#5a2fa6">Radar</span><p>Cada eje compara su promedio semanal con <b>el mejor de la clase (100%)</b>. Morado = alumno, naranja punteado = promedio de la clase.</p></div>
   </div></section>
 </main>
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611122320"></script>
-<script src="assets/comun.js?v=202611122320"></script>
+<script src="assets/config.js?v=202611122326"></script>
+<script src="assets/comun.js?v=202611122326"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
 const VOZ_GR = { 'Lideró': 3, 'Apoyó': 2, 'Habló': 1, 'Intentando': 0.5 };
-let J = [], DET = [], NOT = {}, OBS = [], ETQ = {}, SEMS = {}, CFG = {}, ACT = 1, FIL = '', SEL = null, RES = {};
+let FILP = '', J = [], DET = [], NOT = {}, OBS = [], ETQ = {}, SEMS = {}, CFG = {}, ACT = 1, FIL = '', SEL = null, RES = {};
 const n = v => Number(v || 0), r1 = v => String(Math.round(v * 10) / 10), r2 = v => (Math.round(v * 100) / 100).toFixed(2);
 
 async function iniciar() {
@@ -108,8 +112,73 @@ function calcular() {
     if (etqNeg >= 2) al.push([1, `${etqNeg} etiquetas por mejorar`]);
     const pts = al.reduce((a, x) => a + x[0], 0);
     RES[j.id] = { j, sem, tot, rend, silencio, aus, labNo, faltas, al, pts, nivel: pts >= 5 ? 'Crítico' : pts >= 3 ? 'En riesgo' : 'Bien', nt, vozTot: sem.reduce((a, x) => a + x.v, 0) };
+    Object.assign(RES[j.id], competencias(fs, nt));
+    RES[j.id].perfiles = perfiles(RES[j.id], fs, OBS.filter(o => o.jugador_id === j.id).flatMap(o => o.etiquetas || []));
   });
 }
+// ---------- Alineación con el sílabo 2026 ----------
+// Unidades (cada práctica corresponde a una unidad) y competencias del sílabo + objetivos formativos transversales.
+const UNIDADES = [['Practica 1', 'I', 'Virtualización'], ['Practica 2', 'II', 'Administración de identidad y accesos'], ['Practica 3', 'III', 'Servicios de infraestructura de red'], ['Practica 4', 'IV', 'Plataformas de tipo empresarial']];
+const COMP = [
+  ['SO2', 'Diseña, implementa y evalúa soluciones de infraestructura local, híbrida y cloud', 'Competencia clave · laboratorios, conocimiento técnico y análisis en el trabajo grupal'],
+  ['SO6', 'Administra y brinda soporte a sistemas on-premise y cloud', 'Competencia clave · laboratorios, quiz, foro técnico y respuestas correctas en el Juego del Miedo'],
+  ['SO4', 'Actúa con responsabilidad profesional y ética', 'Competencia relacionada · asistencia, puntualidad, entregas cumplidas y conducta en equipo'],
+  ['T1', 'Comunicación efectiva', 'Transversal · comunicación en el grupal y participación oral'],
+  ['T2', 'Pensamiento crítico', 'Transversal · análisis crítico (grupal) y argumentación (foro)'],
+  ['T3', 'Trabajo en equipo y liderazgo', 'Transversal · rol en el trabajo grupal'],
+  ['T4', 'Investigación autónoma', 'Transversal · bonificaciones por ir más allá y quiz de certificación']
+];
+const nivelLogro = p => p === null ? ['—', 'nl0'] : p >= 0.9 ? ['Destacado', 'nl4'] : p >= 0.7 ? ['Logrado', 'nl3'] : p >= 0.55 ? ['En proceso', 'nl2'] : ['En inicio', 'nl1'];
+function competencias(fs, nt) {
+  const prom = arr => { const v = arr.filter(x => x !== null && x !== undefined && !isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const pas = fs.filter(d => d.semana < ACT || d.semana === ACT);
+  const lab = pas.map(d => d.lab === null ? null : Math.max(0, n(d.lab)) / 3), quiz = pas.map(d => d.quiz === null ? null : Math.min(1, n(d.quiz) / 3));
+  const jmAcc = (() => { const a = pas.reduce((s, d) => s + n(d.jm_aciertos), 0), f = pas.reduce((s, d) => s + n(d.jm_fallos), 0); return a + f ? a / (a + f) : null; })();
+  const lid = { 'Lideró': 1, 'Apoyó': 0.67, 'Habló': 0.33, 'Intentando': 0.17, 'No participó': 0 };
+  const c = {
+    SO2: prom([...lab, ...pas.map(d => d.gr_tecnico === null ? null : n(d.gr_tecnico)), ...pas.map(d => d.gr_analisis === null ? null : n(d.gr_analisis))]),
+    SO6: prom([...lab, ...quiz, ...pas.map(d => d.foro_tecnico === null ? null : n(d.foro_tecnico)), jmAcc]),
+    SO4: prom([...pas.map(d => d.asistencia === 'Presente' ? 1 : d.asistencia === 'Tarde' ? 0.5 : 0), ...pas.map(d => d.lab === null ? null : n(d.lab) < 0 ? 0 : 1), ...pas.map(d => n(d.falta) > 0 ? 0 : null), ...(pas.some(d => n(d.falta) > 0) ? [] : pas.length ? [1] : [])]),
+    T1: prom([...pas.map(d => d.gr_comunicacion === null ? null : n(d.gr_comunicacion)), ...pas.filter(d => d.asistencia !== 'Ausente').map(d => Math.min(1, voz(d) / 3))]),
+    T2: prom([...pas.map(d => d.gr_analisis === null ? null : n(d.gr_analisis)), ...pas.map(d => d.foro_analisis === null ? null : n(d.foro_analisis))]),
+    T3: prom(pas.map(d => d.participacion_grupal ? lid[d.participacion_grupal] : null)),
+    T4: pas.length ? Math.min(1, (pas.filter(d => n(d.extra) > 0 || n(d.foro_bonus) > 0).length * 0.35) + (pas.some(d => n(d.quiz) >= 4) ? 0.4 : 0) + 0.25) : null
+  };
+  const und = UNIDADES.map(([p]) => { const v = nt['p' + p.slice(-1)]; return fs.some(d => d.practica === p) ? Math.max(0, Math.min(1, Number(v || 0) / 20)) : null; });
+  return { comp: c, und };
+}
+
+// ---------- Perfil observado (indicadores para la docente; no son diagnósticos) ----------
+const PERF = {
+  habil: ['🧠', 'Hábil', 'pf-ok', 'Dale retos extra o rol de monitor/mentor en su equipo; propón la certificación.'],
+  lider: ['👑', 'Líder', 'pf-ok', 'Aprovéchalo como coordinador, pero rota roles para que otros también expongan.'],
+  particip: ['🙋', 'Participativo', 'pf-ok', 'Reconócelo en público; pídele que ayude a explicar a sus compañeros.'],
+  timido: ['🤐', 'Tímido', 'pf-mid', 'Hace bien el trabajo escrito pero casi no habla: pregúntale de forma dirigida con preguntas que sabe responder, dale rol de expositor en grupo pequeño.'],
+  flojo: ['😴', 'Poco compromiso', 'pf-mal', 'Entregas incompletas o no cumplidas: micro-entregas con fecha cercana, seguimiento semanal y feedback visible.'],
+  falta: ['🚪', 'Falta mucho', 'pf-mal', 'Contáctalo para conocer la causa; ofrece recuperar con laboratorios y foro.'],
+  impuntual: ['⏰', 'Impuntual', 'pf-mid', 'Recuérdale que el Juego del Miedo empieza al inicio; registra la llegada tarde.'],
+  copia: ['🚩', 'Revisar: posible copia', 'pf-mal', 'Su trabajo escrito es alto pero su desempeño oral/examen es bajo: pídele que explique su laboratorio en clase y varía los ejercicios por alumno. Es solo un indicio, verifícalo.']
+};
+function perfiles(x, fs, etqs) {
+  const pas = fs.filter(d => d.semana <= ACT), out = [];
+  const prom = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+  const escrito = prom([...pas.filter(d => d.lab !== null).map(d => Math.max(0, n(d.lab)) / 3), ...pas.filter(d => d.foro_tecnico !== null || d.foro_analisis !== null).map(d => (n(d.foro_tecnico) + n(d.foro_analisis)) / 2)]);
+  const a = pas.reduce((s, d) => s + n(d.jm_aciertos), 0), f = pas.reduce((s, d) => s + n(d.jm_fallos), 0), jm = a + f >= 3 ? a / (a + f) : null;
+  const presentes = pas.filter(d => d.asistencia !== 'Ausente'), vozProm = presentes.length ? x.vozTot / presentes.length : 0;
+  const tarde = pas.filter(d => d.asistencia === 'Tarde').length, sinEntrega = pas.filter(d => d.semana < ACT && (d.lab === null || n(d.lab) < 0)).length;
+  const ev = (k, txt) => out.push({ k, txt });
+  if (x.comp.SO2 !== null && x.comp.SO2 >= 0.85 && x.rend >= 1.2) ev('habil', `Competencia técnica ${Math.round(x.comp.SO2 * 100)}% y rinde ${Math.round(x.rend * 100)}% del promedio`);
+  if (pas.filter(d => d.participacion_grupal === 'Lideró').length >= 2) ev('lider', `Lideró ${pas.filter(d => d.participacion_grupal === 'Lideró').length} trabajos grupales`);
+  if (vozProm >= 2.5) ev('particip', `Voz promedio ${vozProm.toFixed(1)} por clase`);
+  if (presentes.length >= 2 && (x.silencio >= 2 || vozProm < 0.75) && escrito !== null && escrito >= 0.65) ev('timido', `Voz ${vozProm.toFixed(1)} por clase (${x.silencio} sem. en silencio) pero su trabajo escrito va en ${Math.round(escrito * 100)}%`);
+  if (x.labNo >= 1 || sinEntrega >= 2 || etqs.includes('Flojo')) ev('flojo', [x.labNo ? `${x.labNo} lab. no cumplido(s)` : '', sinEntrega >= 2 ? `${sinEntrega} semanas sin entrega de lab.` : '', etqs.includes('Flojo') ? 'etiquetado “Flojo”' : ''].filter(Boolean).join(' · '));
+  if (x.aus >= 2 || (pas.length >= 4 && x.aus / pas.length >= 0.25)) ev('falta', `${x.aus} ausencia(s) de ${pas.length} clases`);
+  if (tarde >= 2) ev('impuntual', `${tarde} llegadas tarde`);
+  const ep = x.nt.ep !== null && x.nt.ep !== undefined ? Number(x.nt.ep) : null;
+  if (escrito !== null && escrito >= 0.85 && ((jm !== null && jm < 0.4) || (ep !== null && ep < 11))) ev('copia', `Escrito ${Math.round(escrito * 100)}%${jm !== null ? ` · aciertos orales ${Math.round(jm * 100)}%` : ''}${ep !== null ? ` · parcial ${ep}` : ''}`);
+  return out;
+}
+
 const ordenados = () => Object.values(RES).sort((a, b) => b.pts - a.pts || a.rend - b.rend).map(x => x.j);
 const NIV = { 'Crítico': ['crit', '⛔'], 'En riesgo': ['ries', '⚠'], 'Bien': ['bien', '✓'] };
 
@@ -117,9 +186,11 @@ function pintarLista() {
   const q = $('#buscar').value.trim().toLowerCase(), todos = Object.values(RES);
   $('#cTodos').textContent = todos.length; $('#cCrit').textContent = todos.filter(x => x.nivel === 'Crítico').length;
   $('#cRies').textContent = todos.filter(x => x.nivel === 'En riesgo').length; $('#cBien').textContent = todos.filter(x => x.nivel === 'Bien').length;
-  const vis = ordenados().map(j => RES[j.id]).filter(x => (!FIL || x.nivel === FIL) && (!q || (x.j.nombre + ' ' + x.j.alias).toLowerCase().includes(q)));
+  const cuenta = k => todos.filter(x => x.perfiles.some(p => p.k === k)).length;
+  $('#pfil2').innerHTML = Object.entries(PERF).map(([k, p]) => `<button class="${FILP === k ? 'on' : ''}" onclick="FILP = FILP === '${k}' ? '' : '${k}'; pintarLista()" title="${esc(p[1])}">${p[0]} ${esc(p[1].replace('Revisar: ', ''))} <b>${cuenta(k)}</b></button>`).join('');
+  const vis = ordenados().map(j => RES[j.id]).filter(x => (!FIL || x.nivel === FIL) && (!FILP || x.perfiles.some(p => p.k === FILP)) && (!q || (x.j.nombre + ' ' + x.j.alias).toLowerCase().includes(q)));
   $('#lista').innerHTML = vis.length ? vis.map(x => `<button class="pitem ${SEL === x.j.id ? 'sel' : ''}" onclick="elegir('${x.j.id}')">
-    <span class="niv ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span><b>${esc(x.j.nombre)}</b><small>${esc(x.j.alias)} · ${x.al.length ? esc(x.al[0][1]) : 'sin alertas'}</small></button>`).join('') : '<div class="empty">Nadie en este filtro.</div>';
+    <span class="niv ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span><span class="pemo">${x.perfiles.map(p => `<i title="${esc(PERF[p.k][1])}">${PERF[p.k][0]}</i>`).join('')}</span><b>${esc(x.j.nombre)}</b><small>${esc(x.j.alias)} · ${x.al.length ? esc(x.al[0][1]) : 'sin alertas'}</small></button>`).join('') : '<div class="empty">Nadie en este filtro.</div>';
 }
 
 // ---------- Panel del alumno ----------
@@ -130,6 +201,7 @@ async function elegir(id) {
   $('#panel').innerHTML = `
     <div class="phead"><div><div class="nom2">${esc(j.nombre)}</div><div class="sub2">${esc(j.alias)}${j.consultora ? ' · ' + esc(j.consultora) : ''}${j.rol_consultora ? ' · ' + esc(j.rol_consultora) : ''}</div></div><span class="niv big ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span></div>
     ${x.al.length ? `<div class="alertas">${x.al.map(a => `<span><b>+${a[0]}</b> ${esc(a[1])}</span>`).join('')}</div>` : '<div class="alertas ok"><span>Sin alertas: va bien.</span></div>'}
+    <div class="perfil">${x.perfiles.length ? x.perfiles.map(p => `<div class="pfc ${PERF[p.k][2]}"><div class="pft">${PERF[p.k][0]} <b>${esc(PERF[p.k][1])}</b><small>${esc(p.txt)}</small></div><div class="pfa">💡 ${esc(PERF[p.k][3])}</div></div>`).join('') : '<div class="vac2">Sin rasgos marcados todavía (se calculan con más semanas de datos).</div>'}</div>
     <div class="kpis">
       ${kpi('PE (prácticas)', r2(nt.pe ?? 0), '/ 20')}${kpi('PF actual', r2(nt.pf ?? 0), nt.condicion || '')}${kpi('EF mínimo', nt.condicion === 'APROBADO' ? '—' : Number(nt.ef_minimo) > 20 ? '> 20' : r2(nt.ef_minimo ?? 0), 'para aprobar')}
       ${kpi('Rendimiento', Math.round(x.rend * 100) + '%', 'vs. promedio clase')}${kpi('Asistencia', asis + '%', x.aus + ' ausencia(s)')}${kpi('Voz total', r1(x.vozTot), x.silencio + ' sem. en silencio')}
@@ -138,6 +210,10 @@ async function elegir(id) {
       <div class="chart"><h4>Fortalezas por actividad</h4><div class="lg"><span><i style="background:${C_AL}"></i>Alumno</span><span><i class="dash" style="border-color:${C_CL}"></i>Promedio clase</span></div>${radar(id)}</div>
       <div class="chart"><h4>Puntos por semana</h4><div class="lg"><span><i style="background:${C_AL}"></i>Alumno</span><span><i class="dash" style="border-color:${C_CL}"></i>Promedio clase</span></div>${linea(x)}</div>
       <div class="chart ancho2"><h4>Voz por semana <small>(cuánto habló: aciertos + voluntarias + participación grupal)</small></h4>${barras(x)}</div>
+    </div>
+    <div class="alin">
+      <div class="pbox"><h4>Logro por unidad del sílabo <small>(nota de la práctica de cada unidad)</small></h4><div class="unds">${UNIDADES.map(([p, r, t], i) => { const v = x.und[i], [lv, cl] = nivelLogro(v); return `<div class="und ${cl}"><small>Unidad ${r}</small><b>${esc(t)}</b><div class="ubar"><i class="${cl}" style="width:${v === null ? 0 : v * 100}%"></i></div><span>${v === null ? 'Aún no inicia' : r2(v * 20) + ' / 20 · ' + lv}</span></div>`; }).join('')}</div></div>
+      <div class="pbox"><h4>Competencias del sílabo y objetivos formativos <small>(meta: 70% = Logrado)</small></h4><div class="comps">${COMP.map(([k, t, d]) => { const v = x.comp[k], [lv, cl] = nivelLogro(v); return `<div class="comp" data-tip="${esc(d)}"><span class="ck ${k.startsWith('SO') ? 'so' : 'tr'}">${k}</span><span class="ct">${esc(t)}</span><div class="cbar"><i class="${cl}" style="width:${v === null ? 0 : Math.round(v * 100)}%"></i><em style="left:70%"></em></div><b class="${cl}">${v === null ? '—' : Math.round(v * 100) + '%'}</b><small class="${cl}">${lv}</small></div>`; }).join('')}</div></div>
     </div>
     <div class="pfila">
       <div class="pbox"><h4>Etiquetas registradas</h4>${etq.length ? etq.map(o => `<div class="etqs-s"><b>S${o.semana}</b>${o.etiquetas.map(e => `<span class="tag ${ETQ[e]?.tipo === 'Positivo' ? 'okt' : 'et'}">${esc(ETQ[e]?.emoji || '')} ${esc(e)}</span>`).join('')}</div>`).join('') : '<div class="vac2">Sin etiquetas.</div>'}</div>
