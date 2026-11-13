@@ -10,6 +10,7 @@ const MEDALLAS = {
   on_fire: ['🔥', '¡Estás on fire!', 'Superó la meta de XP de la semana', 'auto'],
   cima: ['🏔️', '¡En la cima!', 'Mejor puntaje de la semana en su aula', 'auto'],
   francotirador: ['🎯', 'Francotirador', '3 o más aciertos sin fallar en el Juego del Miedo', 'auto'],
+  kahoot: ['🏆', 'Campeón Kahoot', '1er puesto en el Kahoot de la semana', 'auto'],
   estrella: ['⭐', 'Estrella de la clase', 'Destacó en la sesión de hoy'],
   mentor: ['🤝', 'Mentor', 'Ayudó a sus compañeros'],
   idea: ['💡', 'Idea brillante', 'Propuso una solución creativa'],
