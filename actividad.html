@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Actividad</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css?v=202611131002">
+</head>
+<body>
+<header class="top">
+  <div class="pix">SISOPE ARENA · DOCENTE</div>
+  <div class="pills"><span>Actividad en el portal</span></div>
+  <div class="who"><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
+</header>
+<nav class="tabs" id="nav"></nav>
+<main>
+  <section class="card">
+    <h2 class="pix" id="tit">ACTIVIDAD DE LOS ALUMNOS</h2>
+    <div class="acf">
+      <div class="seg" id="periodo"><button data-d="7" class="on">7 días</button><button data-d="30">30 días</button><button data-d="0">Todo</button></div>
+      <input id="buscar" placeholder="Buscar alumno o alias">
+      <div class="seg" id="nivel"><button data-n="" class="on">Todos</button><button data-n="Sin ingresar">Sin ingresar</button><button data-n="Bajo">Bajo</button><button data-n="Medio">Medio</button><button data-n="Alto">Alto</button></div>
+      <button class="sbtn" onclick="exportar()">⬇ Exportar CSV</button>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="acchart"><div class="acch"><b>Alumnos que entraron al portal por día</b><small>últimos 30 días · pasa el mouse sobre una barra</small></div><div id="grafico"></div></div>
+  </section>
+  <section class="card">
+    <div class="altabla"><div class="acr alc"><div>Alumno</div><div>Interés</div><div>Último ingreso</div><div title="Veces que entró al portal">Ingresos</div><div title="Días distintos con actividad">Días activos</div><div title="Pestañas visitadas: ranking, perfil, puntajes, enlaces">Páginas</div><div title="Enlaces abiertos">Enlaces</div><div title="Ganadas (de 10) · veces que exploró las insignias">Insignias</div><div title="Cambios de nombre de jugador">Nombre</div><div title="Cambios de consultora, rol o foto">Otros</div></div><div id="tabla"><div class="empty">Cargando…</div></div></div>
+    <p class="help"><b>Interés</b> en el período elegido: <b>Alto</b> = 3 o más días activos · <b>Medio</b> = 1 o 2 días · <b>Bajo</b> = ya conoce el portal pero no entró en el período · <b>Sin ingresar</b> = nunca entró. Un “ingreso” cuenta una vez cada 30 minutos. Toca un alumno para ver su historial. Los alumnos no ven este reporte.</p>
+  </section>
+</main>
+<div class="modal hide" id="modal" onclick="if (event.target === this) cerrar()"><div class="box plain det"><div class="dethead"><h2 class="pix" id="mTit"></h2><button class="sbtn" onclick="cerrar()">✕ Cerrar</button></div><div id="mCuerpo"></div></div></div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js?v=202611131002"></script>
+<script src="assets/comun.js?v=202611131002"></script>
+<script>
+let D = [], DIAS_P = 7, NIVEL = '';
+const TIPO = { ingreso: ['🔑', 'Entró al portal'], vista: ['👁', 'Vio'], alias: ['✏️', 'Cambió su nombre'], consultora: ['🛡', 'Renombró su consultora'], rol: ['🎭', 'Cambió su rol'], foto: ['📷', 'Cambió su foto'], enlace: ['🔗', 'Abrió el enlace'], insignia_vista: ['🔍', 'Exploró la insignia'], insignia_ganada: ['🏅', 'Ganó la insignia'] };
+const VISTA = { ranking: 'Ranking', perfil: 'Mi perfil', puntajes: 'Mis puntajes', enlaces: 'Enlaces' };
+async function iniciar() {
+  const ses = await sesionORedirigir(); if (!ses) return;
+  if (!(await esDocente())) { location.replace('alumno.html'); return; }
+  $('#quien').textContent = ses.user.email;
+  await cargarSeccion(); if (!SECC) { toast('Crea una sección en Ajustes', true); return; }
+  $('#tit').textContent = 'ACTIVIDAD DE LOS ALUMNOS · ' + SECC.nombre;
+  await Promise.all([cargar(), grafico()]);
+}
+async function cargar() {
+  const desde = DIAS_P ? new Date(Date.now() - DIAS_P * 864e5).toISOString() : '2000-01-01T00:00:00Z';
+  const { data, error } = await sb.rpc('reporte_actividad', { p_seccion: SECC.id, p_desde: desde });
+  if (error) { $('#tabla').innerHTML = `<div class="empty">${/schema cache|function/i.test(error.message) ? 'Falta ejecutar el script 21 en Supabase.' : esc(error.message)}</div>`; return; }
+  D = (data || []).filter(x => x.activo).map(x => ({ ...x, nivel: !Number(x.ingresos_total) ? 'Sin ingresar' : Number(x.dias_activos) >= 3 ? 'Alto' : Number(x.dias_activos) >= 1 ? 'Medio' : 'Bajo' }));
+  pintar();
+}
+const hace = t => { if (!t) return '—'; const m = (Date.now() - new Date(t)) / 6e4; return m < 1 ? 'ahora' : m < 60 ? `hace ${Math.round(m)} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : m < 2880 ? 'ayer' : `hace ${Math.round(m / 1440)} días`; };
+function pintar() {
+  const q = $('#buscar').value.trim().toLowerCase(), vis = D.filter(x => (!NIVEL || x.nivel === NIVEL) && (!q || (x.nombre + ' ' + x.alias).toLowerCase().includes(q)));
+  const N = D.length, entraron = D.filter(x => Number(x.dias_activos) > 0).length, sum = k => D.reduce((s, x) => s + Number(x[k] || 0), 0), nunca = D.filter(x => x.nivel === 'Sin ingresar').length;
+  $('#kpis').innerHTML = [[`${entraron}<small> / ${N}</small>`, `Alumnos activos ${DIAS_P ? 'en ' + DIAS_P + ' días' : 'en total'}`], [sum('ingresos'), 'Ingresos al portal'], [N ? (sum('dias_activos') / N).toFixed(1) : '0', 'Días activos por alumno'], [sum('insignias_ganadas'), 'Insignias ganadas'], [sum('cambios_alias'), 'Cambios de nombre'], [nunca, 'Nunca han ingresado', nunca ? 'alerta' : '']]
+    .map(([v, t, c]) => `<div class="kpi ${c || ''}"><b>${v}</b><span>${t}</span></div>`).join('');
+  $('#tabla').innerHTML = vis.length ? vis.map(x => `<div class="acr" onclick="detalle('${x.jugador_id}')"><div><b>${esc(x.nombre)}</b><small>${esc(x.alias)}</small></div><div><span class="niv ${x.nivel.replace(' ', '')}">${x.nivel}</span></div><div title="${x.ultima ? new Date(x.ultima).toLocaleString('es-PE') : ''}">${hace(x.ultima)}</div>
+    <div>${x.ingresos}</div><div>${x.dias_activos}</div><div>${x.vistas}</div><div>${x.enlaces}</div><div><b>${x.insignias_ganadas}</b>/10 <small>· ${x.insignias_vistas} 🔍</small></div><div>${Number(x.cambios_alias) ? '✏️ ' + x.cambios_alias : '—'}</div><div>${Number(x.otros_cambios) || '—'}</div></div>`).join('') : '<div class="empty">Nadie con ese filtro.</div>';
+}
+async function grafico() {
+  const { data, error } = await sb.rpc('actividad_diaria', { p_seccion: SECC.id, p_dias: 30 }); if (error || !data) { $('#grafico').innerHTML = ''; return; }
+  const W = 1000, H = 150, pad = 22, n = data.length, bw = (W - pad) / n, max = Math.max(1, ...data.map(d => Number(d.alumnos))), dias = SECC.dias || [];
+  const y = v => H - 18 - (v / max) * (H - 30);
+  const bars = data.map((d, i) => { const v = Number(d.alumnos), x = pad + i * bw + 2, h = (H - 18) - y(v), f = new Date(d.dia + 'T12:00:00'), clase = dias.includes(f.getDay());
+    return `<g><rect x="${x}" y="${pad / 2}" width="${bw - 4}" height="${H - 18 - pad / 2}" fill="transparent"><title>${fechaLarga(d.dia)}: ${v} alumno${v === 1 ? '' : 's'} · ${d.eventos} acciones</title></rect>${v ? `<path d="M${x},${H - 18} v${-(h - 4)} q0,-4 4,-4 h${bw - 12} q4,0 4,4 v${h - 4} z" fill="${clase ? '#1f3a68' : '#6c8fd1'}" pointer-events="none"/>` : ''}${i % 5 === 0 || i === n - 1 ? `<text x="${x + (bw - 4) / 2}" y="${H - 4}" text-anchor="middle">${f.getDate()}/${f.getMonth() + 1}</text>` : ''}</g>`; }).join('');
+  $('#grafico').innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="acsvg" role="img" aria-label="Alumnos por día"><line x1="${pad}" x2="${W}" y1="${H - 18}" y2="${H - 18}" class="base"/><text x="0" y="${y(max) + 4}">${max}</text><line x1="${pad}" x2="${W}" y1="${y(max)}" y2="${y(max)}" class="grid"/>${bars}</svg><div class="acleg"><span><i style="background:#1f3a68"></i>Día de clase</span><span><i style="background:#6c8fd1"></i>Otro día</span></div>`;
+}
+async function detalle(id) {
+  const x = D.find(a => a.jugador_id === id); $('#mTit').textContent = `${x.nombre} · ${x.alias}`; $('#mCuerpo').innerHTML = '<div class="empty">Cargando…</div>'; $('#modal').classList.remove('hide');
+  const { data, error } = await sb.from('actividad').select('tipo, detalle, creado').eq('jugador_id', id).order('creado', { ascending: false }).limit(300);
+  if (error) { $('#mCuerpo').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  const cuenta = t => data.filter(a => a.tipo === t).length, nombres = data.filter(a => a.tipo === 'alias').map(a => a.detalle);
+  const exploradas = {}; data.filter(a => a.tipo === 'insignia_vista').forEach(a => exploradas[a.detalle] = (exploradas[a.detalle] || 0) + 1);
+  const ganadas = data.filter(a => a.tipo === 'insignia_ganada').map(a => a.detalle);
+  let dia = '';
+  $('#mCuerpo').innerHTML = `<div class="kpis mini"><div class="kpi"><b>${cuenta('ingreso')}</b><span>Ingresos</span></div><div class="kpi"><b>${ganadas.length}</b><span>Insignias ganadas</span></div><div class="kpi"><b>${Object.keys(exploradas).length}</b><span>Insignias exploradas</span></div><div class="kpi"><b>${cuenta('enlace')}</b><span>Enlaces abiertos</span></div></div>
+    ${nombres.length ? `<p><b>Historial de nombres:</b> ${nombres.slice().reverse().map(esc).join(' · ')}</p>` : ''}
+    ${Object.keys(exploradas).length ? `<p><b>Insignias que más miró:</b> ${Object.entries(exploradas).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(k)}${ganadas.includes(k) ? ' 🏅' : ''} (${v})`).join(' · ')}</p>` : ''}
+    <div class="tl">${data.length ? data.map(a => { const f = new Date(a.creado), d = f.toLocaleDateString('es-PE', { weekday: 'long', day: '2-digit', month: 'short' }), cab = d !== dia ? `<div class="tld">${dia = d}</div>` : '';
+      return cab + `<div class="tli"><span>${f.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}</span><span>${TIPO[a.tipo]?.[0] || '•'}</span><span>${TIPO[a.tipo]?.[1] || a.tipo}${a.detalle ? ': <b>' + esc(a.tipo === 'vista' ? VISTA[a.detalle] || a.detalle : a.detalle) + '</b>' : ''}</span></div>`; }).join('') : '<div class="empty">Aún sin actividad registrada.</div>'}</div>`;
+}
+function cerrar() { $('#modal').classList.add('hide'); }
+function exportar() {
+  const cols = ['nombre', 'alias', 'nivel', 'ultima', 'ingresos', 'dias_activos', 'vistas', 'enlaces', 'insignias_ganadas', 'insignias_vistas', 'cambios_alias', 'otros_cambios', 'ingresos_total'];
+  const csv = [cols.join(','), ...D.map(x => cols.map(c => `"${String(c === 'ultima' && x[c] ? new Date(x[c]).toLocaleString('es-PE') : x[c] ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = `actividad-${SECC.nombre}-${DIAS_P || 'todo'}d.csv`; a.click();
+}
+document.querySelectorAll('#periodo button').forEach(b => b.onclick = () => { DIAS_P = Number(b.dataset.d); document.querySelectorAll('#periodo button').forEach(x => x.classList.toggle('on', x === b)); cargar(); });
+document.querySelectorAll('#nivel button').forEach(b => b.onclick = () => { NIVEL = b.dataset.n; document.querySelectorAll('#nivel button').forEach(x => x.classList.toggle('on', x === b)); pintar(); });
+$('#buscar').oninput = pintar;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrar(); });
+iniciar();
+</script>
+</body>
+</html>

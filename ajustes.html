@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130955">
+<link rel="stylesheet" href="assets/app.css?v=202611131002">
 </head>
 <body>
 <header class="top">
@@ -31,7 +31,7 @@
     <h2 class="pix">SECCIONES (AULAS)</h2>
     <p class="help">Cada sección tiene sus propios alumnos, semana actual, ranking, víctimas y podio de Kahoot. El plan de semanas, los rangos, las etiquetas y los puntajes se comparten. Elige con qué aula trabajas en el selector <b>AULA</b> del menú.</p>
     <div class="ajform etq" style="grid-template-columns:1fr 1.4fr auto;max-width:720px"><input id="sNombre" placeholder="Nombre (ej. SISOPE 52A – Lunes)"><input id="sDesc" placeholder="Descripción (curso, horario, aula)"><button class="btn green" onclick="agregarSecc()">+ Crear sección</button></div>
-    <div class="altabla" style="margin-top:12px"><div class="sr alc"><div>Sección</div><div>Descripción</div><div>Semana actual</div><div>Alumnos</div><div>Estado</div><div></div></div><div id="secciones"></div></div>
+    <div class="altabla" style="margin-top:12px"><div class="sr alc"><div>Sección</div><div>Descripción</div><div>Días de clase</div><div>Semana actual</div><div>Alumnos</div><div>Estado</div><div></div></div><div id="secciones"></div></div>
   </section>
 
   <!-- ALUMNOS -->
@@ -126,8 +126,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130955"></script>
-<script src="assets/comun.js?v=202611130955"></script>
+<script src="assets/config.js?v=202611131002"></script>
+<script src="assets/comun.js?v=202611131002"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -293,6 +293,7 @@ async function cargarSecc() {
   const sems = Array.from({ length: 16 }, (_, i) => i + 1);
   $('#secciones').innerHTML = (ss || []).map(s => `<div class="sr ${s.activa ? '' : 'inact'}" data-id="${s.id}">
     <input data-c="nombre" value="${esc(s.nombre)}"><input data-c="descripcion" value="${esc(s.descripcion || '')}" placeholder="—">
+    <div class="dias">${DIAS.map((d, i) => `<button class="${(s.dias || []).includes(i) ? 'on' : ''}" title="${DIAS_L[i]}" onclick="alternarDia(${s.id}, ${i})">${d}</button>`).join('')}</div>
     <select data-c="semana_actual">${sems.map(n => `<option ${n === s.semana_actual ? 'selected' : ''}>${n}</option>`).join('')}</select>
     <div><b>${(js || []).filter(j => j.seccion_id === s.id && j.activo).length}</b> activos</div>
     <button class="sbtn mini ${s.activa ? '' : 'gold'}" onclick="alternarSecc(${s.id}, ${!s.activa})">${s.activa ? 'Archivar' : 'Reactivar'}</button>
@@ -303,6 +304,15 @@ async function cargarSecc() {
     const { error } = await sb.from('secciones').update({ [el.dataset.c]: v }).eq('id', id);
     if (error) { toast('No se guardó: ' + error.message, true); return; } el.classList.add('ok'); setTimeout(() => el.classList.remove('ok'), 900);
   });
+}
+async function alternarDia(id, d) {
+  const sec = SECCIONES.find(x => x.id === id) || {}, { data: actual } = await sb.from('secciones').select('dias').eq('id', id).maybeSingle();
+  if (actual && !('dias' in actual)) { toast('Falta ejecutar el script 21 en Supabase', true); return; }
+  let dias = (actual?.dias || []).slice(); dias = dias.includes(d) ? dias.filter(x => x !== d) : [...dias, d].sort();
+  if (!dias.length) { toast('Debe quedar al menos un día de clase', true); return; }
+  const { error } = await sb.from('secciones').update({ dias }).eq('id', id);
+  if (error) { toast(/dias/.test(error.message) ? 'Falta ejecutar el script 21 en Supabase' : 'No se guardó: ' + error.message, true); return; }
+  sec.dias = dias; toast(`Días de clase: ${dias.map(x => DIAS_L[x]).join(', ')}`); cargarSecc();
 }
 async function agregarSecc() {
   const o = { nombre: $('#sNombre').value.trim(), descripcion: $('#sDesc').value.trim() || null }; if (!o.nombre) { toast('Escribe el nombre', true); return; }

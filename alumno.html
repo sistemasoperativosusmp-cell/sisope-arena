@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130955">
+<link rel="stylesheet" href="assets/app.css?v=202611131002">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -69,10 +69,13 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130955"></script>
-<script src="assets/comun.js?v=202611130955"></script>
+<script src="assets/config.js?v=202611131002"></script>
+<script src="assets/comun.js?v=202611131002"></script>
 <script>
 let EQ = [], ENL = [];
+// Registro de actividad para el reporte de la docente (la base ignora repeticiones seguidas y a los docentes)
+const log = (tipo, detalle) => { try { sb.rpc('registrar_actividad', { p_tipo: tipo, p_detalle: detalle ?? null }).then(() => {}, () => {}); } catch (e) {} };
+const GANADAS = new Set();
 let MED = [], SEMACT = 1, CONS = [], SK = null, YO = null, R = [], NOTAS = null, DET = [], SEMS = {}, CFG = {}, FILTRO = 'Todas';
 const n = v => Number(v || 0), f1 = v => String(Math.round(v * 100) / 100), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + f1(Math.abs(v));
 const PRACS = ['Practica 1', 'Practica 2', 'Practica 3', 'Practica 4'];
@@ -88,6 +91,7 @@ async function iniciar() {
   const [{ data: s }, { data: c }, { data: sec }, pod] = await Promise.all([sb.from('semanas').select('semana, tema, practica'), sb.from('config').select('clave, valor'), YO ? sb.from('secciones').select('nombre, semana_actual').eq('id', YO.seccion_id).maybeSingle() : { data: null }, YO ? podiosSeccion(YO.seccion_id) : {}]);
   SEMS = Object.fromEntries((s || []).map(x => [x.semana, { ...x, kahoot_podio: pod[x.semana]?.kahoot_podio || 3 }])); CFG = Object.fromEntries((c || []).map(x => [x.clave, x.valor]));
   SEMACT = sec?.semana_actual || 1; $('#vivo').textContent = `EN VIVO · ${sec ? sec.nombre + ' · ' : ''}semana ${SEMACT}`;
+  if (YO && !doc) log('ingreso');
   window.addEventListener('hashchange', mostrar); mostrar();
   if (new URLSearchParams(location.search).get('bloqueado')) { history.replaceState(null, '', 'alumno.html' + location.hash); toast('Esa sección es solo para la docente. El intento quedó registrado.', true); }
   await refrescar();
@@ -98,6 +102,7 @@ function mostrar() {
   const v = (location.hash || '#ranking').slice(1);
   document.querySelectorAll('.vista').forEach(s => s.classList.toggle('hide', s.id !== 'v-' + v));
   document.querySelectorAll('.anav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
+  if (YO) log('vista', v);
 }
 async function refrescar() {
   const q = await Promise.all([
@@ -193,6 +198,8 @@ function pintarPerfil(fb) {
   const ins = insignias(yo);
   $('#insignias').innerHTML = ins.map(([img, t, r, como, ok]) => `<div class="badge ${r} ${ok ? 'ok' : ''}" data-tip="${esc(t)} · ${RAREZA[r]}: ${ok || r !== 'secreta' ? esc(como) : 'condición secreta'}${ok ? ' ✓' : ''}"><img src="assets/insignias/${img}${ok ? '' : '-bloq'}.webp" alt="" loading="lazy">${ok ? '' : '<i class="lock">🔒</i>'}<span class="rz">${RAREZA[r]}</span><b>${esc(t)}</b><small>${ok || r !== 'secreta' ? esc(como) : '???'}</small></div>`).join('');
   $('#insCont').textContent = `${ins.filter(x => x[4]).length} / ${ins.length}`;
+  ins.filter(x => x[4] && !GANADAS.has(x[1])).forEach(x => { GANADAS.add(x[1]); log('insignia_ganada', x[1]); });
+  document.querySelectorAll('#insignias .badge').forEach(b => { const t = b.querySelector('b')?.textContent; b.addEventListener('mouseenter', () => log('insignia_vista', t)); b.addEventListener('click', () => log('insignia_vista', t)); });
   const nt = NOTAS || {}, fila = (t, v, d) => `<div class="nf"><span>${t}</span><b>${v === null || v === undefined ? '—' : Number(v).toFixed(2)}</b></div>`;
   $('#misnotas').innerHTML = PRACS.map((p, i) => fila(`Práctica ${i + 1}`, nt['p' + (i + 1)])).join('') + fila('Promedio de prácticas (PE)', nt.pe) + fila(`Parcial${n(nt.bonus_ep) ? ' (+' + f1(n(nt.bonus_ep)) + ' bonus)' : ''}`, nt.ep_final) + fila(`Final${n(nt.bonus_ef) ? ' (+' + f1(n(nt.bonus_ef)) + ' bonus)' : ''}`, nt.ef_final)
     + `<div class="nf pf"><span>Promedio final</span><b>${nt.pf !== undefined && nt.pf !== null ? Number(nt.pf).toFixed(2) : '—'}</b></div>`
@@ -253,7 +260,8 @@ async function cambiarRol(sel) {
 function pintarEnlaces() {
   if (!ENL.length) { $('#enlaces').innerHTML = '<div class="panel"><div class="gris">Tu docente aún no ha publicado enlaces.</div></div>'; return; }
   const cats = [...new Set(ENL.map(e => e.categoria))], dom = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
-  $('#enlaces').innerHTML = cats.map(c => `<div class="panel"><h2 class="pix">${esc(c.toUpperCase())}</h2><div class="enls">${ENL.filter(e => e.categoria === c).map(e => `<a class="enl" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer"><b>🔗 ${esc(e.titulo)}</b>${e.descripcion ? `<span>${esc(e.descripcion)}</span>` : ''}<small>${esc(dom(e.url))} ↗</small></a>`).join('')}</div></div>`).join('');
+  setTimeout(() => document.querySelectorAll('#enlaces .enl').forEach(a => a.onclick = () => log('enlace', a.dataset.t)));
+  $('#enlaces').innerHTML = cats.map(c => `<div class="panel"><h2 class="pix">${esc(c.toUpperCase())}</h2><div class="enls">${ENL.filter(e => e.categoria === c).map(e => `<a class="enl" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer" data-t="${esc(e.titulo)}"><b>🔗 ${esc(e.titulo)}</b>${e.descripcion ? `<span>${esc(e.descripcion)}</span>` : ''}<small>${esc(dom(e.url))} ↗</small></a>`).join('')}</div></div>`).join('');
 }
 function editarAlias() {
   if ($('#aliasEd').innerHTML) { $('#aliasEd').innerHTML = ''; return; }
