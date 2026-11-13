@@ -45,7 +45,9 @@ function celda(f, col) {
   return `<span class="seg ${col.cls || ''}">${col.opciones.map(o => {
     const [val, txt] = Array.isArray(o) ? o : [o, String(o)];
     const on = typeof val === 'number' ? nv(f[col.campo]) === val : f[col.campo] === val;
- return `<button class="${on ? 'on' : ''} ${col.cls === 'txt' ? 'p' : ''} ${typeof val === 'number' && val < 0 ? 'neg' : ''}" onclick='poner(${f.id}, "${col.campo}", ${JSON.stringify(val)})'>${esc(txt)}</button>`;
+ // Kahoot: un puesto del podio ya asignado a otro alumno queda bloqueado
+    const dueno = col.campo === 'kahoot_pos' && typeof val === 'number' && val < 99 && !on ? FILAS.find(x => x.id !== f.id && nv(x.kahoot_pos) === val) : null;
+    return `<button class="${on ? 'on' : ''} ${col.cls === 'txt' ? 'p' : ''} ${typeof val === 'number' && val < 0 ? 'neg' : ''} ${dueno ? 'tomado' : ''}" ${dueno ? `disabled title="Ya es de ${esc(dueno.jugadores?.alias)}"` : ''} onclick='poner(${f.id}, "${col.campo}", ${JSON.stringify(val)})'>${esc(txt)}</button>`;
   }).join('')}</span>`;
 }
 
@@ -71,16 +73,13 @@ function pintarCasa() {
 }
 
 async function poner(id, campo, valor) {
+  if (campo === 'kahoot_pos' && valor < 99 && FILAS.some(x => x.id !== id && nv(x.kahoot_pos) === valor)) { toast('Ese puesto ya está asignado', true); return; }
   const f = FILAS.find(x => x.id === id), antes = f[campo];
   const actual = typeof valor === 'number' ? nv(f[campo]) : f[campo];
   const nuevo = actual === valor ? null : valor;
   f[campo] = nuevo; pintarCasa();
   const { error } = await sb.from('detalle').update({ [campo]: nuevo }).eq('id', id);
   if (error) { f[campo] = antes; pintarCasa(); toast('No se guardó: ' + error.message, true); return; }
-  if (campo === 'kahoot_pos' && nuevo >= 1 && nuevo < 99) {
-    const otros = FILAS.filter(x => x.id !== id && nv(x.kahoot_pos) === nuevo);
-    if (otros.length) toast(`Ojo: ${otros.map(x => x.jugadores?.alias).join(', ')} también tiene el puesto ${nuevo}°`, true);
-  }
 }
 async function contar(id, campo, delta) {
   const f = FILAS.find(x => x.id === id), antes = nv(f[campo]) || 0; if (antes + delta < 0) return;

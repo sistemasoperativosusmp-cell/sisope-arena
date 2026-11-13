@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Kahoot</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611122310">
+<link rel="stylesheet" href="assets/app.css?v=202611122320">
 </head>
 <body>
 <header class="top">
@@ -25,16 +25,16 @@
   <div class="grlist" id="lista"><div class="empty">Cargando…</div></div>
   <section class="leyenda"><h3 class="pix">LEYENDA</h3><div class="ley"><div class="ancho"><span class="seg mini2"><button class="on">🥇 1°</button><button>🥈 2°</button><button>🥉 3°</button><button>4°</button></span><p><b>Puntos:</b> 🥇 1° = <b class="kp1">2</b> · 🥈 2° = <b class="kp2">1</b> · 🥉 3° = <b class="kp3">0.5</b>. Así es más competitivo y no conviene copiarse. “Participó” no suma, pero queda registrado que jugó.</p></div>
       <div class="ancho"><span class="podio mini2"><button>−</button><b>5</b><button>+</button></span><p><b>Podio extendido:</b> cuando hay poco quórum, súbelo (hasta 10). Los puestos del 4° en adelante dentro del podio suman <b class="kpx">0.5</b>. Se guarda por semana.</p></div>
-      <div><span class="tag" style="background:#fde8e8;color:#c23030">Ojo</span><p>Si das un puesto que ya tiene otro alumno, te avisa (por si hubo empate).</p></div>
+      <div><span class="seg mini2"><button class="tomado" disabled>🥇 1°</button></span><p><b>Puesto ocupado:</b> cuando un puesto ya tiene dueño se bloquea para los demás. Para cambiarlo, quítaselo primero (tocándolo de nuevo).</p></div>
       <div><span class="seg mini2"><button>0</button><button class="on">1</button></span><p><b>Tocar de nuevo</b> la opción marcada la borra (queda <b>pendiente</b>, distinto de 0).</p></div>
       <div><span class="seg mini2 bulk"><i>Todos</i><button>3</button></span><p><b>Todos → Participó:</b> marca a toda la clase (o a los filtrados) como participantes; luego asignas los puestos del podio.</p></div>
       <div><span class="tag" style="background:#fff1c2;color:#7a5a00">pendiente</span><p>Aún sin registrar en el Kahoot de esta semana. Arriba ves el avance “N de M registrados”.</p></div></div></section>
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611122310"></script>
-<script src="assets/comun.js?v=202611122310"></script>
-<script src="assets/casa.js?v=202611122310"></script>
+<script src="assets/config.js?v=202611122320"></script>
+<script src="assets/comun.js?v=202611122320"></script>
+<script src="assets/casa.js?v=202611122320"></script>
 <script>
 let PODIO = 3, KP = { 1: 2, 2: 1, 3: 0.5, x: 0.5 };
 const ptsK = pos => !pos || pos >= 99 ? 0 : pos <= 3 ? KP[pos] : pos <= PODIO ? KP.x : 0;
@@ -56,9 +56,9 @@ window.CASA = {
 function armar() {
   const med = ['🥇 1°', '🥈 2°', '🥉 3°'];
   CASA.cols[0].opciones = [...Array(PODIO).keys()].map(i => [i + 1, med[i] || (i + 1) + '°']).concat([[99, 'Participó']]);
-  CASA.cols[0].sub = `1° = ${KP[1]} · 2° = ${KP[2]} · 3° = ${KP[3]}${PODIO > 3 ? ` · 4° a ${PODIO}° = ${KP.x}` : ''} pts`;
+  CASA.cols[0].sub = `1° = ${KP[1]} · 2° = ${KP[2]} · 3° = ${KP[3]}${PODIO > 3 ? ` · ${PODIO > 4 ? `4° a ${PODIO}°` : `4°`} = ${KP.x}` : ''} pts`;
   $('#podio').textContent = PODIO;
-  $('#podioTxt').textContent = PODIO > 3 ? `Podio extendido: puestos 4° a ${PODIO}° suman ${KP.x}` : 'Podio normal (top 3)';
+  $('#podioTxt').textContent = PODIO > 3 ? `Podio extendido: ${PODIO > 4 ? `puestos 4° a ${PODIO}°` : `puesto 4°`} suma ${KP.x}` : 'Podio normal (top 3)';
   document.querySelectorAll('.kp1').forEach(e => e.textContent = KP[1]); document.querySelectorAll('.kp2').forEach(e => e.textContent = KP[2]);
   document.querySelectorAll('.kp3').forEach(e => e.textContent = KP[3]); document.querySelectorAll('.kpx').forEach(e => e.textContent = KP.x);
 }
