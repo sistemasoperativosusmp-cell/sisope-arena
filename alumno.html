@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130940">
+<link rel="stylesheet" href="assets/app.css?v=202611130941">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -46,12 +46,6 @@
         <div class="panel"><h2 class="pix">INSIGNIAS <span id="insCont" class="insc"></span></h2><div class="insig2" id="insignias"></div><p class="gris">Las grises aún están bloqueadas: debajo dice cómo ganarlas. Las secretas se revelan al conseguirlas.</p></div>
 
       <div class="panel" id="fbpanel"><h2 class="pix">MENSAJES DE TU DOCENTE</h2><div id="feedback"></div></div>
-      <div class="panel"><h2 class="pix">ESCRÍBELE A TU DOCENTE</h2>
-        <p class="gris" style="margin-top:0">¿Una idea para mejorar la clase, una duda o algo que te gustó? Tu docente lo leerá. Si marcas <b>anónimo</b>, no verá tu nombre (pero tampoco podrá responderte).</p>
-        <div class="msjf"><select id="mCat"><option>Comentario</option><option>Sugerencia</option><option>Duda</option><option>Felicitación</option><option>Problema</option></select>
-        <textarea id="mTxt" maxlength="800" rows="3" placeholder="Escribe tu mensaje…"></textarea>
-        <div class="msjb"><label><input type="checkbox" id="mAnon"> Enviar como anónimo</label><span id="mCnt" class="gris">0 / 800</span><button class="abtn" id="mEnv" onclick="enviarMsj()">ENVIAR</button></div></div>
-        <div id="misMsj"></div></div>
     </div>
   </section>
 
@@ -70,8 +64,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130940"></script>
-<script src="assets/comun.js?v=202611130940"></script>
+<script src="assets/config.js?v=202611130941"></script>
+<script src="assets/comun.js?v=202611130941"></script>
 <script>
 let MED = [], SEMACT = 1, CONS = [], SK = null, YO = null, R = [], NOTAS = null, DET = [], SEMS = {}, CFG = {}, FILTRO = 'Todas';
 const n = v => Number(v || 0), f1 = v => String(Math.round(v * 100) / 100), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + f1(Math.abs(v));
@@ -106,10 +100,8 @@ async function refrescar() {
     YO ? sb.from('v_notas').select('*').eq('jugador_id', YO.id).maybeSingle() : { data: null },
     YO ? sb.from('detalle').select('*').eq('jugador_id', YO.id).order('semana') : { data: [] },
     YO ? sb.from('v_medallas').select('*').eq('seccion_id', YO.seccion_id) : { data: [] },
-    YO ? sb.from('feedback').select('texto, creado, semana').eq('jugador_id', YO.id).eq('visible_alumno', true).order('creado', { ascending: false }) : { data: [] },
-    YO ? sb.from('mensajes').select('categoria, texto, leido, respuesta, respondido, creado').eq('jugador_id', YO.id).order('creado', { ascending: false }).limit(10) : { data: [] }
+    YO ? sb.from('feedback').select('texto, creado, semana').eq('jugador_id', YO.id).eq('visible_alumno', true).order('creado', { ascending: false }) : { data: [] }
   ]);
-  pintarMisMsj(q[6].data || []);
   if (q[0].error) { toast('Error al leer el ranking: ' + q[0].error.message, true); return; }
   R = q[0].data || []; NOTAS = q[2].data; DET = q[3].data || [];
   MED = q[4].data || []; CONS = q[1].data || []; pintarRanking(CONS); pintarPerfil(q[5].data || []); pintarMedallas(); pintarPuntajes(); pintarSkills();
@@ -231,7 +223,7 @@ function pintarExtras() {
     <div class="gris">Puesto ${c ? c.posicion : '—'} de ${CONS.length} consultoras. Sumen XP en los trabajos grupales.</div>` : '<div class="gris">Aún no tienes equipo asignado.</div>';
   guardC();
 }
-// ---------- Nombre de jugador, consultora y mensajes a la docente ----------
+// ---------- Nombre de jugador y consultora ----------
 // Si la página se refresca sola mientras el alumno escribe, conserva el editor abierto y lo escrito
 function guardarEditor(caja, campo) {
   const html = document.getElementById(caja)?.innerHTML, el = document.getElementById(campo), val = el?.value, foco = document.activeElement === el;
@@ -260,19 +252,6 @@ async function guardarCons() {
   if (error) { toast(error.message, true); return; }
   YO.consultora = data; toast(`Consultora renombrada: ${data}`); await refrescar();
 }
-async function enviarMsj() {
-  const t = $('#mTxt').value.trim(); if (t.length < 3) { toast('Escribe tu mensaje', true); return; }
-  $('#mEnv').disabled = true;
-  const { error } = await sb.rpc('enviar_mensaje', { p_texto: t, p_categoria: $('#mCat').value, p_anonimo: $('#mAnon').checked });
-  $('#mEnv').disabled = false;
-  if (error) { toast(/function|schema cache/i.test(error.message) ? 'Esta opción aún no está activa. Avísale a tu docente.' : error.message, true); return; }
-  $('#mTxt').value = ''; $('#mCnt').textContent = '0 / 800'; toast($('#mAnon').checked ? 'Mensaje anónimo enviado. ¡Gracias!' : 'Mensaje enviado. ¡Gracias!'); $('#mAnon').checked = false; refrescar();
-}
-function pintarMisMsj(m) {
-  const d = x => new Date(x).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
-  $('#misMsj').innerHTML = m.length ? `<small class="pix gris">TUS MENSAJES</small>` + m.map(x => `<div class="fbm mio"><small>${d(x.creado)} · ${esc(x.categoria)} · ${x.respuesta ? '💬 respondido' : x.leido ? '👀 leído' : '📨 enviado'}</small><p>${esc(x.texto)}</p>${x.respuesta ? `<div class="resp"><small>Tu docente · ${d(x.respondido || x.creado)}</small><p>${esc(x.respuesta)}</p></div>` : ''}</div>`).join('') : '';
-}
-document.addEventListener('input', e => { if (e.target.id === 'mTxt') $('#mCnt').textContent = `${e.target.value.length} / 800`; });
 
 async function pintarSkills() {
   pintarExtras(); activarTips();
