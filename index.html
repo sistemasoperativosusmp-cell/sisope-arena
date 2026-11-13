@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ingresar</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=">
+<link rel="stylesheet" href="assets/app.css?v=202611131033">
 </head>
 <body>
 <div class="login">
@@ -20,8 +20,8 @@
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v="></script>
-<script src="assets/comun.js?v="></script>
+<script src="assets/config.js?v=202611131033"></script>
+<script src="assets/comun.js?v=202611131033"></script>
 <script>
 async function destino() { const { data } = await sb.auth.getSession(); if (data.session?.user.user_metadata?.debe_cambiar) { location.replace('reset.html?temporal=1'); return; } location.replace((await esDocente()) ? 'docente.html' : 'alumno.html'); }
 sb.auth.getSession().then(({ data }) => { if (data.session) destino(); });
