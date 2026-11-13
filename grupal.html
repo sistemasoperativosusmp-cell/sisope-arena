@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Trabajo grupal</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131002">
+<link rel="stylesheet" href="assets/app.css?v=202611131028">
 </head>
 <body>
 <header class="top">
@@ -38,10 +38,17 @@
     </div>
   </section>
 </main>
+<div class="modal hide" id="mEtq" onclick="if (event.target === this) cerrarEtq()"><div class="box plain">
+  <h2 class="pix" style="color:var(--navy)">ETIQUETAS DE ESTA SEMANA</h2>
+  <div class="nom" style="font-size:22px" id="eNom"></div>
+  <div id="eEtq" class="metq"></div>
+  <p class="help" style="margin:0">Solo las ves tú. Son las mismas del Juego del Miedo y alimentan el perfil en Progreso. Crea más en Ajustes → Etiquetas.</p>
+  <button class="sbtn" onclick="cerrarEtq()">Listo</button>
+</div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131002"></script>
-<script src="assets/comun.js?v=202611131002"></script>
+<script src="assets/config.js?v=202611131028"></script>
+<script src="assets/comun.js?v=202611131028"></script>
 <script>
 let SEM = 1, FILAS = [];
 const PART = [['Lideró', 'Lideró'], ['Apoyó', 'Apoyó'], ['Habló', 'Habló'], ['Intentando', 'Intentando'], ['No participó', 'No part.']];
@@ -69,8 +76,10 @@ async function iniciar() {
   const { data: s } = await sb.from('semanas').select('*').eq('semana', SEM).maybeSingle();
   SEMINFO = s || {}; pintarPills();
   $('#tipo').innerHTML = TIPOS.map(t => `<option ${t === SEMINFO.tipo_grupal ? 'selected' : ''}>${t}</option>`).join('') + (SEMINFO.tipo_grupal ? '' : '<option value="" selected>— elige —</option>');
-  const { data, error } = await sb.from('detalle').select('id, asistencia, tipo_grupal, participacion_grupal, gr_comunicacion, gr_tecnico, gr_analisis, extra, falta, tema_grupal, jugadores!inner(nombre, alias, consultora, rol_consultora, seccion_id)').eq('semana', SEM).eq('jugadores.seccion_id', SECC.id);
+  const { data, error } = await sb.from('detalle').select('id, jugador_id, asistencia, tipo_grupal, participacion_grupal, gr_comunicacion, gr_tecnico, gr_analisis, extra, falta, tema_grupal, jugadores!inner(nombre, alias, consultora, rol_consultora, seccion_id)').eq('semana', SEM).eq('jugadores.seccion_id', SECC.id);
   if (error) { toast('Error al cargar: ' + error.message, true); return; }
+  const [{ data: et }, { data: ob }] = await Promise.all([sb.from('etiquetas').select('*').order('tipo').order('nombre'), sb.from('observaciones').select('jugador_id, etiquetas').eq('semana', SEM)]);
+  ETQ = et || []; OBS = Object.fromEntries((ob || []).map(o => [o.jugador_id, o.etiquetas || []]));
   FILAS = (data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
   if (['Examen', '—'].includes(s?.tipo_grupal)) toast(`La semana ${SEM} no tiene trabajo grupal (${s.tipo_grupal}).`, true);
   pintar();
@@ -84,6 +93,24 @@ function seg(f, campo, opciones, cls) {
   }).join('')}</span>`;
 }
 
+// ---------- Etiquetas de comportamiento (las mismas del Juego del Miedo; se guardan por semana en observaciones) ----------
+let ETQ = [], OBS = {}, ETQ_J = null;
+function chipsEtq(jid) {
+  const sel = OBS[jid] || [], m = n => ETQ.find(e => e.nombre === n);
+  return `<div class="getq">${sel.map(n => `<span class="gchip ${m(n)?.tipo === 'Positivo' ? 'pos' : ''}" title="${esc(n)}">${esc(m(n)?.emoji || '')} ${esc(n)}</span>`).join('')}<button class="gadd" onclick="abrirEtq('${jid}')" title="Etiquetar">🏷${sel.length ? '' : ' Etiquetar'}</button></div>`;
+}
+function etqHTML(jid) {
+  const sel = OBS[jid] || [], b = tipo => ETQ.filter(e => e.tipo === tipo).map(e => `<button class="etq ${sel.includes(e.nombre) ? 'on' : ''} ${e.tipo === 'Positivo' ? 'pos' : ''}" onclick="alternarEtq('${jid}', ${esc(JSON.stringify(e.nombre))})">${esc(e.emoji || '')} ${esc(e.nombre)}</button>`).join('');
+  return `<div class="lbl">Positivas</div><div class="etqs">${b('Positivo')}</div><div class="lbl">Por mejorar</div><div class="etqs">${b('Por mejorar')}</div>`;
+}
+function abrirEtq(jid) { const f = FILAS.find(x => x.jugador_id === jid); ETQ_J = jid; $('#eNom').textContent = `${f.jugadores?.nombre} · ${f.jugadores?.alias}`; $('#eEtq').innerHTML = etqHTML(jid); $('#mEtq').classList.remove('hide'); }
+function cerrarEtq() { $('#mEtq').classList.add('hide'); ETQ_J = null; }
+async function alternarEtq(jid, nombre) {
+  const antes = OBS[jid] || [], nuevo = antes.includes(nombre) ? antes.filter(x => x !== nombre) : [...antes, nombre];
+  OBS[jid] = nuevo; $('#eEtq').innerHTML = etqHTML(jid); pintar();
+  const { error } = await sb.from('observaciones').upsert({ jugador_id: jid, semana: SEM, etiquetas: nuevo }, { onConflict: 'jugador_id,semana' });
+  if (error) { OBS[jid] = antes; if (ETQ_J === jid) $('#eEtq').innerHTML = etqHTML(jid); pintar(); toast('No se guardó la etiqueta: ' + error.message, true); }
+}
 function pintar() {
   if (!FILAS.length) { $('#grupos').innerHTML = `<div class="empty">No hay filas para la semana ${SEM}. Ve a <a href="docente.html">Inicio</a> y presiona "Iniciar / continuar semana".</div>`; return; }
   const grupos = {};
@@ -99,7 +126,7 @@ function pintar() {
         <div></div>
         <div>${netoHTML(null, 0, `ajusteGrupo(${esc(JSON.stringify(g))}, -1)`, `ajusteGrupo(${esc(JSON.stringify(g))}, 1)`, 'equipo')}</div></div>
       ${filas.map(f => `<div class="grrow ${f.asistencia === 'Ausente' ? 'aus' : ''}">
-        <div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.jugadores?.rol_consultora ? ' · ' + esc(f.jugadores.rol_consultora) : ''}${f.asistencia === 'Ausente' ? ' · AUSENTE' : f.asistencia === 'Tarde' ? ' · TARDE' : ''}</small></div>
+        <div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.jugadores?.rol_consultora ? ' · ' + esc(f.jugadores.rol_consultora) : ''}${f.asistencia === 'Ausente' ? ' · AUSENTE' : f.asistencia === 'Tarde' ? ' · TARDE' : ''}</small>${chipsEtq(f.jugador_id)}</div>
         ${seg(f, 'participacion_grupal', PART, 'part')}
         ${CRIT.map(c => seg(f, c, NIV.map(v => [v, String(v)]))).join('')}
         <div class="tot">${fmt(total(f))}</div>

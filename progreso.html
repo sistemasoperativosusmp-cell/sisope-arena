@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131002">
+<link rel="stylesheet" href="assets/app.css?v=202611131028">
 </head>
 <body>
 <header class="top">
@@ -43,8 +43,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131002"></script>
-<script src="assets/comun.js?v=202611131002"></script>
+<script src="assets/config.js?v=202611131028"></script>
+<script src="assets/comun.js?v=202611131028"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -170,12 +170,16 @@ function perfiles(x, fs, etqs) {
   if (x.comp.SO2 !== null && x.comp.SO2 >= 0.85 && x.rend >= 1.2) ev('habil', `Competencia técnica ${Math.round(x.comp.SO2 * 100)}% y rinde ${Math.round(x.rend * 100)}% del promedio`);
   if (pas.filter(d => d.participacion_grupal === 'Lideró').length >= 2) ev('lider', `Lideró ${pas.filter(d => d.participacion_grupal === 'Lideró').length} trabajos grupales`);
   if (vozProm >= 2.5) ev('particip', `Voz promedio ${vozProm.toFixed(1)} por clase`);
-  if (presentes.length >= 2 && (x.silencio >= 2 || vozProm < 0.75) && escrito !== null && escrito >= 0.65) ev('timido', `Voz ${vozProm.toFixed(1)} por clase (${x.silencio} sem. en silencio) pero su trabajo escrito va en ${Math.round(escrito * 100)}%`);
+  const veces = t => etqs.filter(e => e === t).length;
+  if (veces('Buen expositor') >= 2 && vozProm < 2.5) ev('particip', `etiquetado “Buen expositor” ${veces('Buen expositor')} veces`);
+  if ((veces('Tímido') + veces('Mudo')) >= 2) ev('timido', `etiquetado “Tímido/Mudo” ${veces('Tímido') + veces('Mudo')} veces`);
+  else if (presentes.length >= 2 && (x.silencio >= 2 || vozProm < 0.75) && escrito !== null && escrito >= 0.65) ev('timido', `Voz ${vozProm.toFixed(1)} por clase (${x.silencio} sem. en silencio) pero su trabajo escrito va en ${Math.round(escrito * 100)}%`);
   if (x.labNo >= 1 || sinEntrega >= 2 || etqs.includes('Flojo')) ev('flojo', [x.labNo ? `${x.labNo} lab. no cumplido(s)` : '', sinEntrega >= 2 ? `${sinEntrega} semanas sin entrega de lab.` : '', etqs.includes('Flojo') ? 'etiquetado “Flojo”' : ''].filter(Boolean).join(' · '));
   if (x.aus >= 2 || (pas.length >= 4 && x.aus / pas.length >= 0.25)) ev('falta', `${x.aus} ausencia(s) de ${pas.length} clases`);
   if (tarde >= 2) ev('impuntual', `${tarde} llegadas tarde`);
   const ep = x.nt.ep !== null && x.nt.ep !== undefined ? Number(x.nt.ep) : null;
-  if (escrito !== null && escrito >= 0.85 && ((jm !== null && jm < 0.4) || (ep !== null && ep < 11))) ev('copia', `Escrito ${Math.round(escrito * 100)}%${jm !== null ? ` · aciertos orales ${Math.round(jm * 100)}%` : ''}${ep !== null ? ` · parcial ${ep}` : ''}`);
+  if (veces('Plagio')) ev('copia', `etiquetado “Plagio” ${veces('Plagio')} vez/veces`);
+  else if (escrito !== null && escrito >= 0.85 && ((jm !== null && jm < 0.4) || (ep !== null && ep < 11))) ev('copia', `Escrito ${Math.round(escrito * 100)}%${jm !== null ? ` · aciertos orales ${Math.round(jm * 100)}%` : ''}${ep !== null ? ` · parcial ${ep}` : ''}`);
   return out;
 }
 
