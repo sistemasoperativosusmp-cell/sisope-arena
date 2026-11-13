@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131056">
+<link rel="stylesheet" href="assets/app.css?v=202611131133">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -70,8 +70,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131056"></script>
-<script src="assets/comun.js?v=202611131056"></script>
+<script src="assets/config.js?v=202611131133"></script>
+<script src="assets/comun.js?v=202611131133"></script>
 <script>
 let EQ = [], ENL = [];
 // Registro de actividad para el reporte de la docente (la base ignora repeticiones seguidas y a los docentes)
@@ -160,7 +160,7 @@ function pintarMedallas() {
 function partes(d) {
   const k = n(d.kahoot_pos), podio = SEMS[d.semana]?.kahoot_podio || 3, c = x => Number(CFG[x]);
   const kah = !k || k >= 99 ? 0 : k === 1 ? (c('KahootP1') || 2) : k === 2 ? (c('KahootP2') || 1) : k === 3 ? (c('KahootP3') || 0.5) : k <= podio ? (c('KahootExtra') || 0.5) : 0;
-  return { gr: n(d.gr_comunicacion) + n(d.gr_tecnico) + n(d.gr_analisis), lab: n(d.lab), quiz: n(d.quiz), foro: n(d.foro_tecnico) + n(d.foro_analisis) + n(d.foro_bonus), kah, jm: n(d.jm_aciertos) * (c('JMAcierto') || 0.5) - n(d.jm_fallos) * (c('JMFallo') || 0.5), ext: n(d.extra) - n(d.falta) };
+  return { gr: n(d.gr_comunicacion) + n(d.gr_tecnico) + n(d.gr_analisis), lab: n(d.lab) + n(d.lab_bonus), quiz: n(d.quiz), foro: n(d.foro_tecnico) + n(d.foro_analisis) + n(d.foro_bonus), kah, jm: n(d.jm_aciertos) * (c('JMAcierto') || 0.5) - n(d.jm_fallos) * (c('JMFallo') || 0.5), ext: n(d.extra) - n(d.falta) };
 }
 const voz = d => n(d.jm_aciertos) + n(d.part_vol) + (VOZ_GR[d.participacion_grupal] || 0);
 
@@ -170,6 +170,7 @@ const RAREZA = { comun: 'Común', rara: 'Rara', epica: 'Épica', legendaria: 'Le
 function insignias(yo) {
   const D = DET, nt = NOTAS || {};
   let racha = 0, mejor = 0; D.forEach(d => { racha = voz(d) > 0 ? racha + 1 : 0; mejor = Math.max(mejor, racha); });
+  const seguidas = ok => { let r = 0, m = 0, prev = null; D.slice().sort((a, b) => a.semana - b.semana).forEach(d => { r = ok(d) ? (prev !== null && d.semana === prev + 1 && r > 0 ? r + 1 : 1) : 0; prev = d.semana; m = Math.max(m, r); }); return m; };
   return [
     ['primer-comando', 'Primer Comando', 'comun', 'Entrega tu primer laboratorio', D.some(d => d.lab !== null && n(d.lab) >= 0)],
     ['automatizador', 'Automatizador', 'comun', 'Participa en clase 3 semanas seguidas', mejor >= 3],
@@ -180,7 +181,19 @@ function insignias(yo) {
     ['dominio-sistema', 'Dominio del Sistema', 'legendaria', 'Llega al Top 3 del ranking de tu aula', !!yo && yo.posicion <= 3],
     ['red-accion', 'Red en Acción', 'legendaria', 'Saca 16 o más en la Práctica 3 (Servicios de red)', n(nt.p3) >= 16],
     ['virtualizacion-total', 'Virtualización Total', 'secreta', 'Saca 18 o más en la Práctica 1 (Virtualización)', n(nt.p1) >= 18],
-    ['nucleo-supremo', 'Núcleo Supremo', 'secreta', 'Aprueba un quiz de certificación con 4 o alcanza el nivel 10', D.some(d => n(d.quiz) >= 4) || (!!yo && yo.nivel >= 10)]
+    ['nucleo-supremo', 'Núcleo Supremo', 'secreta', 'Alcanza el nivel 10', !!yo && yo.nivel >= 10],
+    // Nuevas (arte provisional con emoji hasta tener la imagen)
+    ['arranque-sistema', 'Arranque del Sistema', 'comun', 'Sube tu foto de perfil', !!YO?.avatar_url, '⏻'],
+    ['daemon-puntual', 'Daemon Puntual', 'comun', 'Asiste 4 semanas seguidas sin tardanza', seguidas(d => d.asistencia === 'Presente') >= 4, '⏱️'],
+    ['kernel-panic', 'Kernel Panic Superado', 'rara', 'En una misma clase falla en el Juego del Miedo y luego acierta', D.some(d => n(d.jm_fallos) >= 1 && n(d.jm_aciertos) >= 1), '💥'],
+    ['escritor-logs', 'Escritor de Logs', 'rara', 'Nota completa en el foro 3 veces', D.filter(d => n(d.foro_tecnico) + n(d.foro_analisis) >= 2).length >= 3, '📜'],
+    ['velocista-kahoot', 'Velocista Kahoot', 'rara', 'Gana el 1.er puesto en 2 Kahoots', D.filter(d => n(d.kahoot_pos) === 1).length >= 2, '⚡'],
+    ['investigador-root', 'Investigador Root', 'epica', 'Gana bonificación en 3 laboratorios por investigar algo adicional', D.filter(d => n(d.lab_bonus) > 0).length >= 3, '🔎'],
+    ['cluster-imparable', 'Clúster Imparable', 'epica', 'Tu consultora llega al 1.er puesto del ranking de consultoras', !!YO?.consultora && CONS.some(c => c.consultora === YO.consultora && c.posicion === 1), '🛡️'],
+    ['certificado-azure', 'Certificado Azure', 'legendaria', `Aprueba la certificación de Azure (quiz de la semana ${Number(CFG.SemanaCertAzure || 12)})`, D.some(d => d.semana === Number(CFG.SemanaCertAzure || 12) && n(d.quiz) >= 4), '☁️'],
+    ['arquitecto-cloud', 'Arquitecto Cloud', 'legendaria', 'Saca 16 o más en la Práctica 4 (Plataformas empresariales)', n(nt.p4) >= 16, '👑'],
+    ['uptime', 'Uptime 99.9%', 'legendaria', 'Asistencia completa en todo el ciclo (mínimo 12 semanas)', D.length >= 12 && D.every(d => d.asistencia !== 'Ausente'), '📈'],
+    ['modo-dios', 'Modo Dios', 'secreta', 'Saca 20 en las 4 prácticas', [1, 2, 3, 4].every(i => n(nt['p' + i]) >= 20), '👁️']
   ];
 }
 function pintarPerfil(fb) {
@@ -198,7 +211,7 @@ function pintarPerfil(fb) {
     <div class="nb"><small class="pix">PROGRESO XP</small><div class="bar"><div style="width:${Math.round(prog * 100)}%"></div></div><span>${yo.xp_siguiente ? `${f1(n(yo.xp))} / ${f1(n(yo.xp_siguiente))} XP · te faltan ${f1(n(yo.xp_siguiente) - n(yo.xp))}` : '¡Rango máximo!'}</span></div>
     <div><small class="pix">SIGUIENTE</small><b>${esc(yo.siguiente_rango || '—')}</b></div>`;
   const ins = insignias(yo);
-  $('#insignias').innerHTML = ins.map(([img, t, r, como, ok]) => `<div class="badge ${r} ${ok ? 'ok' : ''}" data-tip="${esc(t)} · ${RAREZA[r]}: ${ok || r !== 'secreta' ? esc(como) : 'condición secreta'}${ok ? ' ✓' : ''}"><img src="assets/insignias/${img}${ok ? '' : '-bloq'}.webp" alt="" loading="lazy">${ok ? '' : '<i class="lock">🔒</i>'}<span class="rz">${RAREZA[r]}</span><b>${esc(t)}</b><small>${ok || r !== 'secreta' ? esc(como) : '???'}</small></div>`).join('');
+  $('#insignias').innerHTML = ins.map(([img, t, r, como, ok, emo]) => `<div class="badge ${r} ${ok ? 'ok' : ''}" data-tip="${esc(t)} · ${RAREZA[r]}: ${ok || r !== 'secreta' ? esc(como) : 'condición secreta'}${ok ? ' ✓' : ''}">${emo ? `<span class="bph ${r}">${emo}</span>` : `<img src="assets/insignias/${img}${ok ? '' : '-bloq'}.webp" alt="" loading="lazy">`}${ok ? '' : '<i class="lock">🔒</i>'}<span class="rz">${RAREZA[r]}</span><b>${esc(t)}</b><small>${ok || r !== 'secreta' ? esc(como) : '???'}</small></div>`).join('');
   $('#insCont').textContent = `${ins.filter(x => x[4]).length} / ${ins.length}`;
   ins.filter(x => x[4] && !GANADAS.has(x[1])).forEach(x => { GANADAS.add(x[1]); log('insignia_ganada', x[1]); });
   document.querySelectorAll('#insignias .badge').forEach(b => { const t = b.querySelector('b')?.textContent; b.addEventListener('mouseenter', () => log('insignia_vista', t)); b.addEventListener('click', () => log('insignia_vista', t)); });

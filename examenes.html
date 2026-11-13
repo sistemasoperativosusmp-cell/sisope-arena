@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Exámenes y bonus</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131056">
+<link rel="stylesheet" href="assets/app.css?v=202611131133">
 </head>
 <body>
 <header class="top">
@@ -48,8 +48,8 @@
 </div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131056"></script>
-<script src="assets/comun.js?v=202611131056"></script>
+<script src="assets/config.js?v=202611131133"></script>
+<script src="assets/comun.js?v=202611131133"></script>
 <script>
 let NOTAS = [], CAMBIOS = {}, APR = 10.5;
 const CAMPOS = ['ep', 'bonus_ep', 'ef', 'bonus_ef'];
@@ -146,7 +146,7 @@ function partes(d, cfg, sem) {
   return {
     jm: n(d.jm_aciertos) * (cfg.JMAcierto ?? 0.5) - n(d.jm_fallos) * (cfg.JMFallo ?? 0.5),
     gr: n(d.gr_comunicacion) + n(d.gr_tecnico) + n(d.gr_analisis) + n(d.extra) - n(d.falta),
-    lab: n(d.lab), foro: n(d.foro_tecnico) + n(d.foro_analisis) + n(d.foro_bonus), quiz: n(d.quiz), kah
+    lab: n(d.lab) + n(d.lab_bonus), foro: n(d.foro_tecnico) + n(d.foro_analisis) + n(d.foro_bonus), quiz: n(d.quiz), kah
   };
 }
 const ceroVacio = (v, nulo) => nulo ? '<span class="vac">—</span>' : `<span class="${v < 0 ? 'neg' : v > 0 ? 'pos' : ''}">${v > 0 ? '' : v < 0 ? '−' : ''}${fmtN(Math.abs(v))}</span>`;
