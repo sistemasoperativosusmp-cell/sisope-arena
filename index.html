@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ingresar</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130847">
+<link rel="stylesheet" href="assets/app.css?v=202611130925">
 </head>
 <body>
 <div class="login">
@@ -15,23 +15,15 @@
     <label>Contraseña<input id="pass" type="password" autocomplete="current-password" required></label>
     <button class="btn pix" id="go" type="submit">INGRESAR</button>
     <div class="msg" id="msg" role="alert"></div>
-    <button type="button" class="olvide" id="olvide">¿Olvidaste tu contraseña?</button>
-  </form>
-  <form class="box hide" id="fr">
-    <h1 class="pix">RECUPERAR ACCESO</h1>
-    <p>Escribe tu correo institucional y te enviaremos un enlace para crear una nueva contraseña.</p>
-    <label>Correo institucional<input id="remail" type="email" autocomplete="username" required placeholder="nombre@usmp.pe"></label>
-    <button class="btn pix" id="rgo" type="submit">ENVIAR ENLACE</button>
-    <div class="msg ok" id="rmsg" role="status"></div>
-    <button type="button" class="olvide" id="volver">← Volver a ingresar</button>
+    <p class="nota">¿Olvidaste tu contraseña? Pídele a tu docente una contraseña temporal.</p>
   </form>
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130847"></script>
-<script src="assets/comun.js?v=202611130847"></script>
+<script src="assets/config.js?v=202611130925"></script>
+<script src="assets/comun.js?v=202611130925"></script>
 <script>
-async function destino() { location.replace((await esDocente()) ? 'docente.html' : 'alumno.html'); }
+async function destino() { const { data } = await sb.auth.getSession(); if (data.session?.user.user_metadata?.debe_cambiar) { location.replace('reset.html?temporal=1'); return; } location.replace((await esDocente()) ? 'docente.html' : 'alumno.html'); }
 sb.auth.getSession().then(({ data }) => { if (data.session) destino(); });
 $('#f').addEventListener('submit', async (e) => {
   e.preventDefault(); $('#msg').textContent = ''; $('#go').disabled = true;
@@ -39,16 +31,6 @@ $('#f').addEventListener('submit', async (e) => {
   $('#go').disabled = false;
   if (error) { $('#msg').textContent = /invalid/i.test(error.message) ? 'Correo o contraseña incorrectos.' : 'No se pudo ingresar: ' + error.message; return; }
   destino();
-});
-$('#olvide').onclick = () => { $('#f').classList.add('hide'); $('#fr').classList.remove('hide'); $('#remail').value = $('#email').value; $('#remail').focus(); };
-$('#volver').onclick = () => { $('#fr').classList.add('hide'); $('#f').classList.remove('hide'); };
-$('#fr').addEventListener('submit', async (e) => {
-  e.preventDefault(); $('#rgo').disabled = true; $('#rmsg').textContent = '';
-  const destinoReset = location.href.replace(/[^/]*([?#].*)?$/, '') + 'reset.html';
-  const { error } = await sb.auth.resetPasswordForEmail($('#remail').value.trim().toLowerCase(), { redirectTo: destinoReset });
-  $('#rgo').disabled = false;
-  if (error) { $('#rmsg').classList.remove('ok'); $('#rmsg').textContent = /rate|seconds/i.test(error.message) ? 'Espera unos minutos antes de pedir otro enlace.' : /504|timeout|sending/i.test(error.message + error.status) ? 'El servicio de correo no responde en este momento. Pide a tu docente que restablezca tu contraseña.' : 'No se pudo enviar: ' + error.message; console.warn('reset', error); return; }
-  $('#rmsg').classList.add('ok'); $('#rmsg').textContent = 'Si el correo está registrado, te llegará un enlace en unos minutos. Revisa también la carpeta de spam.';
 });
 </script>
 </body>

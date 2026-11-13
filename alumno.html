@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130847">
+<link rel="stylesheet" href="assets/app.css?v=202611130925">
 </head>
 <body class="arena">
 <header class="top atop">
@@ -64,8 +64,8 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130847"></script>
-<script src="assets/comun.js?v=202611130847"></script>
+<script src="assets/config.js?v=202611130925"></script>
+<script src="assets/comun.js?v=202611130925"></script>
 <script>
 let MED = [], SEMACT = 1, CONS = [], SK = null, YO = null, R = [], NOTAS = null, DET = [], SEMS = {}, CFG = {}, FILTRO = 'Todas';
 const n = v => Number(v || 0), f1 = v => String(Math.round(v * 100) / 100), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + f1(Math.abs(v));
@@ -74,6 +74,7 @@ const VOZ_GR = { 'Lideró': 3, 'Apoyó': 2, 'Habló': 1, 'Intentando': 0.5 };
 
 async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
+  if (ses.user.user_metadata?.debe_cambiar) { location.replace('reset.html?temporal=1'); return; }
   const doc = await esDocente();
   $('#quien').innerHTML = doc ? '<a href="docente.html" style="color:#f2b705">Panel docente</a>' : '';
   const { data: yo } = await sb.from('jugadores').select('id, alias, nombre, consultora, rol_consultora, avatar_url, seccion_id').eq('correo', ses.user.email.toLowerCase()).maybeSingle();

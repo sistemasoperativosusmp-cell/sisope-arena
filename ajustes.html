@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611130847">
+<link rel="stylesheet" href="assets/app.css?v=202611130925">
 </head>
 <body>
 <header class="top">
@@ -108,8 +108,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611130847"></script>
-<script src="assets/comun.js?v=202611130847"></script>
+<script src="assets/config.js?v=202611130925"></script>
+<script src="assets/comun.js?v=202611130925"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -147,7 +147,7 @@ function pintarAl() {
     <select data-c="rol_consultora">${rolOpts(a.rol_consultora)}</select>
     <select data-c="seccion_id" title="Mover a otra sección">${SECCIONES.map(s => `<option value="${s.id}" ${s.id === a.seccion_id ? 'selected' : ''}>${esc(s.nombre)}</option>`).join('')}</select>
     <button class="sbtn mini ${a.activo ? '' : 'gold'}" onclick="alternarActivo('${a.id}')">${a.activo ? 'Retirar' : 'Reincorporar'}</button>
-    <button class="sbtn mini" title="Eliminar con todos sus puntajes" onclick="eliminar('${a.id}')">🗑</button></div>`).join('') : '<div class="empty">Aún no hay alumnos. Agrégalos arriba o pégalos desde Excel.</div>';
+    <div class="acc"><button class="sbtn mini" title="Dar contraseña temporal" onclick="claveTemporal('${a.id}')">🔑</button><button class="sbtn mini" title="Eliminar con todos sus puntajes" onclick="eliminar('${a.id}')">🗑</button></div></div>`).join('') : '<div class="empty">Aún no hay alumnos. Agrégalos arriba o pégalos desde Excel.</div>';
   document.querySelectorAll('#alumnos [data-c]').forEach(el => el.onchange = () => editar(el.closest('.alr').dataset.id, el.dataset.c, el.value, el));
 }
 async function editar(id, campo, valor, el) {
@@ -174,6 +174,16 @@ async function alternarActivo(id) {
   const { error } = await sb.from('jugadores').update({ activo: !a.activo }).eq('id', id);
   if (error) { toast('No se guardó: ' + error.message, true); return; }
   a.activo = !a.activo; toast(`${a.alias}: ${a.activo ? 'reincorporado' : 'retirado'}`); pintarAl();
+}
+function claveAzar() { const p = ['Arena', 'Kernel', 'Shell', 'Linux', 'Nube', 'Bash', 'Proceso', 'Hilo']; return p[Math.floor(Math.random() * p.length)] + '-' + String(Math.floor(1000 + Math.random() * 9000)); }
+async function claveTemporal(id) {
+  const a = AL.find(x => x.id === id); if (!a) return;
+  const clave = prompt(`Contraseña temporal para ${a.nombre} (${a.alias}).\nMínimo 8 caracteres con letras y números. Al ingresar, el sistema le pedirá crear la suya.`, claveAzar());
+  if (clave === null) return;
+  const { data, error } = await sb.rpc('restablecer_clave', { p_jugador: id, p_clave: clave.trim() });
+  if (error) { toast(/function|schema cache/i.test(error.message) ? 'Falta ejecutar el script 17 en Supabase' : error.message, true); return; }
+  if (data === 'sin_cuenta') { toast(`${a.alias} aún no tiene cuenta de acceso con ${a.correo}`, true); return; }
+  alert(`✅ Listo. Dicta estos datos a ${a.nombre}:\n\nCorreo: ${a.correo}\nContraseña temporal: ${clave.trim()}\n\nSe cerraron sus sesiones abiertas y al entrar deberá crear su propia contraseña.`);
 }
 async function eliminar(id) {
   const a = AL.find(x => x.id === id);
