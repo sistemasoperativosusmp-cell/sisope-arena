@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131147">
+<link rel="stylesheet" href="assets/app.css?v=202611131149">
 </head>
 <body>
 <header class="top">
@@ -26,6 +26,7 @@
       <div class="plorden">Perfil observado</div>
       <div class="pfil2" id="pfil2"></div>
       <input id="buscar" placeholder="Buscar nombre o alias">
+      <button class="fbfil insb" onclick="verInsignias()">🏅 Insignias del aula</button>
       <div class="plorden">Ordenados del más crítico al mejor</div>
       <div id="lista"><div class="empty">Cargando…</div></div>
     </aside>
@@ -42,15 +43,17 @@
   </div></section>
 </main>
 <div class="tip hide" id="tip"></div>
+<div class="modal hide" id="mIns" onclick="if (event.target === this) cerrarIns()"><div class="box plain det"><div class="dethead"><h2 class="pix" style="color:var(--navy)">INSIGNIAS DEL AULA</h2><button class="sbtn" onclick="cerrarIns()">✕ Cerrar</button></div><div id="mInsCuerpo" style="width:100%"></div></div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131147"></script>
-<script src="assets/comun.js?v=202611131147"></script>
+<script src="assets/config.js?v=202611131149"></script>
+<script src="assets/insignias.js?v=202611131149"></script>
+<script src="assets/comun.js?v=202611131149"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
 const VOZ_GR = { 'Lideró': 3, 'Apoyó': 2, 'Habló': 1, 'Intentando': 0.5 };
-let SOLOFB = false, FB = {};
+let SOLOFB = false, FB = {}, RANK = {}, RCONS = [];
 let FILP = '', J = [], DET = [], NOT = {}, OBS = [], ETQ = {}, SEMS = {}, CFG = {}, ACT = 1, FIL = '', SEL = null, RES = {};
 const n = v => Number(v || 0), r1 = v => String(Math.round(v * 10) / 10), r2 = v => (Math.round(v * 100) / 100).toFixed(2);
 
@@ -60,7 +63,7 @@ async function iniciar() {
   $('#quien').textContent = ses.user.email;
   await cargarSeccion(); if (!SECC) { toast('Crea una sección en Ajustes', true); return; }
   const q = await Promise.all([
-    sb.from('jugadores').select('id, nombre, alias, consultora, rol_consultora').eq('activo', true).eq('seccion_id', SECC.id).order('nombre'),
+    sb.from('jugadores').select('id, nombre, alias, consultora, rol_consultora, avatar_url').eq('activo', true).eq('seccion_id', SECC.id).order('nombre'),
     sb.from('detalle').select('*, jugadores!inner(seccion_id)').eq('jugadores.seccion_id', SECC.id).order('semana'),
     sb.from('v_notas').select('*').eq('seccion_id', SECC.id),
     sb.from('observaciones').select('jugador_id, semana, etiquetas'),
@@ -69,6 +72,8 @@ async function iniciar() {
     sb.from('config').select('clave, valor'),
     sb.from('feedback').select('jugador_id, creado, semana, visible_alumno, jugadores!inner(seccion_id)').eq('jugadores.seccion_id', SECC.id).order('creado', { ascending: false })
   ]);
+  const [rk, rc] = await Promise.all([sb.from('v_ranking').select('*').eq('seccion_id', SECC.id), sb.from('v_ranking_consultoras').select('*').eq('seccion_id', SECC.id)]);
+  RANK = Object.fromEntries((rk.data || []).map(x => [x.alias, x])); RCONS = rc.data || [];
   FB = {}; (q[7].data || []).forEach(f => (FB[f.jugador_id] = FB[f.jugador_id] || []).push(f));
   const e = q.find(x => x.error); if (e) { toast('Error al cargar: ' + e.error.message, true); return; }
   [J, DET] = [q[0].data, q[1].data];
@@ -119,6 +124,7 @@ function calcular() {
     Object.assign(RES[j.id], competencias(fs, nt));
     RES[j.id].perfiles = perfiles(RES[j.id], fs, OBS.filter(o => o.jugador_id === j.id).flatMap(o => o.etiquetas || []));
     RES[j.id].fb = necesitaFb(RES[j.id]);
+    RES[j.id].ins = calcInsignias({ D: fs, nt, yo: RANK[j.alias] || null, YO: j, CONS: RCONS, CFG });
   });
 }
 // ---------- Alineación con el sílabo 2026 ----------
@@ -189,6 +195,19 @@ function necesitaFb(x) {
   if (!mot.length && !ult && ACT >= 4) mot.push(['mid', 'Aún no recibe ningún feedback en el ciclo']);
   return { mot, ult, dias };
 }
+// ---------- Insignias (misma regla que el portal del alumno) ----------
+const insMini = ([img, t, r, como, ok]) => `<div class="imini ${ok ? 'ok ' + r : ''}" title="${esc(t)} · ${RAREZA[r]}${ok ? ' ✓ ganada' : ''}\n${esc(como)}"><img src="assets/insignias/${img}${ok ? '' : '-bloq'}.webp" alt="" loading="lazy"><small>${esc(t)}</small></div>`;
+function verInsignias() {
+  const todos = Object.values(RES), def = todos[0]?.ins || calcInsignias({});
+  const filas = def.map((d, k) => { const quien = todos.filter(x => x.ins[k][4]); return { d, quien }; });
+  const ganadas = todos.reduce((a, x) => a + x.ins.filter(i => i[4]).length, 0);
+  const top = todos.map(x => ({ x, c: x.ins.filter(i => i[4]).length })).sort((a, b) => b.c - a.c).slice(0, 5).filter(t => t.c);
+  $('#mInsCuerpo').innerHTML = `<div class="kpis mini"><div class="kpi"><b>${ganadas}</b><span>Insignias ganadas en el aula</span></div><div class="kpi"><b>${todos.filter(x => x.ins.some(i => i[4])).length}<small> / ${todos.length}</small></b><span>Alumnos con al menos una</span></div><div class="kpi"><b>${filas.filter(f => !f.quien.length).length}</b><span>Insignias que nadie tiene aún</span></div></div>
+    ${top.length ? `<p><b>Coleccionistas:</b> ${top.map(t => `${esc(t.x.j.alias)} (${t.c})`).join(' · ')}</p>` : ''}
+    <div class="aulains">${filas.map(({ d, quien }) => `<div class="aitem ${quien.length ? '' : 'nadie'}">${insMini([d[0], d[1], d[2], d[3], quien.length > 0])}<div><b>${quien.length}</b> <small>de ${todos.length}</small><div class="aq">${quien.length ? quien.map(x => `<span onclick="cerrarIns(); elegir('${x.j.id}')" title="${esc(x.j.nombre)}">${esc(x.j.alias)}</span>`).join('') : '<i>Nadie todavía</i>'}</div></div></div>`).join('')}</div>`;
+  $('#mIns').classList.remove('hide');
+}
+function cerrarIns() { $('#mIns').classList.add('hide'); }
 function irFeedback() { const t = $('#fbTxt'); if (!t) return; t.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => t.focus(), 400); }
 function perfiles(x, fs, etqs) {
   const pas = fs.filter(d => d.semana <= ACT), out = [];
@@ -253,6 +272,7 @@ async function elegir(id) {
       <div class="pbox"><h4>Competencias del sílabo y objetivos formativos <small>(meta: 70% = Logrado)</small></h4><div class="comps">${COMP.map(([k, t, d]) => { const v = x.comp[k], [lv, cl] = nivelLogro(v); return `<div class="comp" data-tip="${esc(d)}"><span class="ck ${k.startsWith('SO') ? 'so' : 'tr'}">${k}</span><span class="ct">${esc(t)}</span><div class="cbar"><i class="${cl}" style="width:${v === null ? 0 : Math.round(v * 100)}%"></i><em style="left:70%"></em></div><b class="${cl}">${v === null ? '—' : Math.round(v * 100) + '%'}</b><small class="${cl}">${lv}</small></div>`; }).join('')}</div></div>
     </div>
     <div class="pfila">
+      <div class="pbox ancho2"><h4>Insignias <small>(${x.ins.filter(i => i[4]).length} de ${x.ins.length} · las grises aún no las gana)</small></h4><div class="dins">${x.ins.map(i => insMini(i)).join('')}</div></div>
       <div class="pbox"><h4>Medallas <small>(automáticas y otorgadas por ti)</small></h4><div id="medPanel"><div class="vac2">Cargando…</div></div></div>
       <div class="pbox"><h4>Etiquetas registradas</h4>${etq.length ? etq.map(o => `<div class="etqs-s"><b>S${o.semana}</b>${o.etiquetas.map(e => `<span class="tag ${ETQ[e]?.tipo === 'Positivo' ? 'okt' : ETQ[e]?.tipo === 'Apoyo' ? 'apo' : 'et'}" title="${esc(ETQ[e]?.consejo || '')}">${esc(ETQ[e]?.emoji || '')} ${esc(e)}</span>`).join('')}</div>`).join('') : '<div class="vac2">Sin etiquetas.</div>'}</div>
       <div class="pbox fb"><h4>Feedback para el alumno</h4>
