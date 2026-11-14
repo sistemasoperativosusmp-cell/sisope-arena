@@ -26,7 +26,7 @@
     <div class="acchart"><div class="acch"><b>Alumnos que entraron al portal por día</b><small>últimos 30 días · pasa el mouse sobre una barra</small></div><div id="grafico"></div></div>
   </section>
   <section class="card">
-    <div class="altabla"><div class="acr alc"><div>Alumno</div><div>Interés</div><div>Último ingreso</div><div title="Veces que entró al portal">Ingresos</div><div title="Días distintos con actividad">Días activos</div><div title="Pestañas visitadas: ranking, perfil, puntajes, enlaces">Páginas</div><div title="Enlaces abiertos">Enlaces</div><div title="Ganadas (de 10) · veces que exploró las insignias">Insignias</div><div title="Cambios de nombre de jugador">Nombre</div><div title="Cambios de consultora, rol o foto">Otros</div></div><div id="tabla"><div class="empty">Cargando…</div></div></div>
+    <div class="altabla"><div class="acr alc"><div>Alumno</div><div>Interés</div><div>Último ingreso</div><div title="Veces que entró al portal">Ingresos</div><div title="Días distintos con actividad">Días activos</div><div title="Pestañas visitadas: ranking, perfil, puntajes, entrenamiento">Páginas</div><div title="Enlaces abiertos">Enlaces</div><div title="Ganadas (de 10) · veces que exploró las insignias">Insignias</div><div title="Cambios de nombre de jugador">Nombre</div><div title="Cambios de consultora, rol o foto">Otros</div></div><div id="tabla"><div class="empty">Cargando…</div></div></div>
     <p class="help"><b>Interés</b> en el período elegido: <b>Alto</b> = 3 o más días activos · <b>Medio</b> = 1 o 2 días · <b>Bajo</b> = ya conoce el portal pero no entró en el período · <b>Sin ingresar</b> = nunca entró. Un “ingreso” cuenta una vez cada 30 minutos. Toca un alumno para ver su historial. Los alumnos no ven este reporte.</p>
   </section>
 </main>
@@ -38,7 +38,7 @@
 <script>
 let D = [], DIAS_P = 7, NIVEL = '';
 const TIPO = { ingreso: ['🔑', 'Entró al portal'], vista: ['👁', 'Vio'], alias: ['✏️', 'Cambió su nombre'], consultora: ['🛡', 'Renombró su consultora'], rol: ['🎭', 'Cambió su rol'], foto: ['📷', 'Cambió su foto'], enlace: ['🔗', 'Abrió el enlace'], insignia_vista: ['🔍', 'Exploró la insignia'], insignia_ganada: ['🏅', 'Ganó la insignia'] };
-const VISTA = { ranking: 'Ranking', perfil: 'Mi perfil', puntajes: 'Mis puntajes', enlaces: 'Enlaces' };
+const VISTA = { ranking: 'Ranking', perfil: 'Mi perfil', puntajes: 'Mis puntajes', enlaces: 'Enlaces', entrenamiento: 'Entrenamiento' };
 async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
   if (!(await esDocente())) { location.replace('alumno.html'); return; }

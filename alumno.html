@@ -5,11 +5,21 @@
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/app.css?v=202611131219">
+<style>
+.entr{display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;background:#0f1733;border:2px solid #2a3766;border-radius:14px;padding:14px;transition:border-color .15s,transform .15s}
+.entr:hover{border-color:var(--gold);transform:translateY(-2px)}
+.entr .eico{font-size:38px}.entr .etx{flex:1;display:flex;flex-direction:column;gap:4px}.entr .etx b{font-size:17px}.entr .etx span{font-size:13px;color:#b8c2e6}
+.entr .emis{color:var(--gold)!important;font-weight:800}
+.entr .ego{background:var(--gold);color:#0f1733;border-radius:10px;padding:10px 12px;font-size:10px;white-space:nowrap}
+.segt{display:flex;gap:6px;margin-bottom:8px}.segt button{flex:1;background:#0f1733;border:2px solid #2a3766;color:#b8c2e6;border-radius:10px;padding:6px;font-weight:800;cursor:pointer}.segt button.on{border-color:var(--gold);color:var(--gold)}
+#enlaces .panel{margin-top:16px}
+@media(max-width:600px){.entr{flex-wrap:wrap}.entr .ego{width:100%;text-align:center}}
+</style>
 </head>
 <body class="arena">
 <header class="top atop">
   <div class="pix">SISOPE ARENA</div>
-  <nav class="anav"><a href="#ranking" data-v="ranking">Ranking</a><a href="#perfil" data-v="perfil">Mi perfil</a><a href="#puntajes" data-v="puntajes">Mis puntajes</a><a href="#enlaces" data-v="enlaces">Enlaces</a></nav>
+  <nav class="anav"><a href="#ranking" data-v="ranking">Ranking</a><a href="#perfil" data-v="perfil">Mi perfil</a><a href="#puntajes" data-v="puntajes">Mis puntajes</a><a href="#entrenamiento" data-v="entrenamiento">Entrenamiento</a></nav>
   <div class="who"><a href="reset.html" class="cambiar">🔑 Contraseña</a><span class="live"><i></i><span id="vivo">EN VIVO</span></span><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
 </header>
 <main class="amain">
@@ -63,9 +73,17 @@
     </div>
   </section>
 
-  <!-- A4 · ENLACES -->
-  <section class="vista hide" id="v-enlaces">
-    <div class="acol" style="grid-column:1 / -1"><div id="enlaces"><div class="empty">Cargando…</div></div></div>
+  <!-- A4 · ENTRENAMIENTO (actividades de práctica + enlaces) -->
+  <section class="vista hide" id="v-entrenamiento">
+    <div class="acol">
+      <div class="panel"><h2 class="pix">ACTIVIDADES DE ENTRENAMIENTO</h2>
+        <a class="entr" href="memoria.html"><span class="eico">🧠</span><span class="etx"><b>Memoria Técnica</b><span>Voltea las cartas y une cada término con su definición. Mazos por unidad: virtualización, servicios de red, identidad y Azure.</span><span class="emis" id="memMis">Cargando tus puntos…</span></span><span class="ego pix">JUGAR ▶</span></a>
+      </div>
+      <div id="enlaces"><div class="empty">Cargando…</div></div>
+    </div>
+    <div class="aside">
+      <div class="panel"><h2 class="pix">TOP MEMORIA TÉCNICA</h2><div class="segt" id="memPer"><button data-d="7" class="on">7 días</button><button data-d="">Histórico</button></div><div id="memTop"><div class="gris">Cargando…</div></div><p class="gris">Suman las partidas en modo Individual con los mazos del curso.</p></div>
+    </div>
   </section>
 </main>
 <div class="tip hide" id="tip"></div>
@@ -107,7 +125,8 @@ async function iniciar() {
   setInterval(refrescar, Math.max(20, Number(CFG.RefrescoSegundos || 60)) * 1000);
 }
 function mostrar() {
-  const v = (location.hash || '#ranking').slice(1);
+  let v = (location.hash || '#ranking').slice(1); if (v === 'enlaces') v = 'entrenamiento';
+  if (v === 'entrenamiento') cargarMemTop();
   document.querySelectorAll('.vista').forEach(s => s.classList.toggle('hide', s.id !== 'v-' + v));
   document.querySelectorAll('.anav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
   if (YO) log('vista', v);
@@ -284,11 +303,21 @@ async function cambiarRol(sel) {
   YO.rol_consultora = data || null; toast(data ? `Ahora eres ${data}` : 'Quitaste tu rol'); await refrescar();
 }
 function pintarEnlaces() {
-  if (!ENL.length) { $('#enlaces').innerHTML = '<div class="panel"><div class="gris">Tu docente aún no ha publicado enlaces.</div></div>'; return; }
+  if (!ENL.length) { $('#enlaces').innerHTML = ''; return; }
   const cats = [...new Set(ENL.map(e => e.categoria))], dom = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
   setTimeout(() => document.querySelectorAll('#enlaces .enl').forEach(a => a.onclick = () => log('enlace', a.dataset.t)));
   $('#enlaces').innerHTML = cats.map(c => `<div class="panel"><h2 class="pix">${esc(c.toUpperCase())}</h2><div class="enls">${ENL.filter(e => e.categoria === c).map(e => `<a class="enl" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer" data-t="${esc(e.titulo)}"><b>🔗 ${esc(e.titulo)}</b>${e.descripcion ? `<span>${esc(e.descripcion)}</span>` : ''}<small>${esc(dom(e.url))} ↗</small></a>`).join('')}</div></div>`).join('');
 }
+// ---------- Entrenamiento: puntos y top de Memoria Técnica ----------
+let MEMPER = '7';
+async function cargarMemTop() {
+  const { data, error } = await sb.rpc('top_entrenamiento', { p_juego: 'memoria', p_dias: MEMPER ? Number(MEMPER) : null });
+  if (error) { $('#memTop').innerHTML = `<div class="gris">${/schema cache|function/i.test(error.message) ? 'El top aún no está activo. Avísale a tu docente.' : esc(error.message)}</div>`; $('#memMis').textContent = ''; return; }
+  const L = data || [], yo = L.find(x => x.es_yo);
+  $('#memMis').textContent = yo ? `Tus puntos ${MEMPER ? '(7 días)' : '(histórico)'}: ${yo.total} · puesto ${yo.posicion}° · mejor partida ${yo.mejor}` : 'Aún no tienes puntos: ¡juega tu primera partida!';
+  $('#memTop').innerHTML = L.length ? L.slice(0, 10).map(x => `<div class="rank ${x.es_yo ? 'yo' : ''}"><span class="pos">${x.posicion <= 3 ? ['🥇', '🥈', '🥉'][x.posicion - 1] : x.posicion}</span>${avatar(x, 'rav')}<span class="al">${esc(x.alias)}<small class="nreal">${x.partidas} partida${x.partidas > 1 ? 's' : ''} · mejor ${x.mejor}</small></span><span class="xp">${x.total}</span></div>`).join('') + (yo && yo.posicion > 10 ? `<div class="rank yo"><span class="pos">${yo.posicion}</span>${avatar(yo, 'rav')}<span class="al">${esc(yo.alias)}</span><span class="xp">${yo.total}</span></div>` : '') : '<div class="gris">Nadie ha jugado todavía. ¡Sé el primero!</div>';
+}
+document.addEventListener('click', e => { const b = e.target.closest('#memPer button'); if (!b) return; MEMPER = b.dataset.d; document.querySelectorAll('#memPer button').forEach(x => x.classList.toggle('on', x === b)); cargarMemTop(); });
 function editarAlias() {
   if ($('#aliasEd').innerHTML) { $('#aliasEd').innerHTML = ''; return; }
   $('#aliasEd').innerHTML = `<div class="edl"><input id="nuevoAlias" maxlength="20" value="${esc(YO.alias)}"><button class="abtn mini" title="Nombre al azar" onclick="$('#nuevoAlias').value = nombreAzar(R.map(x => x.alias))">🎲</button><button class="abtn mini" onclick="guardarAlias()">GUARDAR</button></div><small class="gris">3 a 20 caracteres: letras, números, - o _. Puedes cambiarlo una vez cada ${Number(CFG.AliasHorasEspera || 24)} horas.</small>`;

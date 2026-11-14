@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SISOPE Arena · Memoria Técnica</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b1220;--p:#111a2e;--p2:#16213a;--ln:#24314f;--tx:#e6ecf7;--mu:#8fa0bf;--ac:#3b9cff;--ok:#2ecc8f;--bad:#ff4d6d;--gold:#ffd166;--t1:#3b9cff;--t2:#ff7a59}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Inter,system-ui,sans-serif}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0}
+button,select,textarea{font:inherit}
+button{cursor:pointer}
+header{padding:12px 16px;border-bottom:1px solid var(--ln);display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(90deg,#0f1a33,#0b1220)}
+header h1{font-size:19px}header h1 span{color:var(--gold)}
+.sub{color:var(--mu);font-size:12px}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}
+.cfg{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+select,.btn{background:var(--p2);border:1px solid var(--ln);color:var(--tx);border-radius:9px;padding:8px 11px;font-size:13px}
+.btn:hover{border-color:var(--ac)}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:#04111f;font-weight:700}
+.hud{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{background:var(--p);border:1px solid var(--ln);border-radius:999px;padding:6px 12px;font-size:13px}
+.chip b{color:var(--gold)}
+.team{border-width:2px}
+.team.on{box-shadow:0 0 0 2px currentColor inset}
+#grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.card{perspective:900px;height:130px;border:none;background:none;padding:0}
+.in{position:relative;width:100%;height:100%;transition:transform .45s;transform-style:preserve-3d}
+.card.up .in,.card.done .in{transform:rotateY(180deg)}
+.f,.b{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px}
+.f{background:linear-gradient(135deg,#1b2a4d,#101a30);border:1px solid #2c3d63;font-size:30px}
+.f small{position:absolute;bottom:8px;font-size:10px;color:var(--mu);letter-spacing:1px}
+.b{transform:rotateY(180deg);background:var(--p2);border:2px solid var(--ln);flex-direction:column;gap:4px}
+.b .tag{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mu)}
+.b.term .txt{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;color:var(--gold)}
+.b.def .txt{font-size:12.5px;line-height:1.35}
+.card.done .b{border-color:var(--ok);background:#0d2a22}
+.card.miss .b{border-color:var(--bad);animation:sh .35s}
+@keyframes sh{25%{transform:rotateY(180deg) translateX(-5px)}75%{transform:rotateY(180deg) translateX(5px)}}
+.card.done{opacity:.85}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(140%);background:#0d2a22;border:1px solid var(--ok);color:var(--tx);border-radius:12px;padding:12px 16px;max-width:92vw;width:520px;transition:transform .3s;z-index:20;line-height:1.45;font-size:14px}
+#toast.on{transform:translateX(-50%) translateY(0)}
+#toast b{color:var(--ok)}
+#modal{position:fixed;inset:0;background:rgba(3,8,18,.8);display:none;align-items:center;justify-content:center;padding:18px;z-index:30}
+#modal .box{background:var(--p);border:1px solid var(--ac);border-radius:16px;padding:20px;max-width:560px;width:100%;max-height:88vh;overflow:auto}
+#modal h2{margin-bottom:8px}
+#modal p{color:#cdd6e8;line-height:1.5}
+textarea{width:100%;height:220px;background:#0a1426;color:var(--tx);border:1px solid var(--ln);border-radius:9px;padding:9px;font-size:13px;font-family:ui-monospace,monospace}
+.big{font-size:44px;text-align:center}
+.gloss{margin-top:10px;font-size:13px}
+.gloss div{padding:6px 0;border-bottom:1px solid var(--ln)}
+.gloss b{color:var(--gold)}
+.back{color:var(--gold);text-decoration:none;font-weight:600;font-size:13px;border:1px solid var(--ln);border-radius:9px;padding:7px 11px}
+.me{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.lay{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px;align-items:start}
+.side{background:var(--p);border:1px solid var(--ln);border-radius:14px;padding:14px;position:sticky;top:12px}
+.side h3{font-size:15px;margin-bottom:8px}
+.seg{display:flex;gap:4px;margin-bottom:8px}.seg button{flex:1;background:var(--p2);border:1px solid var(--ln);color:var(--mu);border-radius:8px;padding:6px;font-size:12px}.seg button.on{border-color:var(--gold);color:var(--gold)}
+.tr{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--ln);font-size:13px}
+.tr.yo{background:#2a1d05;border-radius:8px}
+.tr .ps{width:26px;text-align:center;font-weight:700;color:var(--mu)}.tr .ps.m1{color:#ffd23f}.tr .ps.m2{color:#cfd8e3}.tr .ps.m3{color:#e39b5b}
+.tr img,.tr .ini{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:none;background:#24314f;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.tr .al{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.tr .pt{font-weight:700;color:var(--gold)}.tr small{display:block;color:var(--mu);font-size:10.5px;font-weight:400}
+.nota{font-size:11.5px;color:var(--mu);line-height:1.45;margin-top:10px}
+.gain{font-size:30px;text-align:center;color:var(--gold);font-family:'Space Grotesk',sans-serif;font-weight:700;margin:6px 0}
+@media(max-width:900px){.lay{grid-template-columns:1fr}.side{position:static}}
+@media(max-width:600px){#grid{grid-template-columns:repeat(3,1fr);gap:7px}.card{height:118px}.b.term .txt{font-size:15px}.b.def .txt{font-size:11px}.f{font-size:24px}}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="alumno.html#entrenamiento">← Arena</a>
+  <div><h1>🧠 Memoria <span>Técnica</span></h1><div class="sub">SISOPE Arena · Entrenamiento · Une cada término con su definición</div></div>
+  <div class="me" id="me"></div>
+</header>
+<div class="wrap">
+  <div class="cfg">
+    <select id="deck"></select>
+    <select id="size"><option value="6">6 pares</option><option value="8" selected>8 pares</option><option value="10">10 pares</option><option value="12">12 pares</option></select>
+    <select id="mode"><option value="solo">👤 Individual</option><option value="duel">⚔️ Duelo por equipos</option></select>
+    <button class="btn pri" id="start">▶ Nueva partida</button>
+    <button class="btn" id="edit">✏️ Mis términos</button>
+  </div>
+  <div class="lay">
+    <div><div class="hud" id="hud"></div><div id="grid"></div></div>
+    <aside class="side">
+      <h3>🏆 Top del aula</h3>
+      <div class="seg" id="per"><button data-d="7" class="on">Últimos 7 días</button><button data-d="">Histórico</button></div>
+      <div id="top"><div class="nota">Cargando…</div></div>
+      <p class="nota">Suman puntos solo las partidas en modo <b>Individual</b> con los mazos del curso. El duelo y “Mis términos” son de práctica.<br>Puntos = 10 × pares + precisión + mejor racha + rapidez.</p>
+    </aside>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="modal"><div class="box" id="mbox"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js?v=202611141100"></script>
+<script>
+const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, window.SISOPE_CONFIG.SUPABASE_KEY);
+let YO = null, PER = '7';
+const DECKS={
+ u1:{n:'Unidad I · Infraestructura y virtualización',w:[
+  ['Red','Conjunto de equipos interconectados que comparten datos y recursos.'],
+  ['Sistema operativo','Software que administra el hardware y brinda servicios a las aplicaciones.'],
+  ['Hipervisor','Capa de software que crea y ejecuta máquinas virtuales.'],
+  ['Hyper-V','Hipervisor tipo 1 de Microsoft, incluido en Windows Server.'],
+  ['Kernel','Núcleo del SO: gestiona CPU, memoria y dispositivos.'],
+  ['Máquina virtual','Computador emulado por software, con su propio SO.'],
+  ['Contenedor','Proceso aislado que comparte el kernel del host.'],
+  ['Docker','Plataforma para crear y ejecutar contenedores a partir de imágenes.'],
+  ['Centro de datos','Instalación que aloja servidores, almacenamiento y redes de forma segura.'],
+  ['TIER III','Data center mantenible sin detener la operación: 99.982% de disponibilidad.'],
+  ['Hipervisor tipo 2','Se ejecuta sobre un SO anfitrión, como VirtualBox.'],
+  ['KVM','Hipervisor integrado en el kernel de Linux.'],
+  ['Proxmox VE','Plataforma open source de virtualización basada en KVM y LXC.'],
+  ['Snapshot','Copia del estado de una VM en un instante para poder revertirla.'],
+  ['UPS','Sistema de energía ininterrumpida que protege ante cortes eléctricos.']]},
+ u2:{n:'Unidad II · Servicios de red e identidad',w:[
+  ['DNS','Traduce nombres de dominio a direcciones IP.'],
+  ['DHCP','Asigna direcciones IP automáticamente a los equipos.'],
+  ['AD DS','Servicio de directorio de Windows que centraliza usuarios y equipos.'],
+  ['Controlador de dominio','Servidor que autentica usuarios y guarda la base de AD.'],
+  ['OU','Contenedor de AD para organizar objetos y aplicar políticas.'],
+  ['GPO','Conjunto de configuraciones que se aplica a usuarios o equipos.'],
+  ['Bosque','Límite de seguridad máximo de Active Directory; agrupa dominios.'],
+  ['Delegación','Otorgar permisos administrativos limitados sobre una OU.'],
+  ['Kerberos','Protocolo de autenticación por tickets usado en AD.'],
+  ['Registro A','Registro DNS que asocia un nombre a una dirección IPv4.'],
+  ['Ámbito DHCP','Rango de direcciones IP que el servidor DHCP puede entregar.'],
+  ['Zona DNS','Porción del espacio de nombres administrada por un servidor.'],
+  ['PowerShell','Shell y lenguaje de scripting para automatizar Windows.'],
+  ['LDAP','Protocolo para consultar y modificar servicios de directorio.']]},
+ u3:{n:'Unidad III · Seguridad e identidad cloud',w:[
+  ['NTFS','Sistema de archivos de Windows con permisos y auditoría.'],
+  ['Mínimo privilegio','Dar solo los permisos estrictamente necesarios.'],
+  ['Entra ID','Servicio de identidad en la nube de Microsoft.'],
+  ['MFA','Verificar la identidad con dos o más factores.'],
+  ['Acceso condicional','Políticas si-entonces que permiten o bloquean el acceso según señales.'],
+  ['Federación','Confianza entre dominios de identidad para compartir autenticación.'],
+  ['Zero Trust','Nunca confiar, verificar siempre y asumir la brecha.'],
+  ['SSO','Iniciar sesión una vez y acceder a varias aplicaciones.'],
+  ['PIM','Activar roles privilegiados solo por tiempo limitado.'],
+  ['Entra Connect','Sincroniza las identidades del AD on-premise con Entra ID.'],
+  ['RBAC','Control de acceso basado en roles.'],
+  ['Phishing','Engaño para robar credenciales haciéndose pasar por alguien confiable.']]},
+ az:{n:'Azure · Arquitectura cloud',w:[
+  ['VNet','Red privada virtual aislada dentro de Azure.'],
+  ['NSG','Reglas de permitir/denegar tráfico por IP, puerto y protocolo.'],
+  ['Azure Bastion','Acceso RDP/SSH seguro sin IP pública en la VM.'],
+  ['Key Vault','Bóveda de secretos, llaves y certificados.'],
+  ['Load Balancer','Reparte el tráfico entre varias VMs (capa 4).'],
+  ['App Gateway','Balanceador web de capa 7 con WAF.'],
+  ['Sentinel','SIEM/SOAR en la nube de Microsoft.'],
+  ['IaaS','La nube entrega la infraestructura y tú administras el SO.'],
+  ['PaaS','La nube administra el SO y tú solo despliegas el código.'],
+  ['SaaS','Software listo para usar por suscripción, como Microsoft 365.'],
+  ['Región','Conjunto de data centers en un área geográfica.'],
+  ['Zona de disponibilidad','Data center físicamente separado dentro de una región.'],
+  ['VM Scale Set','Grupo de VMs idénticas que escala automáticamente.'],
+  ['Azure Backup','Servicio de respaldo en un Recovery Services vault.']]}
+};
+let custom=[];try{custom=JSON.parse(localStorage.getItem('mem_custom')||'[]')}catch(e){}
+const $=id=>document.getElementById(id);
+function fillDecks(){
+  $('deck').innerHTML=Object.entries(DECKS).map(([k,d])=>`<option value="${k}">${d.n}</option>`).join('')+
+    `<option value="mix">🎲 Mezcla de todas las unidades</option><option value="custom">✏️ Mis términos (${custom.length})</option>`;
+}
+fillDecks();
+let G=null,lock=false,timer=null;
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
+function start(){
+  const dk=$('deck').value,n=+$('size').value;
+  let pool=dk==='mix'?Object.values(DECKS).flatMap(d=>d.w):dk==='custom'?custom:DECKS[dk].w;
+  if(pool.length<3){editor('Agrega al menos 3 términos para jugar con tu propio mazo.');return;}
+  const pairs=shuffle(pool.slice()).slice(0,Math.min(n,pool.length));
+  const cards=[];pairs.forEach((p,i)=>{cards.push({k:i,t:'term',x:p[0]});cards.push({k:i,t:'def',x:p[1]});});
+  G={pairs,cards:shuffle(cards),up:[],found:0,moves:0,miss:0,streak:0,best:0,t0:Date.now(),mode:$('mode').value,team:0,pts:[0,0]};
+  clearInterval(timer);timer=setInterval(hud,1000);
+  render();hud();
+}
+function render(){
+  $('grid').innerHTML=G.cards.map((c,i)=>`<button class="card" data-i="${i}" aria-label="Carta ${i+1}"><div class="in">
+    <div class="f">❔<small>SISOPE</small></div>
+    <div class="b ${c.t}"><span class="tag">${c.t==='term'?'Término':'Definición'}</span><span class="txt">${esc(c.x)}</span></div></div></button>`).join('');
+}
+$('grid').addEventListener('click',e=>{
+  const el=e.target.closest('.card');if(!el||lock||!G)return;
+  const i=+el.dataset.i;if(el.classList.contains('up')||el.classList.contains('done'))return;
+  el.classList.add('up');G.up.push(i);
+  if(G.up.length<2)return;
+  G.moves++;lock=true;
+  const [a,b]=G.up,A=G.cards[a],B=G.cards[b],els=[a,b].map(x=>$('grid').children[x]);
+  if(A.k===B.k&&A.t!==B.t){
+    G.found++;G.streak++;G.best=Math.max(G.best,G.streak);
+    if(G.mode==='duel')G.pts[G.team]+=G.streak>1?2:1;
+    setTimeout(()=>{els.forEach(x=>{x.classList.remove('up');x.classList.add('done');});G.up=[];lock=false;
+      const p=G.pairs[A.k];toast(`<b>✔ ${esc(p[0])}</b>: ${esc(p[1])}${G.streak>1?` <br>🔥 Racha x${G.streak}${G.mode==='duel'?' (+2 pts)':''}`:''}`);
+      hud();if(G.found===G.pairs.length)end();},450);
+  }else{
+    G.miss++;G.streak=0;
+    setTimeout(()=>els.forEach(x=>x.classList.add('miss')),500);
+    setTimeout(()=>{els.forEach(x=>x.classList.remove('up','miss'));G.up=[];lock=false;if(G.mode==='duel')G.team=1-G.team;hud();},1300);
+  }
+  hud();
+});
+function secs(){return Math.floor((Date.now()-G.t0)/1000);}
+const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+function hud(){
+  if(!G){$('hud').innerHTML='<span class="chip">Elige un mazo y presiona ▶ Nueva partida</span>';return;}
+  let h=`<span class="chip">Pares <b>${G.found}/${G.pairs.length}</b></span><span class="chip">Intentos <b>${G.moves}</b></span><span class="chip">⏱ <b>${fmt(secs())}</b></span><span class="chip">🔥 Racha <b>${G.streak}</b></span>`;
+  if(G.mode==='duel')h+=`<span class="chip team ${G.team===0?'on':''}" style="color:var(--t1)">🔵 Equipo Azul: <b>${G.pts[0]}</b></span><span class="chip team ${G.team===1?'on':''}" style="color:var(--t2)">🟠 Equipo Naranja: <b>${G.pts[1]}</b></span>`;
+  $('hud').innerHTML=h;
+}
+function end(){
+  clearInterval(timer);const s=secs(),eff=Math.round(G.pairs.length/G.moves*100);
+  const stars=eff>=75?'⭐⭐⭐':eff>=50?'⭐⭐':'⭐';
+  let head;
+  if(G.mode==='duel'){const[a,b]=G.pts;head=a===b?'🤝 ¡Empate!':a>b?'🔵 ¡Gana el Equipo Azul!':'🟠 ¡Gana el Equipo Naranja!';}
+  else head=eff>=75?'🧠 ¡Memoria de ingeniero!':eff>=50?'💪 ¡Buen trabajo!':'📚 A repasar el vocabulario';
+  const cuenta=G.mode==='solo'&&$('deck').value!=='custom';
+  const res=`MEMORIA TÉCNICA · SISOPE\nMazo: ${$('deck').selectedOptions[0].text}\nPares: ${G.pairs.length} · Intentos: ${G.moves} · Precisión: ${eff}% · Tiempo: ${fmt(s)} · Mejor racha: ${G.best}`+(G.mode==='duel'?`\nAzul ${G.pts[0]} – Naranja ${G.pts[1]}`:'');
+  modal(`<div class="big">${stars}</div><h2 style="text-align:center">${head}</h2>
+   ${cuenta?'<div class="gain" id="gain">Guardando…</div>':'<p style="text-align:center;color:var(--mu)">Partida de práctica: no suma puntos al ranking.</p>'}
+   <p style="text-align:center">${G.moves} intentos · ${eff}% de precisión · ${fmt(s)} · mejor racha ${G.best}${G.mode==='duel'?`<br>Azul <b>${G.pts[0]}</b> – Naranja <b>${G.pts[1]}</b>`:''}</p>
+   <h3>📘 Glosario de la partida</h3><div class="gloss">${G.pairs.map(p=>`<div><b>${esc(p[0])}</b>: ${esc(p[1])}</div>`).join('')}</div>
+   <p>🎯 <b>Reto:</b> elige 2 términos y explica en voz alta cómo se relacionan entre sí.</p>
+   <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" id="cp">📋 Copiar resultado</button><button class="btn pri" onclick="closeM();start()">Jugar otra vez</button></div>`);
+  if(cuenta)guardar(G.pairs.length,G.moves,s,G.best);
+  $('cp').onclick=async()=>{try{await navigator.clipboard.writeText(res);$('cp').textContent='✔ Copiado';}catch(e){$('cp').textContent='No se pudo copiar';}};
+}
+function editor(msg){
+  const txt=custom.map(p=>p[0]+' | '+p[1]).join('\n');
+  modal(`<h2>✏️ Mis términos</h2><p>${msg||'Escribe un término por línea con el formato <b>término | definición</b>. Usa definiciones cortas (máx. ~15 palabras).'}</p>
+   <textarea id="ta" placeholder="Red | Conjunto de equipos interconectados que comparten recursos&#10;Hyper-V | Hipervisor tipo 1 de Microsoft">${esc(txt)}</textarea>
+   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" onclick="closeM()">Cancelar</button><button class="btn pri" id="sv">Guardar y jugar</button></div>
+   <p style="font-size:12px;color:var(--mu)">Se guardan solo en este navegador.</p>`);
+  $('sv').onclick=()=>{
+    custom=$('ta').value.split('\n').map(l=>l.split('|').map(s=>s.trim())).filter(p=>p.length>=2&&p[0]&&p[1]).map(p=>[p[0],p.slice(1).join(' | ')]);
+    try{localStorage.setItem('mem_custom',JSON.stringify(custom))}catch(e){}
+    fillDecks();$('deck').value='custom';closeM();if(custom.length>=3)start();
+  };
+}
+// ---------- SISOPE Arena: registro de puntos y top ----------
+async function guardar(pares,intentos,segundos,racha){
+  if(!YO){$('gain').style.fontSize='14px';$('gain').textContent='Solo las cuentas de alumno suman puntos';return;}
+  const {data,error}=await sb.rpc('registrar_entrenamiento',{p_juego:'memoria',p_mazo:$('deck').selectedOptions[0].text,p_pares:pares,p_intentos:intentos,p_segundos:segundos,p_racha:racha});
+  const g=$('gain');if(!g)return;
+  if(error){g.style.fontSize='14px';g.textContent=/schema cache|function/i.test(error.message)?'El registro de puntos aún no está activo. Avísale a tu docente.':error.message;return;}
+  g.textContent=`+${data} puntos`;cargarTop();
+}
+async function cargarTop(){
+  const {data,error}=await sb.rpc('top_entrenamiento',{p_juego:'memoria',p_dias:PER?Number(PER):null});
+  if(error){$('top').innerHTML=`<div class="nota">${/schema cache|function/i.test(error.message)?'El top aún no está activo.':esc(error.message)}</div>`;return;}
+  const L=data||[],yo=L.find(x=>x.es_yo);
+  $('me').innerHTML=YO?`<span class="chip">👾 <b>${esc(YO.alias)}</b></span><span class="chip">Puntos ${PER?'(7 días)':''} <b>${yo?yo.total:0}</b></span><span class="chip">Puesto <b>${yo?yo.posicion+'°':'—'}</b></span>`:'';
+  const av=x=>x.avatar_url?`<img src="${esc(/^https?:/.test(x.avatar_url)?x.avatar_url:window.SISOPE_CONFIG.SUPABASE_URL+'/storage/v1/object/public/'+x.avatar_url)}" alt="">`:`<span class="ini">${esc((x.alias||'?').replace(/[^A-Za-z0-9]/g,'').slice(0,2).toUpperCase())}</span>`;
+  $('top').innerHTML=L.length?L.slice(0,10).map(x=>`<div class="tr ${x.es_yo?'yo':''}"><span class="ps m${x.posicion}">${x.posicion<=3?['🥇','🥈','🥉'][x.posicion-1]:x.posicion}</span>${av(x)}<span class="al">${esc(x.alias)}<small>${x.partidas} partida${x.partidas>1?'s':''} · mejor ${x.mejor}</small></span><span class="pt">${x.total}</span></div>`).join('')+(yo&&yo.posicion>10?`<div class="tr yo"><span class="ps">${yo.posicion}</span>${av(yo)}<span class="al">${esc(yo.alias)}</span><span class="pt">${yo.total}</span></div>`:''):'<div class="nota">Nadie ha jugado todavía. ¡Sé el primero!</div>';
+}
+$('per').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;PER=b.dataset.d;$('per').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));cargarTop();});
+(async()=>{
+  const {data}=await sb.auth.getSession();
+  if(!data.session){location.replace('index.html');return;}
+  const {data:yo}=await sb.from('jugadores').select('alias').eq('correo',data.session.user.email.toLowerCase()).maybeSingle();
+  YO=yo;cargarTop();
+})();
+let tt;function toast(h){const t=$('toast');t.innerHTML=h;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3800);}
+function modal(h){$('mbox').innerHTML=h;$('modal').style.display='flex';}
+function closeM(){$('modal').style.display='none';}
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeM();});
+$('start').onclick=start;$('edit').onclick=()=>editor();
+start();
+</script>
+</body>
+</html>
