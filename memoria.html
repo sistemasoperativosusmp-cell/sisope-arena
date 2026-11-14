@@ -91,6 +91,7 @@ textarea{width:100%;height:220px;background:#0a1426;color:var(--tx);border:1px s
       <h3>🏆 Top del aula</h3>
       <div class="seg" id="per"><button data-d="7" class="on">Últimos 7 días</button><button data-d="">Histórico</button></div>
       <div id="top"><div class="nota">Cargando…</div></div>
+      <p class="nota">📅 Cada semana de clase se desbloquean nuevos términos del curso.</p>
       <p class="nota">Suman puntos solo las partidas en modo <b>Individual</b> con los mazos del curso. El duelo y “Mis términos” son de práctica.<br>Puntos = 10 × pares + precisión + mejor racha + rapidez.</p>
     </aside>
   </div>
@@ -98,11 +99,11 @@ textarea{width:100%;height:220px;background:#0a1426;color:var(--tx);border:1px s
 <div id="toast"></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611141100"></script>
+<script src="assets/config.js?v=202611141654"></script>
 <script>
 const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, window.SISOPE_CONFIG.SUPABASE_KEY);
 let YO = null, PER = '7';
-const DECKS={
+const DECKS_BASE={
  u1:{n:'Unidad I · Infraestructura y virtualización',w:[
   ['Red','Conjunto de equipos interconectados que comparten datos y recursos.'],
   ['Sistema operativo','Software que administra el hardware y brinda servicios a las aplicaciones.'],
@@ -163,6 +164,7 @@ const DECKS={
   ['VM Scale Set','Grupo de VMs idénticas que escala automáticamente.'],
   ['Azure Backup','Servicio de respaldo en un Recovery Services vault.']]}
 };
+let DECKS=DECKS_BASE;
 let custom=[];try{custom=JSON.parse(localStorage.getItem('mem_custom')||'[]')}catch(e){}
 const $=id=>document.getElementById(id);
 function fillDecks(){
@@ -176,7 +178,7 @@ const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'
 
 function start(){
   const dk=$('deck').value,n=+$('size').value;
-  let pool=dk==='mix'?Object.values(DECKS).flatMap(d=>d.w):dk==='custom'?custom:DECKS[dk].w;
+  let pool=dk==='mix'?[...new Map(Object.values(DECKS).flatMap(d=>d.w).map(p=>[p[0].toLowerCase(),p])).values()]:dk==='custom'?custom:DECKS[dk].w;
   if(pool.length<3){editor('Agrega al menos 3 términos para jugar con tu propio mazo.');return;}
   const pairs=shuffle(pool.slice()).slice(0,Math.min(n,pool.length));
   const cards=[];pairs.forEach((p,i)=>{cards.push({k:i,t:'term',x:p[0]});cards.push({k:i,t:'def',x:p[1]});});
@@ -266,15 +268,33 @@ $('per').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
 (async()=>{
   const {data}=await sb.auth.getSession();
   if(!data.session){location.replace('index.html');return;}
-  const {data:yo}=await sb.from('jugadores').select('alias').eq('correo',data.session.user.email.toLowerCase()).maybeSingle();
+  const {data:yo}=await sb.from('jugadores').select('alias, seccion_id').eq('correo',data.session.user.email.toLowerCase()).maybeSingle();
   YO=yo;cargarTop();
+  await cargarMazos();
 })();
+// ---------- Mazos del curso desde Supabase (la docente los administra en Ajustes → Memoria Técnica) ----------
+async function cargarMazos(){
+  const [{data:t,error},{data:sem},{data:sec}]=await Promise.all([
+    sb.from('memoria_terminos').select('semana, termino, definicion').eq('activo',true).order('semana'),
+    sb.from('semanas').select('semana, unidad, tema').order('semana'),
+    YO?sb.from('secciones').select('semana_actual').eq('id',YO.seccion_id).maybeSingle():{data:null}
+  ]);
+  if(error||!t||t.length<3){start();return;}            // sin conexión o sin términos: se usan los mazos de respaldo
+  const plan=Object.fromEntries((sem||[]).map(x=>[x.semana,x])),act=sec?.semana_actual||null,D={};
+  const sin=t.filter(x=>x.semana===act);
+  if(sin.length>=3)D.sem={n:`📅 Esta semana · S${act}${plan[act]?.tema?' · '+plan[act].tema:''}`,w:sin.map(x=>[x.termino,x.definicion])};
+  const romano={'UNIDAD I':'Unidad I','UNIDAD II':'Unidad II','UNIDAD III':'Unidad III','UNIDAD IV':'Unidad IV'};
+  const porU={};t.forEach(x=>{const u=plan[x.semana]?.unidad||'Otros';(porU[u]=porU[u]||[]).push(x);});
+  Object.keys(porU).sort().forEach(u=>{const L=porU[u];if(L.length<3)return;const ss=[...new Set(L.map(x=>x.semana).filter(Boolean))].sort((a,b)=>a-b);
+    D['u_'+u]={n:`${romano[u]||u} · ${ss.length>1?'Semanas '+ss[0]+'–'+ss[ss.length-1]:'Semana '+ss[0]} (${L.length} términos)`,w:L.map(x=>[x.termino,x.definicion])};});
+  DECKS=D;fillDecks();if(D.sem)$('deck').value='sem';
+  start();
+}
 let tt;function toast(h){const t=$('toast');t.innerHTML=h;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3800);}
 function modal(h){$('mbox').innerHTML=h;$('modal').style.display='flex';}
 function closeM(){$('modal').style.display='none';}
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeM();});
 $('start').onclick=start;$('edit').onclick=()=>editor();
-start();
 </script>
 </body>
 </html>

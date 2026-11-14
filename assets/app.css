@@ -604,3 +604,9 @@ html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:1
 .kcamp{position:relative}.kcamp .kx{position:absolute;top:8px;right:10px;border:0;background:transparent;color:var(--neo-gold);font-size:16px;font-weight:800;cursor:pointer;padding:2px 6px;opacity:.8}.kcamp .kx:hover{opacity:1}
 .ausk{justify-self:start;font-size:13px;font-weight:800;color:var(--mute);background:#f3f4f8;border:2px dashed #d5d9e4;border-radius:10px;padding:6px 12px;display:inline-block}
 .tip{white-space:pre-line}.imini{cursor:help}
+.ajform.mem{display:grid;grid-template-columns:220px 1.2fr 2fr auto;gap:8px}
+.mtr{display:grid;grid-template-columns:90px minmax(180px,1fr) minmax(320px,2.4fr) 54px 84px;gap:6px;padding:6px 10px;border-bottom:1px solid #edf0f6;align-items:center;min-width:900px}
+.mtr.alc{background:var(--navy);color:#fff;font-size:12px;font-weight:800}.mtr.inact{opacity:.5}
+.mtr input,.mtr select,.mtr textarea{padding:6px 8px;font-size:13px;border:2px solid transparent;border-radius:10px;background:transparent;min-width:0;width:100%;color:var(--ink);font:inherit;resize:vertical}.mtr input:hover,.mtr select:hover,.mtr textarea:hover{border-color:var(--line)}.mtr input:focus,.mtr textarea:focus{border-color:var(--blue);background:#fff;outline:0}.mtr input{font-weight:800}
+.mtr .lg{font-size:12px;font-weight:800;color:var(--mute);text-align:center}.mtr .lg.largo{color:#b06000}.mtr .acc{display:flex;gap:4px;justify-content:flex-end}
+.pill{display:inline-block;background:#eef1f7;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;color:var(--mute)}

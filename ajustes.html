@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611131219">
+<link rel="stylesheet" href="assets/app.css?v=202611141654">
 </head>
 <body>
 <header class="top">
@@ -22,6 +22,7 @@
     <button data-s="sConfig">⚙ Puntajes y reglas</button>
     <button data-s="sEtq">🏷 Etiquetas</button>
     <button data-s="sEnl">🔗 Enlaces</button>
+    <button data-s="sMem" data-h="memoria">🧠 Memoria Técnica</button>
     <button data-s="sSeg">🔒 Seguridad</button>
     <button data-s="sSem" class="peligro">🧹 Nuevo semestre</button>
   </div>
@@ -99,6 +100,20 @@
     <div class="altabla" style="margin-top:12px"><div class="enr alc"><div>Orden</div><div>Título</div><div>Enlace</div><div>Categoría</div><div>Descripción</div><div>Para</div><div></div></div><div id="enlaces"></div></div>
   </section>
 
+  <!-- MEMORIA TÉCNICA -->
+  <section class="card aj hide" id="sMem">
+    <h2 class="pix">MEMORIA TÉCNICA · TÉRMINOS DEL JUEGO</h2>
+    <p class="help">Los términos alimentan el minijuego <b>Memoria Técnica</b> del portal. Cada término se asigna a una <b>semana</b>: el alumno solo lo ve cuando su aula llega a esa semana (sin semana = siempre visible). Los mazos por unidad se arman solos según el plan de <b>Semanas y temas</b>. Usa definiciones cortas (máx. ~100 caracteres) para que quepan en la carta.</p>
+    <div class="ajform mem"><select id="mSem"></select><input id="mTer" maxlength="60" placeholder="Término (ej. Hipervisor tipo 1)"><input id="mDef" maxlength="160" placeholder="Definición corta"><button class="btn green" onclick="agregarMem()">+ Agregar</button></div>
+    <details class="imp"><summary>📋 Cargar varios a la vez (pegar desde Excel)</summary>
+      <p class="help">Columnas: <b>Término · Definición · Semana</b> (la semana es opcional; si falta se usa la elegida arriba). Si el término ya existe, se actualiza.</p>
+      <textarea id="mImp" rows="6" placeholder="Hipervisor tipo 1&#9;Se ejecuta directamente sobre el hardware&#9;1"></textarea>
+      <button class="btn green" onclick="importarMem()">Importar</button>
+    </details>
+    <div class="filtros" style="margin-top:12px"><label>Semana <select id="mFil"></select></label><label>Buscar <input id="mBus" placeholder="Término o definición"></label><span class="pill" id="mCuenta"></span></div>
+    <div class="altabla"><div class="mtr alc"><div>Semana</div><div>Término</div><div>Definición</div><div>Largo</div><div></div></div><div id="memLista"></div></div>
+  </section>
+
   <!-- SEGURIDAD -->
   <section class="card aj hide" id="sSeg">
     <div class="ajhead"><h2 class="pix">SEGURIDAD</h2><button class="sbtn" onclick="cargarIntentos()">↻ Actualizar</button></div>
@@ -126,8 +141,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611131219"></script>
-<script src="assets/comun.js?v=202611131219"></script>
+<script src="assets/config.js?v=202611141654"></script>
+<script src="assets/comun.js?v=202611141654"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -144,7 +159,7 @@ async function iniciar() {
   await cargarSeccion();
   $('#secNom').textContent = SECC ? SECC.nombre.toUpperCase() : 'SIN SECCIÓN'; document.querySelectorAll('.secNom').forEach(e => e.textContent = $('#secNom').textContent);
   await cargarEq();
-  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc(), cargarEnl(), cargarSemanas()]); cargarIntentos();
+  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc(), cargarEnl(), cargarSemanas(), cargarMem()]); cargarIntentos();
 }
 
 // ---------- Alumnos ----------
@@ -436,6 +451,57 @@ async function moverEnl(id, d) {
   const r = await Promise.all(grupo.map((x, k) => sb.from('enlaces').update({ orden: k + 1 }).eq('id', x.id))); if (r.some(x => x.error)) { toast('No se reordenó', true); return; } cargarEnl();
 }
 async function borrarEnl(id) { if (!confirm('¿Borrar este enlace?')) return; const { error } = await sb.from('enlaces').delete().eq('id', id); if (error) { toast('No se borró: ' + error.message, true); return; } cargarEnl(); }
+
+// ---------- Memoria Técnica ----------
+let MEM = [], MEMSEM = [];
+async function cargarMem() {
+  const [{ data, error }, { data: sem }] = await Promise.all([sb.from('memoria_terminos').select('*').order('semana').order('termino'), sb.from('semanas').select('semana, unidad, tema').order('semana')]);
+  if (error) { $('#memLista').innerHTML = `<div class="empty">${/relation|schema cache/i.test(error.message) ? 'Falta ejecutar el script 27 en Supabase.' : esc(error.message)}</div>`; return; }
+  MEM = data || []; MEMSEM = sem || [];
+  const op = MEMSEM.map(w => `<option value="${w.semana}">S${w.semana}${w.tema ? ' · ' + esc(w.tema.slice(0, 40)) : ''}</option>`).join('');
+  const f = $('#mFil').value, a = $('#mSem').value;
+  $('#mSem').innerHTML = `<option value="">Sin semana (siempre visible)</option>${op}`; $('#mSem').value = a || String(SECC?.semana_actual || '');
+  $('#mFil').innerHTML = `<option value="">Todas (${MEM.length})</option>${MEMSEM.map(w => `<option value="${w.semana}">S${w.semana} (${MEM.filter(t => t.semana === w.semana).length})</option>`).join('')}<option value="0">Sin semana (${MEM.filter(t => t.semana == null).length})</option>`; $('#mFil').value = f;
+  pintarMem();
+}
+function pintarMem() {
+  const f = $('#mFil').value, q = $('#mBus').value.trim().toLowerCase();
+  const vis = MEM.filter(t => (f === '' || (f === '0' ? t.semana == null : t.semana === Number(f))) && (!q || (t.termino + ' ' + t.definicion).toLowerCase().includes(q)));
+  $('#mCuenta').textContent = `${vis.length} término(s) · ${MEM.filter(t => t.activo).length} activos en total`;
+  const op = v => `<option value="">—</option>${MEMSEM.map(w => `<option value="${w.semana}" ${w.semana === v ? 'selected' : ''}>S${w.semana}</option>`).join('')}`;
+  $('#memLista').innerHTML = vis.length ? vis.map(t => `<div class="mtr ${t.activo ? '' : 'inact'}" data-id="${t.id}"><select data-c="semana">${op(t.semana)}</select><input data-c="termino" maxlength="60" value="${esc(t.termino)}"><textarea data-c="definicion" rows="2" maxlength="160">${esc(t.definicion)}</textarea>
+    <div class="lg ${t.definicion.length > 100 ? 'largo' : ''}">${t.definicion.length}</div>
+    <div class="acc"><button class="sbtn mini ${t.activo ? '' : 'gold'}" title="${t.activo ? 'Ocultar del juego' : 'Mostrar en el juego'}" onclick="editarMem(${t.id}, 'activo', ${!t.activo})">${t.activo ? '👁' : '🚫'}</button><button class="sbtn mini" title="Borrar" onclick="borrarMem(${t.id})">🗑</button></div></div>`).join('') : '<div class="empty">No hay términos con ese filtro.</div>';
+  document.querySelectorAll('#memLista [data-c]').forEach(el => el.onchange = () => editarMem(Number(el.closest('.mtr').dataset.id), el.dataset.c, el.value, el));
+}
+async function editarMem(id, campo, valor, el) {
+  const t = MEM.find(x => x.id === id); let v = valor;
+  if (campo === 'semana') v = valor ? Number(valor) : null;
+  if (['termino', 'definicion'].includes(campo)) { v = String(v).trim(); if (!v) { toast('No puede quedar vacío', true); el.value = t[campo]; return; } }
+  const { error } = await sb.from('memoria_terminos').update({ [campo]: v }).eq('id', id);
+  if (error) { if (el) el.value = t[campo] ?? ''; toast(/unico|duplicate/i.test(error.message) ? 'Ese término ya existe' : 'No se guardó: ' + error.message, true); return; }
+  t[campo] = v; if (campo !== 'termino') pintarMem(); toast('Guardado');
+}
+async function agregarMem() {
+  const o = { semana: $('#mSem').value ? Number($('#mSem').value) : null, termino: $('#mTer').value.trim(), definicion: $('#mDef').value.trim() };
+  if (!o.termino || o.definicion.length < 3) { toast('Escribe el término y su definición', true); return; }
+  const { error } = await sb.from('memoria_terminos').insert(o);
+  if (error) { toast(/unico|duplicate/i.test(error.message) ? 'Ese término ya existe' : 'No se guardó: ' + error.message, true); return; }
+  $('#mTer').value = ''; $('#mDef').value = ''; toast('Término agregado'); await cargarMem(); $('#mTer').focus();
+}
+async function importarMem() {
+  const def = $('#mSem').value ? Number($('#mSem').value) : null;
+  const filas = $('#mImp').value.split(/\r?\n/).map(l => l.split(/\t|\|/).map(x => x.trim())).filter(c => c[0] && c[1] && c[1].length >= 3).map(c => ({ termino: c[0].slice(0, 60), definicion: c[1].slice(0, 160), semana: c[2] && /^\d+$/.test(c[2]) ? Number(c[2]) : def }));
+  if (!filas.length) { toast('No encontré filas válidas: Término ⇥ Definición ⇥ Semana', true); return; }
+  const ex = Object.fromEntries(MEM.map(t => [t.termino.trim().toLowerCase(), t])), nuevos = filas.filter(f => !ex[f.termino.toLowerCase()]), cambia = filas.filter(f => ex[f.termino.toLowerCase()]);
+  if (!confirm(`Se agregarán ${nuevos.length} término(s) y se actualizarán ${cambia.length}. ¿Continuar?`)) return;
+  if (nuevos.length) { const { error } = await sb.from('memoria_terminos').insert(nuevos); if (error) { toast('No se importó: ' + error.message, true); return; } }
+  const r = await Promise.all(cambia.map(f => sb.from('memoria_terminos').update({ definicion: f.definicion, semana: f.semana }).eq('id', ex[f.termino.toLowerCase()].id)));
+  $('#mImp').value = ''; toast(`Listo: ${nuevos.length} nuevo(s), ${cambia.length - r.filter(x => x.error).length} actualizado(s)`); cargarMem();
+}
+async function borrarMem(id) { if (!confirm('¿Borrar este término?')) return; const { error } = await sb.from('memoria_terminos').delete().eq('id', id); if (error) { toast('No se borró: ' + error.message, true); return; } cargarMem(); }
+document.addEventListener('input', e => { if (e.target.id === 'mBus') pintarMem(); });
+document.addEventListener('change', e => { if (e.target.id === 'mFil') pintarMem(); });
 
 // ---------- Seguridad ----------
 async function cargarIntentos() {
