@@ -610,3 +610,28 @@ html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:1
 .mtr input,.mtr select,.mtr textarea{padding:6px 8px;font-size:13px;border:2px solid transparent;border-radius:10px;background:transparent;min-width:0;width:100%;color:var(--ink);font:inherit;resize:vertical}.mtr input:hover,.mtr select:hover,.mtr textarea:hover{border-color:var(--line)}.mtr input:focus,.mtr textarea:focus{border-color:var(--blue);background:#fff;outline:0}.mtr input{font-weight:800}
 .mtr .lg{font-size:12px;font-weight:800;color:var(--mute);text-align:center}.mtr .lg.largo{color:#b06000}.mtr .acc{display:flex;gap:4px;justify-content:flex-end}
 .pill{display:inline-block;background:#eef1f7;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;color:var(--mute)}
+
+/* ---------- Trabajo grupal en tablet (y pantallas angostas): cada alumno como tarjeta con etiquetas ---------- */
+.grrow .cel{min-width:0}
+@media (max-width:1280px){
+  .grhead{display:none}
+  .grrow,.grrow.grcab{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px 12px;padding:12px 14px}
+  .grrow>:nth-child(1),.grrow>:nth-child(2){grid-column:1/-1}
+  .grrow>.tot{grid-column:1/2;text-align:left;font-size:22px}
+  .grrow>:last-child{grid-column:2/-1;justify-self:end}
+  .grrow .cel::before,.grrow .tot::before{content:attr(data-l);display:block;font-size:11px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+  .grrow .tot::before{font-size:11px}
+  .grrow .cel .seg{display:flex;width:100%}
+  .grrow .cel .seg button{flex:1;padding:10px 4px;font-size:14px;min-height:44px}
+  .grrow .cel .seg.part{flex-wrap:wrap}.grrow .cel .seg.part button{flex:1 1 18%}
+  .grrow .cel .seg.bulk i{display:none}
+  .grrow .cel .jmc{height:48px}.grrow .cel .jmc button{padding:0 16px;font-size:15px}
+  .grcab .nop{display:none}.grcab .vacio{display:none}
+  .grcab>:nth-child(1){grid-column:1/-1}
+  .grtipo{flex-direction:column;align-items:stretch}.grtipo label{flex-wrap:wrap}.grtipo select{width:100%;min-height:44px}
+  main{padding-left:12px;padding-right:12px}
+}
+@media (max-width:640px){
+  .grrow,.grrow.grcab{grid-template-columns:1fr!important}
+  .grrow>*{grid-column:1/-1!important;justify-self:stretch!important}
+}

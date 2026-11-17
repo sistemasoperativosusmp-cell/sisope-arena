@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Trabajo grupal</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611141654">
+<link rel="stylesheet" href="assets/app.css?v=202611170655">
 </head>
 <body>
 <header class="top">
@@ -47,8 +47,8 @@
 </div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611141654"></script>
-<script src="assets/comun.js?v=202611141654"></script>
+<script src="assets/config.js?v=202611170655"></script>
+<script src="assets/comun.js?v=202611170655"></script>
 <script>
 let SEM = 1, FILAS = [];
 const PART = [['Lideró', 'Lideró'], ['Apoyó', 'Apoyó'], ['Habló', 'Habló'], ['Intentando', 'Intentando'], ['No participó', 'No part.']];
@@ -85,6 +85,7 @@ async function iniciar() {
   pintar();
 }
 
+const CRIT_N = ['Comunicación efectiva', 'Conocimiento técnico', 'Análisis crítico'];
 function seg(f, campo, opciones, cls) {
   const dis = f.asistencia === 'Ausente' ? 'disabled' : '';
   return `<span class="seg ${cls || ''}">${opciones.map(([val, txt]) => {
@@ -122,15 +123,15 @@ function pintar() {
       <div class="grrow grcab"><div><div class="pix" style="font-size:11px">${esc(g.toUpperCase())}</div><small>Promedio ${fmt(prom)} / 3</small>
           <input class="tema" placeholder="Tema del grupo (ej. Hyper-V)" value="${esc(filas.find(f => f.tema_grupal)?.tema_grupal || '')}" onchange='guardarTema(${JSON.stringify(g)}, this.value)'></div>
         <div class="nop" style="font-weight:800">Aplicar a toda la consultora →</div>
-        ${CRIT.map(c => `<span class="seg bulk"><i>Todos</i>${NIV.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c}", ${v})'>${v}</button>`).join('')}</span>`).join('')}
-        <div></div>
-        <div>${netoHTML(null, 0, `ajusteGrupo(${esc(JSON.stringify(g))}, -1)`, `ajusteGrupo(${esc(JSON.stringify(g))}, 1)`, 'equipo')}</div></div>
+        ${CRIT.map((c, i) => `<div class="cel" data-l="${CRIT_N[i]} · todos"><span class="seg bulk"><i>Todos</i>${NIV.map(v => `<button onclick='masivo(${JSON.stringify(g)}, "${c}", ${v})'>${v}</button>`).join('')}</span></div>`).join('')}
+        <div class="vacio"></div>
+        <div class="cel" data-l="Bonus / Falta · equipo">${netoHTML(null, 0, `ajusteGrupo(${esc(JSON.stringify(g))}, -1)`, `ajusteGrupo(${esc(JSON.stringify(g))}, 1)`, 'equipo')}</div></div>
       ${filas.map(f => `<div class="grrow ${f.asistencia === 'Ausente' ? 'aus' : ''}">
         <div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.jugadores?.rol_consultora ? ' · ' + esc(f.jugadores.rol_consultora) : ''}${f.asistencia === 'Ausente' ? ' · AUSENTE' : f.asistencia === 'Tarde' ? ' · TARDE' : ''}</small>${chipsEtq(f.jugador_id)}</div>
-        ${seg(f, 'participacion_grupal', PART, 'part')}
-        ${CRIT.map(c => seg(f, c, NIV.map(v => [v, String(v)]))).join('')}
-        <div class="tot">${fmt(total(f))}</div>
-        <div>${netoHTML(f, (n(f.extra) || 0) - (n(f.falta) || 0), `ajuste(${f.id}, -1)`, `ajuste(${f.id}, 1)`)}</div>
+        <div class="cel" data-l="Participación">${seg(f, 'participacion_grupal', PART, 'part')}</div>
+        ${CRIT.map((c, i) => `<div class="cel" data-l="${CRIT_N[i]}">${seg(f, c, NIV.map(v => [v, String(v)]))}</div>`).join('')}
+        <div class="tot" data-l="Total">${fmt(total(f))}</div>
+        <div class="cel" data-l="Bonus / Falta">${netoHTML(f, (n(f.extra) || 0) - (n(f.falta) || 0), `ajuste(${f.id}, -1)`, `ajuste(${f.id}, 1)`)}</div>
       </div>`).join('')}
     </div>`;
   }).join('');

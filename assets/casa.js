@@ -64,11 +64,11 @@ function pintarCasa() {
   // Lista individual por orden alfabético (apellidos), sin agrupar por consultora
   $('#lista').innerHTML = `<div class="grupo">
       <div class="grrow grcab" style="${grid}"><div><div class="pix" style="font-size:11px">${FILTRO ? 'FILTRADOS' : 'TODA LA CLASE'}</div><small>${vis.length} alumnos · promedio ${f1(prom)} / ${CASA.max}</small></div>
-        ${CASA.cols.map(c => c.masivo ? `<span class="seg bulk"><i>Todos</i>${c.masivo.map(v => `<button onclick='masivo(${JSON.stringify(v)}, "${c.campo}")'>${esc(v < 0 ? 'No cumplió' : (c.campo === 'kahoot_pos' && v === 99) ? 'Participó' : String(v))}</button>`).join('')}</span>` : '<div></div>').join('')}<div></div></div>
+        ${CASA.cols.map(c => c.masivo ? `<div class="cel" data-l="${esc(c.titulo)} · todos"><span class="seg bulk"><i>Todos</i>${c.masivo.map(v => `<button onclick='masivo(${JSON.stringify(v)}, "${c.campo}")'>${esc(v < 0 ? 'No cumplió' : (c.campo === 'kahoot_pos' && v === 99) ? 'Participó' : String(v))}</button>`).join('')}</span></div>` : '<div></div>').join('')}<div></div></div>
       ${vis.length ? vis.map((f, i) => `<div class="grrow ${CASA.calificado(f) ? '' : 'pend'}" style="${grid}">
         <div class="nomn"><span class="nro">${i + 1}</span><div><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Ausente' ? ' · faltó a clase' : ''}${CASA.calificado(f) ? '' : ' · <span class="pendt">pendiente</span>'}</small></div></div>
-        ${CASA.cols.map(c => celda(f, c)).join('')}
-        <div class="tot">${f1(CASA.total(f))}</div>
+        ${CASA.cols.map(c => `<div class="cel" data-l="${esc(c.titulo)}">${celda(f, c)}</div>`).join('')}
+        <div class="tot" data-l="Puntos / ${CASA.max}">${f1(CASA.total(f))}</div>
       </div>`).join('') : '<div class="empty">Nadie coincide con la búsqueda.</div>'}
     </div>`;
 }
