@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Equipos</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191703">
+<link rel="stylesheet" href="assets/app.css?v=202611191806">
 <style>
 main{display:flex;flex-direction:column;gap:20px}
 .card h2{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -108,9 +108,9 @@ details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191703"></script>
-<script src="assets/comun.js?v=202611191703"></script>
-<script src="assets/armado.js?v=202611191703"></script>
+<script src="assets/config.js?v=202611191806"></script>
+<script src="assets/comun.js?v=202611191806"></script>
+<script src="assets/armado.js?v=202611191806"></script>
 <script>
 let AL = [], PERF = {}, EQ = [], REP = [], PEN = {}, PROP = [], NOMBRES = [];
 const PENAS = ['Sustentación individual', 'Trabajo adicional', 'Examen individual'];
@@ -149,11 +149,11 @@ function pintarEstado() {
   const tec = hechos.length ? Math.round(hechos.reduce((s, a) => s + Number(PERF[a.id].tecnico), 0) / hechos.length) : 0;
   $('#estado').innerHTML = `<div><small>Respondieron</small><b>${hechos.length} / ${AL.length}</b></div><div><small>Nivel técnico promedio</small><b>${hechos.length ? tec + '%' : '—'}</b></div>
     <div><small>😈 Sin Miedo (reto a la primera)</small><b>${reto1}</b></div><div><small>🫠 Intentaron escapar</small><b>${hechos.length - reto1}</b></div>`;
-  $('#pend').innerHTML = pend.map(a => `<span class="ch no">${esc(a.alias)} <small>${esc(corto(a.nombre))}</small></span>`).join('') || '<span class="ch ok">¡Todos respondieron! 🎉</span>';
-  $('#hechos').innerHTML = hechos.map(a => `<span class="ch ok">${esc(a.alias)} <small>${Math.round(PERF[a.id].tecnico)}%</small><button title="Repetir la misión" onclick="reabrir('${a.id}')">↺</button></span>`).join('') || '<span class="vac">Nadie todavía.</span>';
+  $('#pend').innerHTML = pend.map(a => `<span class="ch no">${esc(a.nombre)} <small>${esc(a.alias)}</small></span>`).join('') || '<span class="ch ok">¡Todos respondieron! 🎉</span>';
+  $('#hechos').innerHTML = hechos.map(a => `<span class="ch ok">${esc(a.nombre)} <small>${esc(a.alias)} · ${Math.round(PERF[a.id].tecnico)}%</small><button title="Repetir la misión" onclick="reabrir('${a.id}')">↺</button></span>`).join('') || '<span class="vac">Nadie todavía.</span>';
 }
 async function reabrir(id) {
-  const a = porId(id); if (!confirm(`¿Borrar la evaluación de ${a.alias} para que repita la Misión 0? (La medalla ya ganada se mantiene.)`)) return;
+  const a = porId(id); if (!confirm(`¿Borrar la evaluación de ${a.nombre} (${a.alias}) para que repita la Misión 0? (La medalla ya ganada se mantiene.)`)) return;
   const { error } = await sb.from('eq_perfil').delete().eq('jugador_id', id);
   if (error) { toast('No se borró: ' + error.message, true); return; }
   toast(`${a.alias} puede repetir la Misión 0`); cargar();
@@ -184,7 +184,7 @@ function pintarProp() {
     const ev = t.filter(a => PERF[a.id]), tec = ev.length ? Math.round(ev.reduce((s, a) => s + Number(PERF[a.id].tecnico), 0) / ev.length) : null;
     const faltan = ROLES_EQUIPO.filter(r => !t.some(a => a.rol === r));
     return `<div class="eqx"><h3><span>${esc(NOMBRES[ti])}</span><small>${t.length} · 🧠 ${tec ?? '—'}%</small></h3>
-      ${t.map((a, i) => `<div class="mb"><div><b>${esc(a.alias)}</b><span class="nm">${esc(corto(a.nombre))}</span></div>
+      ${t.map((a, i) => `<div class="mb"><div><b>${esc(a.nombre)}</b><span class="nm">${esc(a.alias)}</span></div>
         <div><select onchange="rolProp(${ti}, ${i}, this.value)">${rolOpts(a.rol)}</select></div>
         <div class="tgs">${tagsPerfil(a, a.rol)}<select style="margin-left:auto;font-size:11px;padding:3px" title="Mover a otro equipo" onchange="moverProp(${ti}, ${i}, this.value)">${NOMBRES.map((nm, k) => `<option value="${k}" ${k === ti ? 'selected' : ''}>→ ${esc(nm)}</option>`).join('')}</select></div></div>`).join('')}
       ${faltan.length ? `<div class="mb"><div class="tgs"><span class="t sin">Rol sin cubrir: ${faltan.map(esc).join(', ')}</span></div></div>` : ''}</div>`;
@@ -216,7 +216,7 @@ function pintarActuales() {
   const sin = g[''] || [];
   $('#eqCuenta').textContent = `${EQ.length} equipos · ${sin.length} sin equipo`;
   const eqSel = a => `<select class="mv" title="Mover a otro equipo" onchange="asignar('${a.id}', this.value)"><option value="">→ sin equipo</option>${nombres.map(nm => `<option value="${esc(nm)}" ${nm === a.consultora ? 'selected' : ''}>→ ${esc(nm)}</option>`).join('')}</select>`;
-  const fila = a => { const s = strikesDe(a.id); return `<div class="mb"><div><b>${esc(a.alias)}</b><span class="nm">${esc(corto(a.nombre))}</span></div>
+  const fila = a => { const s = strikesDe(a.id); return `<div class="mb"><div><b>${esc(a.nombre)}</b><span class="nm">${esc(a.alias)}</span></div>
       <div><select onchange="cambiarRol('${a.id}', this)">${rolOpts(a.rol_consultora)}</select></div>
       <div class="tgs">${tagsPerfil(a, a.rol_consultora)}${s ? `<span class="t st">🟥 ${s} strike${s > 1 ? 's' : ''}</span>` : ''}<span style="margin-left:auto">${eqSel(a)}</span></div></div>`; };
   $('#actuales').innerHTML = nombres.map(nm => { const e = EQ.find(x => x.nombre === nm), m = g[nm] || [];
@@ -265,7 +265,7 @@ async function cambiarRol(id, sel) {
 function tarjetaRep(r) {
   const de = porId(r.reportante_id), a = porId(r.reportado_id), url = /^https?:\/\//i.test(r.evidencia || '');
   const f = new Date(r.creado).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-  return `<div class="rep ${r.estado}"><div><div class="q">${f}${r.semana ? ' · Semana ' + r.semana : ''} · <b>${esc(de?.alias || '¿?')}</b> (${esc(corto(de?.nombre))}) reporta a <b>${esc(a?.alias || '¿?')}</b> (${esc(corto(a?.nombre))}) · ${esc(a?.consultora || '')}</div>
+  return `<div class="rep ${r.estado}"><div><div class="q">${f}${r.semana ? ' · Semana ' + r.semana : ''} · <b>${esc(de?.nombre || '¿?')}</b> (${esc(de?.alias || '')}) reporta a <b>${esc(a?.nombre || '¿?')}</b> (${esc(a?.alias || '')}) · ${esc(a?.consultora || '')}</div>
       <p>“${esc(r.motivo)}”</p>${r.evidencia ? `<div class="q" style="margin-top:6px">Evidencia: ${url ? `<a href="${esc(r.evidencia)}" target="_blank" rel="noopener noreferrer">${esc(r.evidencia)}</a>` : esc(r.evidencia)}</div>` : '<div class="q" style="margin-top:6px">Sin evidencia adjunta</div>'}
       ${r.estado !== 'Pendiente' ? `<div class="q" style="margin-top:6px"><b>${r.estado === 'Validado' ? '🟥 Validado' : '✕ Rechazado'}</b>${r.nota_docente ? ' · Nota: ' + esc(r.nota_docente) : ''}</div>` : ''}</div>
     <div>${r.estado === 'Pendiente' ? `<textarea id="nota${r.id}" placeholder="Nota (opcional). Si validas, el alumno verá esta nota."></textarea>
@@ -280,7 +280,7 @@ function pintarReportes() {
 }
 async function resolver(id, estado) {
   const r = REP.find(x => x.id === id), nota = document.getElementById('nota' + id)?.value.trim();
-  if (estado === 'Validado') { const a = porId(r.reportado_id), s = strikesDe(r.reportado_id) + 1; if (!confirm(`¿Validar el strike ${s} de 3 para ${a?.alias}?`)) return; }
+  if (estado === 'Validado') { const a = porId(r.reportado_id), s = strikesDe(r.reportado_id) + 1; if (!confirm(`¿Validar el strike ${s} de 3 para ${a?.nombre} (${a?.alias})?`)) return; }
   const cambio = estado === 'Pendiente' ? { estado, resuelto: null } : { estado, resuelto: new Date().toISOString(), ...(nota ? { nota_docente: nota } : {}) };
   const { error } = await sb.from('eq_reportes').update(cambio).eq('id', id);
   if (error) { toast('No se guardó: ' + error.message, true); return; }
@@ -292,7 +292,7 @@ async function resolver(id, estado) {
 // ---------- 5 · Strikes ----------
 function pintarStrikes() {
   const L = AL.map(a => ({ a, s: strikesDe(a.id) })).filter(x => x.s > 0 || PEN[x.a.id]).sort((x, y) => y.s - x.s);
-  $('#strikes').innerHTML = L.map(({ a, s }) => { const pe = PEN[a.id]; return `<div class="${s >= 3 ? 'tres' : ''}"><b>${esc(a.alias)}</b> <small class="nm">${esc(corto(a.nombre))} · ${esc(a.consultora || 'sin equipo')}</small>
+  $('#strikes').innerHTML = L.map(({ a, s }) => { const pe = PEN[a.id]; return `<div class="${s >= 3 ? 'tres' : ''}"><b>${esc(a.nombre)}</b> <small class="nm">${esc(a.alias)} · ${esc(a.consultora || 'sin equipo')}</small>
       <div class="sq3">${'🟥'.repeat(Math.min(s, 3))}${'⬜'.repeat(Math.max(0, 3 - s))}${s > 3 ? ` <small>+${s - 3}</small>` : ''}</div>
       ${pe ? `<div class="q"><b>Penalidad:</b> ${esc(pe.penalidad)}${pe.nota ? ' · ' + esc(pe.nota) : ''} · <b>${esc(pe.estado)}</b></div>
           <div class="bt" style="display:flex;gap:8px;margin-top:6px">${pe.estado === 'Pendiente' ? `<button class="sbtn" onclick="cumplida('${a.id}')">✔ Marcar cumplida</button>` : ''}<button class="sbtn" onclick="quitarPena('${a.id}')">Quitar</button></div>`
