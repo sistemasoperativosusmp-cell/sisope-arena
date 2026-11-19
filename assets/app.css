@@ -635,3 +635,8 @@ html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:1
   .grrow,.grrow.grcab{grid-template-columns:1fr!important}
   .grrow>*{grid-column:1/-1!important;justify-self:stretch!important}
 }
+
+/* Asistencia: se escapó de clase */
+.chip.Escapo{background:#ffd9b8;border-color:#e2741c;color:#5a2a00}
+#bEsc.on{background:#e2741c;border-color:#e2741c;color:#fff}
+.astrip span.es{background:#e2741c;color:#fff}

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191651">
+<link rel="stylesheet" href="assets/app.css?v=202611191653">
 <style>
 .evo{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .evo0{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
@@ -56,7 +56,7 @@
     <div><span class="niv crit">⛔ Crítico</span><p>5 puntos de alerta o más. Prioridad para conversar esta semana.</p></div>
     <div><span class="niv ries">⚠ En riesgo</span><p>3 o 4 puntos de alerta. Seguimiento cercano.</p></div>
     <div><span class="niv bien">✓ Bien</span><p>0 a 2 puntos de alerta.</p></div>
-    <div class="ancho"><span class="tag" style="background:#eef1f7;color:var(--ink)">Alertas</span><p><b>+3</b> necesita más de 20 en el EF · <b>+2</b> necesita más de 14 en el EF · <b>+2</b> rinde menos del 60% del promedio de la clase (<b>+1</b> si es menos del 80%) · <b>+2</b> 3 o más semanas sin hablar (<b>+1</b> si son 2) · <b>+1</b> 2 o más ausencias · <b>+1</b> algún laboratorio no cumplido · <b>+1</b> alguna falta · <b>+1</b> sus últimas 3 semanas van peor que antes · <b>+1</b> 2 o más etiquetas “por mejorar”.</p></div>
+    <div class="ancho"><span class="tag" style="background:#eef1f7;color:var(--ink)">Alertas</span><p><b>+3</b> necesita más de 20 en el EF · <b>+2</b> necesita más de 14 en el EF · <b>+2</b> rinde menos del 60% del promedio de la clase (<b>+1</b> si es menos del 80%) · <b>+2</b> 3 o más semanas sin hablar (<b>+1</b> si son 2) · <b>+1</b> 2 o más ausencias · <b>+1</b> se escapó de clase alguna vez · <b>+1</b> algún laboratorio no cumplido · <b>+1</b> alguna falta · <b>+1</b> sus últimas 3 semanas van peor que antes · <b>+1</b> 2 o más etiquetas “por mejorar”.</p></div>
     <div class="ancho"><span class="tag" style="background:#e7efff;color:#1d4fb0">Perfil</span><p><b>Perfil observado</b> (indicios a partir de los datos, no diagnósticos): 🧠 Hábil · 👑 Líder · 🙋 Participativo · 🤐 Tímido (escribe bien, habla poco) · 😴 Poco compromiso (labs no cumplidos o sin entregar) · 🚪 Falta mucho · ⏰ Impuntual · 🚩 Revisar posible copia (escrito alto vs. oral o parcial bajo). Cada uno trae una sugerencia de cómo trabajar con el alumno.</p></div>
     <div class="ancho"><span class="tag" style="background:#eef8ea;color:#24600f">Sílabo</span><p><b>Alineación con el sílabo 2026:</b> logro por unidad (<span id="undLey">I Virtualización · II Identidad y accesos · III Infraestructura de red · IV Plataformas empresariales</span>) y competencias SO2 y SO6 (clave), SO4 (relacionada) más objetivos transversales. Niveles: En inicio &lt;55% · En proceso 55–69% · Logrado 70–89% · Destacado ≥90%.</p></div>
     <div><span class="tag" style="background:#efe7fb;color:#5a2fa6">Radar</span><p>Cada eje compara su promedio semanal con <b>el mejor de la clase (100%)</b>. Morado = alumno, naranja punteado = promedio de la clase.</p></div>
@@ -67,9 +67,9 @@
 <div class="modal hide" id="mIns" onclick="if (event.target === this) cerrarIns()"><div class="box plain det"><div class="dethead"><h2 class="pix" style="color:var(--navy)">INSIGNIAS DEL AULA</h2><button class="sbtn" onclick="cerrarIns()">✕ Cerrar</button></div><div id="mInsCuerpo" style="width:100%"></div></div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191651"></script>
-<script src="assets/insignias.js?v=202611191651"></script>
-<script src="assets/comun.js?v=202611191651"></script>
+<script src="assets/config.js?v=202611191653"></script>
+<script src="assets/insignias.js?v=202611191653"></script>
+<script src="assets/comun.js?v=202611191653"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -140,6 +140,7 @@ function calcular() {
     if (sem.length && rend < 0.6) al.push([2, `Rinde el ${Math.round(rend * 100)}% del promedio de la clase`]); else if (sem.length && rend < 0.8) al.push([1, `Rinde el ${Math.round(rend * 100)}% del promedio de la clase`]);
     if (silencio >= 3) al.push([2, `${silencio} semanas sin hablar`]); else if (silencio === 2) al.push([1, '2 semanas sin hablar']);
     if (aus >= 2) al.push([1, `${aus} ausencias`]);
+    const escp = fs.filter(d => d.se_escapo).length; if (escp) al.push([1, `Se escapó de clase ${escp} ${escp === 1 ? 'vez' : 'veces'}`]);
     if (labNo) al.push([1, `${labNo} laboratorio(s) no cumplido(s)`]);
     if (faltas) al.push([1, `${faltas} semana(s) con falta en grupo`]);
     if (baja) al.push([1, 'Sus últimas 3 semanas van peor que antes']);
@@ -177,7 +178,7 @@ function competencias(fs, nt) {
   const c = {
     SO2: prom([...lab, ...pas.map(d => d.gr_tecnico === null ? null : n(d.gr_tecnico)), ...pas.map(d => d.gr_analisis === null ? null : n(d.gr_analisis))]),
     SO6: prom([...lab, ...quiz, ...pas.map(d => d.foro_tecnico === null ? null : n(d.foro_tecnico)), jmAcc]),
-    SO4: prom([...pas.map(d => d.asistencia === 'Presente' ? 1 : d.asistencia === 'Tarde' ? 0.5 : 0), ...pas.map(d => d.lab === null ? null : n(d.lab) < 0 ? 0 : 1), ...pas.map(d => n(d.falta) > 0 ? 0 : null), ...(pas.some(d => n(d.falta) > 0) ? [] : pas.length ? [1] : [])]),
+    SO4: prom([...pas.map(d => d.se_escapo ? 0.25 : d.asistencia === 'Presente' ? 1 : d.asistencia === 'Tarde' ? 0.5 : 0), ...pas.map(d => d.lab === null ? null : n(d.lab) < 0 ? 0 : 1), ...pas.map(d => n(d.falta) > 0 ? 0 : null), ...(pas.some(d => n(d.falta) > 0) ? [] : pas.length ? [1] : [])]),
     T1: prom([...pas.map(d => d.gr_comunicacion === null ? null : n(d.gr_comunicacion)), ...pas.filter(d => d.asistencia !== 'Ausente').map(d => Math.min(1, voz(d) / 3))]),
     T2: prom([...pas.map(d => d.gr_analisis === null ? null : n(d.gr_analisis)), ...pas.map(d => d.foro_analisis === null ? null : n(d.foro_analisis))]),
     T3: prom(pas.map(d => d.participacion_grupal ? lid[d.participacion_grupal] : null)),
@@ -233,7 +234,7 @@ function evolucion(x, fs) {
   // Compromiso por semana: entregó el lab, asistió, sin falta en el grupal ni strike (no hablar es timidez, no flojera: no cuenta aquí)
   const compSem = d => { const it = []; if (d.lab !== null && d.lab !== undefined) it.push(n(d.lab) >= 0 ? 1 : 0); else if (d.semana < ACT) it.push(0);
     if (n(d.falta) > 0) it.push(0); if ((STK[x.j.id] || []).includes(d.semana)) it.push(0);
-    if (d.asistencia === 'Ausente') it.push(0); return it.length ? it.reduce((a, b) => a + b, 0) / it.length : null; };
+    if (d.asistencia === 'Ausente' || d.se_escapo) it.push(0); return it.length ? it.reduce((a, b) => a + b, 0) / it.length : null; };
   const compP = L => { const v = L.map(compSem).filter(v => v !== null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   const timido = (m && Number(m.comunicacion) <= 33) || etqs.some(e => ['Tímido', 'Mudo'].includes(e));
   const vIni = vozP(ini), vFin = fin.length ? vozP(fin) : null, cIni = compP(ini), cFin = fin.length ? compP(fin) : null;

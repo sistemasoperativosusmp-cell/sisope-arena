@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Juego del Miedo</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191651">
+<link rel="stylesheet" href="assets/app.css?v=202611191653">
 </head>
 <body>
 <header class="top">
@@ -102,8 +102,8 @@
 
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191651"></script>
-<script src="assets/comun.js?v=202611191651"></script>
+<script src="assets/config.js?v=202611191653"></script>
+<script src="assets/comun.js?v=202611191653"></script>
 <script>
 let SEM = 1, FILAS = [], ETQ = [], OBS = {}, RADAR = {}, PA = 0.5, PF = 0.5, soloMudos = false, PILA = [], ELEGIDOS = new Set(), SEL = new Set(), VIC = null, ETQ_ALUMNO = null;
 const num = n => Number(n || 0);
@@ -128,12 +128,14 @@ async function iniciar() {
 }
 
 async function cargar() {
-  const [r1, r2, r3, r4] = await Promise.all([
-    sb.from('detalle').select('id, jugador_id, asistencia, hora_llegada, jm_aciertos, jm_fallos, part_vol, participacion_grupal, jugadores!inner(nombre, alias, consultora, rol_consultora, avatar_url, seccion_id)').eq('semana', SEM).eq('jugadores.seccion_id', SECC.id),
+  const qd = extra => sb.from('detalle').select('id, jugador_id, asistencia, hora_llegada, jm_aciertos, jm_fallos, part_vol, participacion_grupal' + extra + ', jugadores!inner(nombre, alias, consultora, rol_consultora, avatar_url, seccion_id)').eq('semana', SEM).eq('jugadores.seccion_id', SECC.id);
+  let [r1, r2, r3, r4] = await Promise.all([
+    qd(', se_escapo, hora_salida'),
     sb.from('etiquetas').select('*').order('id'),
     sb.from('observaciones').select('jugador_id, etiquetas').eq('semana', SEM),
     sb.from('v_radar').select('jugador_id, voz_ciclo, semanas_silencio').eq('seccion_id', SECC.id)
   ]);
+  if (r1.error && /se_escapo|hora_salida/.test(r1.error.message)) r1 = await qd('');
   const err = r1.error || r2.error || r3.error || r4.error;
   if (err) { toast('Error al cargar: ' + err.message, true); return; }
   FILAS = (r1.data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
@@ -159,7 +161,7 @@ function filaHTML(f) {
   const dis = aus ? 'disabled' : '', sel = SEL.has(f.jugador_id), n = xpJM(f);
   return `<div class="fila ${aus ? 'aus' : v === 0 ? 'mudo' : ''} ${sel ? 'sel' : ''}">
     <input type="checkbox" class="chk" ${dis} ${sel ? 'checked' : ''} title="Seleccionar" onchange="alternarSel('${f.jugador_id}')">
-    <div class="q" onclick="${aus ? '' : `alternarSel('${f.jugador_id}')`}"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : aus ? ' · AUSENTE' : ''}</small>
+    <div class="q" onclick="${aus ? '' : `alternarSel('${f.jugador_id}')`}"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : aus ? ' · AUSENTE' : ''}${f.se_escapo ? ' · 🏃 SE ESCAPÓ' : ''}</small>
       <div class="tags"><span class="tag ${v === 0 ? 'rojo' : ''}">${v === 0 ? 'Sin hablar' : 'Voz ' + v}</span><span class="tag xp">✓${num(f.jm_aciertos)} · ✗${num(f.jm_fallos)}</span>${et.map(e => `<span class="tag et">${esc(e)}</span>`).join('')}</div></div>
     <div class="jmc ${dis ? 'off' : ''}">
       <button ${dis} class="menos" title="No contestó: −${fmt(PF)}" onclick="sumar(['${f.jugador_id}'],'jm_fallos',1)">−${fmt(PF)}</button>
@@ -237,7 +239,7 @@ function abrirEtq(jid) {
 
 // ---------- D3 · Víctima al azar ----------
 function elegirVictima() {
-  const cand = FILAS.filter(f => f.asistencia !== 'Ausente' && !ELEGIDOS.has(f.jugador_id));
+  const cand = FILAS.filter(f => f.asistencia !== 'Ausente' && !f.se_escapo && !ELEGIDOS.has(f.jugador_id));   // quien se escapó ya no está en el aula
   if (!cand.length) { toast(ELEGIDOS.size ? 'Ya pasaron todos los presentes. Reinicio el sorteo.' : 'No hay alumnos presentes', !ELEGIDOS.size); ELEGIDOS.clear(); if (!FILAS.some(f => f.asistencia !== 'Ausente')) return; return elegirVictima(); }
   const mudos = cand.filter(f => voz(f) === 0), pool = mudos.length ? mudos : cand;
   const peso = f => 1 / (1 + num(RADAR[f.jugador_id]?.voz_ciclo)) + 0.5 * num(RADAR[f.jugador_id]?.semanas_silencio);

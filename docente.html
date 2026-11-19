@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Docente</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191651">
+<link rel="stylesheet" href="assets/app.css?v=202611191653">
 </head>
 <body>
 <header class="top">
@@ -20,7 +20,7 @@
         <label>Semana<select id="semana"></select></label>
         <label>Fecha<select id="fecha"></select></label>
         <label>Práctica<select id="practica"><option>Practica 1</option><option>Practica 2</option><option>Practica 3</option><option>Practica 4</option></select></label>
-        <label>Unidad<select id="unidad" disabled title="Se asigna sola: Práctica 1 = Unidad I, Práctica 2 = Unidad II…"><option>UNIDAD I</option><option>UNIDAD II</option><option>UNIDAD III</option><option>UNIDAD IV</option></select></label>
+        <label>Unidad<div id="unidadTxt" title="Se asigna sola según la práctica: Práctica 1 = Unidad I, Práctica 2 = Unidad II…" style="padding:10px 2px;font-weight:800;line-height:1.3"></div></label>
       </div>
       <p class="help" id="plan"></p><p class="help" id="undAviso" style="color:#a15c00"></p><p class="help" id="diasAyuda"></p>
       <button class="btn green big pix" id="iniciar">INICIAR / CONTINUAR SEMANA</button>
@@ -34,7 +34,9 @@
           <span><i class="sq" style="border:2px solid var(--green)"></i>Presente</span>
           <span><i class="sq" style="background:var(--gold)"></i>Tarde</span>
           <span><i class="sq" style="background:var(--mute)"></i>Ausente (sale del radar y del sorteo)</span>
+          <span><i class="sq" style="background:#ffd9b8;border:2px solid #e2741c"></i>🏃 Se escapó (se fue antes de terminar)</span>
         </div>
+        <button class="sbtn" id="bEsc" onclick="modoEscape()" style="margin-bottom:10px">🏃 Marcar quién se escapó de clase</button>
         <div class="chips" id="chips"></div>
         <div class="count" id="conteo"></div>
       </section>
@@ -48,19 +50,27 @@
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191651"></script>
-<script src="assets/comun.js?v=202611191651"></script>
+<script src="assets/config.js?v=202611191653"></script>
+<script src="assets/comun.js?v=202611191653"></script>
 <script>
 let SEMANAS = [], FILAS = [], SESI = {}, TIT_U = {};
 // Cada práctica corresponde a una unidad del sílabo (los títulos se editan en Ajustes → Semanas y temas)
 const ROM = ['I', 'II', 'III', 'IV'], UND_DEF = { I: 'Virtualización', II: 'Administración de identidad y accesos', III: 'Servicios de infraestructura de red', IV: 'Plataformas de tipo empresarial' };
 const unidadDe = prac => 'UNIDAD ' + ROM[(Number(String(prac || '').slice(-1)) || 1) - 1];
 function pintarUnidad() {
-  $('#unidad').value = unidadDe($('#practica').value);
+  const u = unidadDe($('#practica').value), r = u.split(' ')[1];
+  $('#unidadTxt').innerHTML = `${u}<br><span style="font-weight:700;color:var(--mute)">${esc((TIT_U[r] || '').trim() || UND_DEF[r])}</span>`;
   const s = SEMANAS.find(x => x.semana === semanaSel()) || {};
-  $('#undAviso').textContent = s.unidad && s.unidad !== $('#unidad').value ? `⚠ En el plan esta semana figuraba ${s.unidad}; al iniciar la semana se corrige a ${$('#unidad').value}.` : '';
+  $('#undAviso').textContent = s.unidad && s.unidad !== u ? `⚠ En el plan esta semana figuraba ${s.unidad}; al iniciar la semana se corrige a ${u}.` : '';
 }
 const ORDEN = { Presente: 'Tarde', Tarde: 'Ausente', Ausente: 'Presente' };
+let MODO_ESC = false, SIN_ESC = false;   // SIN_ESC: aún no se ejecuta el script 30
+function modoEscape() {
+  if (SIN_ESC) { toast('Falta ejecutar el script 30 (se escapó) en Supabase', true); return; }
+  MODO_ESC = !MODO_ESC; $('#bEsc').classList.toggle('on', MODO_ESC);
+  $('#bEsc').textContent = MODO_ESC ? '✔ Listo (volver a marcar asistencia)' : '🏃 Marcar quién se escapó de clase';
+  if (MODO_ESC) toast('Toca a quien se fue antes de terminar la clase. Tócalo otra vez para quitarlo.');
+}
 
 async function iniciar() {
   const ses = await sesionORedirigir(); if (!ses) return;
@@ -73,7 +83,6 @@ async function iniciar() {
   SEMANAS = sem || [];
   const { data: tu } = await sb.from('config').select('clave, valor').like('clave', 'TituloUnidad%');
   TIT_U = Object.fromEntries((tu || []).map(x => [x.clave.replace('TituloUnidad', ''), x.valor]));
-  $('#unidad').innerHTML = ROM.map(r => `<option value="UNIDAD ${r}">UNIDAD ${r} · ${esc((TIT_U[r] || '').trim() || UND_DEF[r])}</option>`).join('');
   if (!SEMANAS.length) { toast('La tabla "semanas" llegó vacía. Revisa el diagnóstico en Supabase.', true); }
   $('#semana').innerHTML = SEMANAS.map(s => `<option value="${s.semana}">Semana ${s.semana}${s.tema ? ' · ' + esc(s.tema) : ''}</option>`).join('');
   const deseada = String(parseInt(cfg?.valor, 10) || 1);
@@ -98,7 +107,9 @@ function completarSesion() {
 }
 
 async function cargarAsistencia() {
-  const { data, error } = await sb.from('detalle').select('id, asistencia, hora_llegada, jugadores!inner(nombre, alias, consultora, seccion_id)').eq('semana', semanaSel()).eq('jugadores.seccion_id', SECC.id);
+  const q = cols => sb.from('detalle').select(cols + ', jugadores!inner(nombre, alias, consultora, seccion_id)').eq('semana', semanaSel()).eq('jugadores.seccion_id', SECC.id);
+  let { data, error } = await q('id, asistencia, hora_llegada, se_escapo, hora_salida');
+  if (error && /se_escapo|hora_salida/.test(error.message)) { SIN_ESC = true; ({ data, error } = await q('id, asistencia, hora_llegada')); }
   if (error) { toast('Error al leer asistencia: ' + error.message, true); return; }
   FILAS = (data || []).sort((a, b) => (a.jugadores?.nombre || '').localeCompare(b.jugadores?.nombre || ''));
   pintarAsistencia();
@@ -106,17 +117,27 @@ async function cargarAsistencia() {
 
 function pintarAsistencia() {
   if (!FILAS.length) { $('#chips').innerHTML = '<div class="empty">Aún no hay filas para esta semana. Presiona "Iniciar / continuar semana".</div>'; $('#conteo').textContent = ''; return; }
-  $('#chips').innerHTML = FILAS.map(f => `<button class="chip ${f.asistencia}" data-id="${f.id}"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : f.asistencia === 'Ausente' ? ' · AUSENTE' : ''}</small></button>`).join('');
-  const c = k => FILAS.filter(f => f.asistencia === k).length;
-  $('#conteo').textContent = `${c('Presente')} presentes · ${c('Tarde')} tarde · ${c('Ausente')} ausentes`;
+  $('#chips').innerHTML = FILAS.map(f => `<button class="chip ${f.asistencia} ${f.se_escapo ? 'Escapo' : ''}" data-id="${f.id}"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : f.asistencia === 'Ausente' ? ' · AUSENTE' : ''}${f.se_escapo ? ' · 🏃 SE ESCAPÓ ' + esc((f.hora_salida || '').slice(0, 5)) : ''}</small></button>`).join('');
+  const c = k => FILAS.filter(f => f.asistencia === k).length, e = FILAS.filter(f => f.se_escapo).length;
+  $('#conteo').textContent = `${c('Presente')} presentes · ${c('Tarde')} tarde · ${c('Ausente')} ausentes${e ? ` · 🏃 ${e} se escapó/escaparon` : ''}`;
   document.querySelectorAll('.chip').forEach(b => b.onclick = () => cambiarAsistencia(Number(b.dataset.id)));
 }
 
 async function cambiarAsistencia(id) {
-  const f = FILAS.find(x => x.id === id); const nuevo = ORDEN[f.asistencia];
+  const f = FILAS.find(x => x.id === id);
+  if (MODO_ESC) {
+    if (f.asistencia === 'Ausente') { toast('Está ausente: primero márcalo presente o tarde', true); return; }
+    const antes = { ...f }, esc2 = !f.se_escapo, hs = esc2 ? new Date().toTimeString().slice(0, 5) : null;
+    f.se_escapo = esc2; f.hora_salida = hs; pintarAsistencia();
+    const { error } = await sb.from('detalle').update({ se_escapo: esc2, hora_salida: hs }).eq('id', id);
+    if (error) { Object.assign(f, antes); pintarAsistencia(); toast('No se guardó: ' + error.message, true); return; }
+    toast(esc2 ? `🏃 ${f.jugadores?.alias} se escapó (${hs})` : `${f.jugadores?.alias}: ya no figura como escapado`); return;
+  }
+  const nuevo = ORDEN[f.asistencia];
   const hora = nuevo === 'Tarde' ? new Date().toTimeString().slice(0, 5) : null;
-  const antes = { ...f }; f.asistencia = nuevo; f.hora_llegada = hora; pintarAsistencia();
-  const { error } = await sb.from('detalle').update({ asistencia: nuevo, hora_llegada: hora }).eq('id', id);
+  const limpiar = nuevo === 'Ausente' && f.se_escapo ? { se_escapo: false, hora_salida: null } : {};
+  const antes = { ...f }; f.asistencia = nuevo; f.hora_llegada = hora; Object.assign(f, limpiar); pintarAsistencia();
+  const { error } = await sb.from('detalle').update({ asistencia: nuevo, hora_llegada: hora, ...limpiar }).eq('id', id);
   if (error) { Object.assign(f, antes); pintarAsistencia(); toast('No se guardó: ' + error.message, true); }
 }
 
@@ -134,7 +155,7 @@ $('#semana').addEventListener('change', async () => { completarSesion(); await c
 $('#iniciar').addEventListener('click', async () => {
   if (!semanaSel()) { toast('Primero elige una semana válida.', true); return; }
   const b = $('#iniciar'); b.disabled = true;
-  const { data, error } = await sb.rpc('iniciar_semana', { p_seccion: SECC.id, p_semana: semanaSel(), p_fecha: $('#fecha').value || null, p_practica: $('#practica').value, p_unidad: $('#unidad').value, p_tema: SEMANAS.find(x => x.semana === semanaSel())?.tema || null, p_tipo: SEMANAS.find(x => x.semana === semanaSel())?.tipo_grupal || null });
+  const { data, error } = await sb.rpc('iniciar_semana', { p_seccion: SECC.id, p_semana: semanaSel(), p_fecha: $('#fecha').value || null, p_practica: $('#practica').value, p_unidad: unidadDe($('#practica').value), p_tema: SEMANAS.find(x => x.semana === semanaSel())?.tema || null, p_tipo: SEMANAS.find(x => x.semana === semanaSel())?.tipo_grupal || null });
   b.disabled = false;
   if (error) { toast('Error: ' + error.message, true); return; }
   toast(`Semana ${semanaSel()}: ${data} filas nuevas creadas`);

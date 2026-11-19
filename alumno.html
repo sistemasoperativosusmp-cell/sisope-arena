@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191651">
+<link rel="stylesheet" href="assets/app.css?v=202611191653">
 <style>
 .entr{display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;background:#0f1733;border:2px solid #2a3766;border-radius:14px;padding:14px;transition:border-color .15s,transform .15s}
 .entr:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -99,9 +99,9 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191651"></script>
-<script src="assets/insignias.js?v=202611191651"></script>
-<script src="assets/comun.js?v=202611191651"></script>
+<script src="assets/config.js?v=202611191653"></script>
+<script src="assets/insignias.js?v=202611191653"></script>
+<script src="assets/comun.js?v=202611191653"></script>
 <script>
 let EQ = [], ENL = [], INSR = {}, EQST = null;
 // Insignias visibles en el ranking: solo las que NO dependen de notas (las de nota se ven únicamente en el perfil propio)
@@ -195,6 +195,8 @@ function recordatorios() {
   const aus = pas.filter(d => d.asistencia === 'Ausente').length, tar = pas.filter(d => d.asistencia === 'Tarde').length;
   if (aus >= 2) out.push(['mal', '🚪', `Estás faltando mucho a clase: ${aus} ausencias. En clase se ganan los puntos del Juego del Miedo y del trabajo grupal.`]);
   else if (aus === 1 && pas.length >= 3) out.push(['mid', '🚪', 'Tienes 1 ausencia. Procura no faltar: cada clase suma puntos.']);
+  const esc0 = pas.filter(d => d.se_escapo).length;
+  if (esc0) out.push(['mal', '🏃', `Te fuiste antes de terminar la clase ${esc0} ${esc0 === 1 ? 'vez' : 'veces'}. Quedarte hasta el final cuenta: ahí se juegan el Kahoot y el trabajo grupal.`]);
   if (tar >= 2) out.push(['mid', '⏰', `Llegaste tarde ${tar} veces. El Juego del Miedo empieza al inicio de la clase: llega a tiempo para sumar.`]);
   const grp = pas.filter(d => d.asistencia !== 'Ausente' && d.tipo_grupal && (d.participacion_grupal === 'No participó' || (d.participacion_grupal == null && (d.gr_comunicacion != null || d.gr_tecnico != null || d.gr_analisis != null))));
   const ultG = grp[grp.length - 1];
@@ -287,7 +289,7 @@ function pintarExtras() {
   const D = DET, tot = D.length, p = D.filter(d => d.asistencia === 'Presente').length, t = D.filter(d => d.asistencia === 'Tarde').length, a = D.filter(d => d.asistencia === 'Ausente').length;
   const pct = tot ? Math.round(100 * (p + t) / tot) : 0;
   $('#asistencia').innerHTML = tot ? `<div class="asis"><div class="anillo" style="--p:${pct}"><b>${pct}%</b></div><div class="acnt"><span><i class="pr"></i>Presente <b>${p}</b></span><span><i class="ta"></i>Tarde <b>${t}</b></span><span><i class="au"></i>Ausente <b>${a}</b></span></div></div>
-    <div class="astrip">${D.map(d => `<span class="${d.asistencia === 'Presente' ? 'pr' : d.asistencia === 'Tarde' ? 'ta' : 'au'}" data-tip="Semana ${d.semana}${SEMS[d.semana]?.tema ? ' · ' + esc(SEMS[d.semana].tema) : ''}: ${d.asistencia}${d.asistencia === 'Tarde' && d.hora_llegada ? ' (' + d.hora_llegada.slice(0, 5) + ')' : ''}">S${d.semana}</span>`).join('')}</div>
+    <div class="astrip">${D.map(d => `<span class="${d.se_escapo ? 'es' : d.asistencia === 'Presente' ? 'pr' : d.asistencia === 'Tarde' ? 'ta' : 'au'}" data-tip="Semana ${d.semana}${SEMS[d.semana]?.tema ? ' · ' + esc(SEMS[d.semana].tema) : ''}: ${d.asistencia}${d.se_escapo ? ' · se fue antes de terminar' : ''}${d.asistencia === 'Tarde' && d.hora_llegada ? ' (' + d.hora_llegada.slice(0, 5) + ')' : ''}">S${d.semana}</span>`).join('')}</div>
     ${a >= 2 ? '<div class="meta">Tienes varias ausencias: recuerda que en clase se ganan puntos de Juego del Miedo y trabajo grupal.</div>' : ''}` : '<div class="gris">Aún no hay clases registradas.</div>';
   const mio = YO?.consultora, miembros = R.filter(x => x.consultora && x.consultora === mio), c = CONS.find(x => x.consultora === mio);
   const tema = DET.slice().reverse().find(d => d.tema_grupal)?.tema_grupal;
