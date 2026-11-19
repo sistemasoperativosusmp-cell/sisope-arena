@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611190928">
+<link rel="stylesheet" href="assets/app.css?v=202611190953">
 <style>
 .entr{display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;background:#0f1733;border:2px solid #2a3766;border-radius:14px;padding:14px;transition:border-color .15s,transform .15s}
 .entr:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -99,9 +99,9 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611190928"></script>
-<script src="assets/insignias.js?v=202611190928"></script>
-<script src="assets/comun.js?v=202611190928"></script>
+<script src="assets/config.js?v=202611190953"></script>
+<script src="assets/insignias.js?v=202611190953"></script>
+<script src="assets/comun.js?v=202611190953"></script>
 <script>
 let EQ = [], ENL = [], INSR = {}, EQST = null;
 // Insignias visibles en el ranking: solo las que NO dependen de notas (las de nota se ven únicamente en el perfil propio)
@@ -293,9 +293,9 @@ function pintarExtras() {
   const tema = DET.slice().reverse().find(d => d.tema_grupal)?.tema_grupal;
   const guardC = guardarEditor('consEd', 'nuevaCons');
   $('#equipo').innerHTML = mio ? `<div class="eqh"><div><b>${esc(mio)}</b> <button class="abtn mini" title="Cambiar el nombre de tu consultora" onclick="editarCons()">✏️ Renombrar</button><div id="consEd"></div>${tema ? `<small>Tema actual: ${esc(tema)}</small>` : ''}</div><div class="eqp"><span class="pix">${c ? c.posicion + '°' : '—'}</span><small>${c ? f1(c.xp) + ' XP' : ''}</small></div></div>
-    ${(EQ.length ? EQ : miembros.map(m => ({ alias: m.alias, rol_consultora: m.rol_consultora, es_yo: m.alias === YO.alias }))).map(m => { const r = R.find(x => x.alias === m.alias) || m; return `<div class="rank ${m.es_yo ? 'yo' : ''}">${avatar(r, 'rav')}<span class="al" style="flex:1">${esc(m.alias)}${m.nombre ? `<small class="nreal">${esc(nombreCorto(m.nombre))}</small>` : ''}<small class="rol">${m.es_yo ? '🎯 ' : ''}${esc(m.rol_consultora || 'sin rol')}</small></span>${!m.es_yo && EQST ? `<button class="abtn mini" title="Reportar a ${esc(m.alias)} por no cumplir con el equipo" onclick='abrirReporte(${esc(JSON.stringify(m.alias))})'>🚩</button>` : ''}<span class="xp">${f1(n(r.xp))} XP</span></div>`; }).join('')}
+    ${(EQ.length ? EQ : miembros.map(m => ({ alias: m.alias, rol_consultora: m.rol_consultora, es_yo: m.alias === YO.alias }))).map(m => { const r = R.find(x => x.alias === m.alias) || m; return `<div class="rank ${m.es_yo ? 'yo' : ''}">${avatar(r, 'rav')}<span class="al" style="flex:1">${esc(m.alias)}${m.nombre ? `<small class="nreal">${esc(nombreCorto(m.nombre))}</small>` : ''}<small class="rol">${m.es_yo ? '🎯 ' : ''}${esc(m.rol_consultora || 'sin rol')}</small></span>${!m.es_yo && EQST ? `<button class="abtn mini" title="Reportar a ${esc(m.alias)} por no cumplir con el equipo" onclick='abrirReporte(${esc(JSON.stringify(m.alias))})'>🚩 Reportar</button>` : ''}<span class="xp">${f1(n(r.xp))} XP</span></div>`; }).join('')}
     ${strikesHTML()}
-    <div class="gris">Puesto ${c ? c.posicion : '—'} de ${CONS.length} consultoras. Sumen XP en los trabajos grupales. Tu <b>rol</b> lo asigna tu docente según la Misión 0. ¿Alguien no cumple con el equipo? Usa 🚩 para reportarlo (con evidencia): tu docente lo revisa y nunca se dice quién reportó.</div>` : `<div class="gris">Aún no tienes equipo asignado.${EQST && !EQST.evaluado ? ' Primero completa la <a href="evaluacion.html" style="color:var(--gold)">Misión 0: Reclutamiento</a>.' : ''}</div>`;
+    <div class="gris">Puesto ${c ? c.posicion : '—'} de ${CONS.length} consultoras. Sumen XP en los trabajos grupales. Tu <b>rol</b> lo asigna tu docente según la Misión 0. ¿Alguien no cumple con el equipo? Usa 🚩 para reportarlo (con evidencia): tu docente lo revisa y nunca se dice quién reportó.</div>` : `<div class="gris">Aún no tienes equipo asignado.${EQST && !EQST.evaluado ? ' Primero completa la <a href="evaluacion.html" style="color:var(--gold)">Misión 0: Reclutamiento</a>.' : ''} Cuando tu docente publique las consultoras verás aquí a tus compañeros, tu rol y el botón 🚩 Reportar por si alguien no cumple.</div>`;
   guardC();
 }
 // ---------- Nombre de jugador y consultora ----------
