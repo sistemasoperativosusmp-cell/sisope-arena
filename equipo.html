@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Equipos</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191806">
+<link rel="stylesheet" href="assets/app.css?v=202611191807">
 <style>
 main{display:flex;flex-direction:column;gap:20px}
 .card h2{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -14,6 +14,7 @@ main{display:flex;flex-direction:column;gap:20px}
 .chl{display:flex;flex-wrap:wrap;gap:6px}
 .ch{font-size:12px;font-weight:800;border-radius:999px;padding:4px 10px;border:2px solid var(--line);background:#fff;display:inline-flex;align-items:center;gap:6px}
 .ch.ok{border-color:#9fd08a;background:#f1fbec}.ch.no{border-color:#f0b4b4;background:#fff6f6}
+.ch small{font-weight:700;color:var(--mute)}.ch b{font-weight:800}
 .ch button{border:0;background:none;cursor:pointer;font-size:12px;padding:0;color:var(--mute)}
 .arm{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
 .arm label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:800;color:var(--mute)}
@@ -108,9 +109,9 @@ details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191806"></script>
-<script src="assets/comun.js?v=202611191806"></script>
-<script src="assets/armado.js?v=202611191806"></script>
+<script src="assets/config.js?v=202611191807"></script>
+<script src="assets/comun.js?v=202611191807"></script>
+<script src="assets/armado.js?v=202611191807"></script>
 <script>
 let AL = [], PERF = {}, EQ = [], REP = [], PEN = {}, PROP = [], NOMBRES = [];
 const PENAS = ['Sustentación individual', 'Trabajo adicional', 'Examen individual'];
@@ -149,8 +150,8 @@ function pintarEstado() {
   const tec = hechos.length ? Math.round(hechos.reduce((s, a) => s + Number(PERF[a.id].tecnico), 0) / hechos.length) : 0;
   $('#estado').innerHTML = `<div><small>Respondieron</small><b>${hechos.length} / ${AL.length}</b></div><div><small>Nivel técnico promedio</small><b>${hechos.length ? tec + '%' : '—'}</b></div>
     <div><small>😈 Sin Miedo (reto a la primera)</small><b>${reto1}</b></div><div><small>🫠 Intentaron escapar</small><b>${hechos.length - reto1}</b></div>`;
-  $('#pend').innerHTML = pend.map(a => `<span class="ch no">${esc(a.nombre)} <small>${esc(a.alias)}</small></span>`).join('') || '<span class="ch ok">¡Todos respondieron! 🎉</span>';
-  $('#hechos').innerHTML = hechos.map(a => `<span class="ch ok">${esc(a.nombre)} <small>${esc(a.alias)} · ${Math.round(PERF[a.id].tecnico)}%</small><button title="Repetir la misión" onclick="reabrir('${a.id}')">↺</button></span>`).join('') || '<span class="vac">Nadie todavía.</span>';
+  $('#pend').innerHTML = pend.map(a => `<span class="ch no"><b>${esc(a.nombre)}</b> <small>${esc(a.alias)}</small></span>`).join('') || '<span class="ch ok">¡Todos respondieron! 🎉</span>';
+  $('#hechos').innerHTML = hechos.map(a => `<span class="ch ok"><b>${esc(a.nombre)}</b> <small>${esc(a.alias)} · ${Math.round(PERF[a.id].tecnico)}%</small><button title="Repetir la misión" onclick="reabrir('${a.id}')">↺</button></span>`).join('') || '<span class="vac">Nadie todavía.</span>';
 }
 async function reabrir(id) {
   const a = porId(id); if (!confirm(`¿Borrar la evaluación de ${a.nombre} (${a.alias}) para que repita la Misión 0? (La medalla ya ganada se mantiene.)`)) return;
