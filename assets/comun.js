@@ -3,7 +3,7 @@ const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, windo
 // ---------- Guardia de páginas docentes ----------
 // La seguridad real está en la base de datos (RLS): un alumno no puede leer ni modificar datos ajenos aunque abra estas páginas.
 // Esta guardia además oculta la página hasta confirmar el rol y registra el intento si un alumno entra cambiando la dirección.
-const PAGINAS_DOCENTE = ['docente.html', 'juego.html', 'grupal.html', 'lab.html', 'foro.html', 'quiz.html', 'kahoot.html', 'examenes.html', 'progreso.html', 'actividad.html', 'ajustes.html'];
+const PAGINAS_DOCENTE = ['docente.html', 'juego.html', 'grupal.html', 'lab.html', 'foro.html', 'quiz.html', 'kahoot.html', 'examenes.html', 'progreso.html', 'actividad.html', 'ajustes.html', 'equipo.html'];
 (function guardia() {
   const pag = location.pathname.split('/').pop() || 'index.html';
   if (!PAGINAS_DOCENTE.includes(pag)) return;
@@ -36,7 +36,9 @@ const MEDALLAS = {
   relampago: ['⚡', 'Respuesta relámpago', 'Respondió primero y bien'],
   valiente: ['🦁', 'Valiente', 'Se animó a participar aunque le cuesta'],
   companero: ['💖', 'Buen compañero', 'Actitud solidaria con su equipo'],
-  especial: ['🏅', 'Medalla especial', 'Motivo escrito por la docente']
+  especial: ['🏅', 'Medalla especial', 'Motivo escrito por la docente'],
+  sin_miedo: ['😈', 'Sin Miedo', 'Eligió el Modo Reto a la primera en la Misión 0', 'auto'],
+  lo_intentaste: ['🫠', 'Lo intentaste', 'Quiso escapar del Modo Reto… y no pudo', 'auto']
 };
 const medalla = t => MEDALLAS[t] || ['🏅', t, ''];
 
@@ -74,7 +76,7 @@ async function salir() { await sb.auth.signOut(); location.replace('index.html')
 
 // Menú docente agrupado (se pinta en <nav id="nav">)
 const MENU = [
-  ['EN CLASE', [['docente.html', 'Inicio', 'navy'], ['juego.html', 'Juego del Miedo', 'red'], ['grupal.html', 'Trabajo grupal', 'purple'], ['kahoot.html', 'Kahoot', 'pink']]],
+  ['EN CLASE', [['docente.html', 'Inicio', 'navy'], ['juego.html', 'Juego del Miedo', 'red'], ['grupal.html', 'Trabajo grupal', 'purple'], ['equipo.html', 'Equipos', 'orange'], ['kahoot.html', 'Kahoot', 'pink']]],
   ['EN CASA', [['lab.html', 'Laboratorio', 'teal'], ['foro.html', 'Foro', 'blue'], ['quiz.html', 'Quiz', 'gold']]],
   ['NOTAS', [['examenes.html', 'Exámenes y bonus', 'orange'], ['progreso.html', 'Progreso', 'teal'], ['actividad.html', 'Actividad', 'blue'], ['ajustes.html', 'Ajustes', 'navy']]]
 ];
@@ -87,3 +89,6 @@ function pintarNav() {
   if (typeof pintarSelector === 'function') pintarSelector();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pintarNav); else pintarNav();
+
+// Roles de la consultora (deben coincidir con los pesos de las preguntas en eq_preguntas)
+const ROLES_EQUIPO = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];

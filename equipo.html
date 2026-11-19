@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Equipos</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css?v=202611190907">
+<style>
+main{display:flex;flex-direction:column;gap:20px}
+.card h2{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.cnt3{font-family:Nunito,sans-serif;font-size:13px;font-weight:800;color:var(--mute)}
+.estado{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.estado div{background:#f7f8fc;border:2px solid var(--line);border-radius:12px;padding:10px 14px}.estado small{font-size:12px;font-weight:800;color:var(--mute);display:block}.estado b{font-size:24px}
+.chl{display:flex;flex-wrap:wrap;gap:6px}
+.ch{font-size:12px;font-weight:800;border-radius:999px;padding:4px 10px;border:2px solid var(--line);background:#fff;display:inline-flex;align-items:center;gap:6px}
+.ch.ok{border-color:#9fd08a;background:#f1fbec}.ch.no{border-color:#f0b4b4;background:#fff6f6}
+.ch button{border:0;background:none;cursor:pointer;font-size:12px;padding:0;color:var(--mute)}
+.arm{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.arm label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:800;color:var(--mute)}
+.arm input,.arm select{font-size:15px;padding:9px;border-radius:10px;border:2px solid var(--line)}
+.eqs{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;margin-top:16px}
+.eqx{border:2px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+.eqx h3{margin:0;padding:10px 14px;background:#f7f8fc;border-bottom:2px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;font-family:'Press Start 2P',monospace;font-weight:400;line-height:1.6}
+.eqx h3 small{font-family:Nunito,sans-serif;font-size:12px;font-weight:800;color:var(--mute)}
+.mb{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:9px 14px;border-bottom:1px solid #edf0f6;align-items:center}
+.mb:last-child{border-bottom:0}
+.mb b{font-size:13px}.mb .nm{font-size:11px;font-weight:700;color:var(--mute);display:block}
+.mb .tgs{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.mb select{font-size:13px;padding:6px;border-radius:8px;border:2px solid var(--line);max-width:200px}
+.t{font-size:11px;font-weight:800;border-radius:999px;padding:2px 8px;background:#e7efff;color:#1d4fb0}
+.t.voz{background:#fff1c2;color:#7a5a00}.t.res{background:#efe7fb;color:#5a2fa6}.t.sin{background:#ffe4e4;color:#b02a2a}.t.af{background:#eef6ee;color:#2f6d1f}
+.t.st{background:#c23030;color:#fff}
+.rep{border:2px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px;margin-bottom:10px;background:#fff}
+.rep.Validado{border-color:#e9a3a3;background:#fff8f8}.rep.Rechazado{opacity:.6}
+.rep .q{font-size:13px;font-weight:700;color:var(--mute)}.rep .q b{color:var(--ink)}
+.rep p{margin:6px 0 0;font-weight:700}
+.rep textarea{width:100%;min-height:54px;border-radius:10px;border:2px solid var(--line);padding:8px;font-family:inherit;font-size:13px;box-sizing:border-box}
+.rep .bt{display:flex;gap:8px;margin-top:6px}
+.stk{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.stk>div{border:2px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}.stk>div.tres{border-color:var(--red);background:#fff6f6}
+.stk .sq3{font-size:18px;letter-spacing:2px}
+.stk select,.stk input{font-size:13px;padding:7px;border-radius:8px;border:2px solid var(--line);width:100%;box-sizing:border-box;margin-top:6px}
+.vac{color:var(--mute);font-weight:700;padding:10px 0}
+  .stk .q,.stk .nm{font-size:12px;font-weight:700;color:var(--mute)}
+details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
+@media(max-width:800px){.estado{grid-template-columns:repeat(2,minmax(0,1fr))}.rep{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="pix">SISOPE ARENA · DOCENTE</div>
+  <div class="pills" id="pills"></div>
+  <div class="who"><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
+</header>
+<nav class="tabs" id="nav"></nav>
+<main>
+  <!-- 1 · Estado de la Misión 0 -->
+  <section class="card">
+    <h2 class="pix">1 · MISIÓN 0: RECLUTAMIENTO <span class="cnt3">Enlace para los alumnos: <a id="lnkEval" href="evaluacion.html" target="_blank">evaluacion.html</a></span></h2>
+    <div class="estado" id="estado"></div>
+    <p class="help" style="margin-top:0">Pendientes (sin evaluación):</p><div class="chl" id="pend"></div>
+    <details><summary>Ya respondieron (toca ↺ para que un alumno repita la misión)</summary><div class="chl" id="hechos"></div></details>
+  </section>
+
+  <!-- 2 · Armado automático -->
+  <section class="card">
+    <h2 class="pix">2 · ARMAR CONSULTORAS</h2>
+    <div class="arm">
+      <label>Integrantes por equipo<input id="tam" type="number" min="3" max="7" value="5" style="width:90px"></label>
+      <label>Asignación de roles<select id="modo"><option value="reto" selected>🔥 Modo Reto (rol de menor afinidad)</option><option value="afinidad">🛋️ Afinidad (rol de mayor afinidad)</option></select></label>
+      <button class="btn" onclick="generar()">⚡ Generar propuesta</button>
+      <button class="btn green" id="bPub" onclick="publicar()" disabled>✅ Publicar equipos</button>
+    </div>
+    <p class="help">La propuesta reparte por nivel técnico en “serpiente” (cada equipo queda con fuertes, intermedios y en desarrollo) y procura que en cada uno haya al menos una <span class="t voz">🗣 voz</span> y un <span class="t res">🤫 reservado</span>. Puedes cambiar roles y equipos antes de publicar, o generar otra propuesta. Los alumnos sin evaluación entran con perfil neutro. <b>Solo tú ves estos datos.</b></p>
+    <div class="eqs" id="prop"></div>
+  </section>
+
+  <!-- 3 · Equipos publicados -->
+  <section class="card">
+    <h2 class="pix">3 · EQUIPOS ACTUALES <span class="cnt3">Para mover alumnos de equipo o renombrar: <a href="ajustes.html">Ajustes</a></span></h2>
+    <p class="help" style="margin-top:0">Los alumnos ven su rol en <b>Mi perfil → Mi equipo</b> y ya no pueden cambiarlo: solo tú lo haces aquí.</p>
+    <div class="eqs" id="actuales"></div>
+  </section>
+
+  <!-- 4 · Reportes -->
+  <section class="card">
+    <h2 class="pix">4 · REPORTES ENTRE COMPAÑEROS <span class="cnt3" id="repCnt"></span></h2>
+    <p class="help" style="margin-top:0">Un reporte solo cuenta como <b>strike</b> si lo validas. El alumno reportado nunca ve quién lo reportó. Si escribes una nota al validar, el alumno verá tu nota en lugar del texto de su compañero.</p>
+    <div id="pendRep"></div>
+    <details><summary>Historial de reportes resueltos</summary><div id="histRep"></div></details>
+  </section>
+
+  <!-- 5 · Strikes -->
+  <section class="card">
+    <h2 class="pix">5 · STRIKES Y PENALIDADES</h2>
+    <p class="help" style="margin-top:0">🟥 = strike validado. Al tercero asigna la penalidad; el alumno la ve en su perfil.</p>
+    <div class="stk" id="strikes"></div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js?v=202611190907"></script>
+<script src="assets/comun.js?v=202611190907"></script>
+<script src="assets/armado.js?v=202611190907"></script>
+<script>
+let AL = [], PERF = {}, EQ = [], REP = [], PEN = {}, PROP = [], NOMBRES = [];
+const PENAS = ['Sustentación individual', 'Trabajo adicional', 'Examen individual'];
+const corto = nm => String(nm || '').split(',')[0];
+const porId = id => AL.find(a => a.id === id);
+const errSQL = e => /schema cache|does not exist|function|relation/i.test(e.message) ? 'Falta ejecutar el script sql/equipos_mision0.sql en Supabase' : e.message;
+
+async function iniciar() {
+  const ses = await sesionORedirigir(); if (!ses) return;
+  if (!(await esDocente())) { location.replace('alumno.html'); return; }
+  $('#quien').textContent = ses.user.email;
+  await cargarSeccion(); if (!SECC) { toast('Crea una sección en Ajustes', true); return; }
+  $('#pills').innerHTML = `<span>${esc(SECC.nombre)}</span><span>Semana ${SECC.semana_actual || 1}</span>`;
+  await cargar();
+}
+async function cargar() {
+  const [a, p, e, r, pe] = await Promise.all([
+    sb.from('jugadores').select('id, nombre, alias, consultora, rol_consultora, activo').eq('seccion_id', SECC.id).eq('activo', true).order('nombre'),
+    sb.from('eq_perfil').select('jugador_id, tecnico, comunicacion, afinidad, modo_elegido, intentos_escape, enviado'),
+    sb.from('equipos').select('*').eq('seccion_id', SECC.id).order('nombre'),
+    sb.from('eq_reportes').select('*').eq('seccion_id', SECC.id).order('creado', { ascending: false }),
+    sb.from('eq_penalidades').select('*')
+  ]);
+  if (a.error) { toast('Error al cargar alumnos: ' + a.error.message, true); return; }
+  const err = [p, r, pe].find(x => x.error); if (err) toast(errSQL(err.error), true);
+  AL = a.data || []; EQ = e.data || [];
+  PERF = Object.fromEntries((p.data || []).map(x => [x.jugador_id, x]));
+  REP = r.data || []; PEN = Object.fromEntries((pe.data || []).map(x => [x.jugador_id, x]));
+  pintarEstado(); pintarActuales(); pintarReportes(); pintarStrikes(); if (PROP.length) pintarProp();
+}
+
+// ---------- 1 · Estado ----------
+function pintarEstado() {
+  const hechos = AL.filter(a => PERF[a.id]), pend = AL.filter(a => !PERF[a.id]);
+  const reto1 = hechos.filter(a => Number(PERF[a.id].intentos_escape) === 0).length;
+  const tec = hechos.length ? Math.round(hechos.reduce((s, a) => s + Number(PERF[a.id].tecnico), 0) / hechos.length) : 0;
+  $('#estado').innerHTML = `<div><small>Respondieron</small><b>${hechos.length} / ${AL.length}</b></div><div><small>Nivel técnico promedio</small><b>${hechos.length ? tec + '%' : '—'}</b></div>
+    <div><small>😈 Sin Miedo (reto a la primera)</small><b>${reto1}</b></div><div><small>🫠 Intentaron escapar</small><b>${hechos.length - reto1}</b></div>`;
+  $('#pend').innerHTML = pend.map(a => `<span class="ch no">${esc(a.alias)} <small>${esc(corto(a.nombre))}</small></span>`).join('') || '<span class="ch ok">¡Todos respondieron! 🎉</span>';
+  $('#hechos').innerHTML = hechos.map(a => `<span class="ch ok">${esc(a.alias)} <small>${Math.round(PERF[a.id].tecnico)}%</small><button title="Repetir la misión" onclick="reabrir('${a.id}')">↺</button></span>`).join('') || '<span class="vac">Nadie todavía.</span>';
+}
+async function reabrir(id) {
+  const a = porId(id); if (!confirm(`¿Borrar la evaluación de ${a.alias} para que repita la Misión 0? (La medalla ya ganada se mantiene.)`)) return;
+  const { error } = await sb.from('eq_perfil').delete().eq('jugador_id', id);
+  if (error) { toast('No se borró: ' + error.message, true); return; }
+  toast(`${a.alias} puede repetir la Misión 0`); cargar();
+}
+
+// ---------- Etiquetas comunes ----------
+function tagsPerfil(a, rol) {
+  const p = PERF[a.id]; if (!p) return '<span class="t sin">⚠ sin evaluación</span>';
+  const af = rol && p.afinidad ? p.afinidad[rol] : null;
+  const voz = a.voz || (Number(p.comunicacion) >= 67 ? 'voz' : Number(p.comunicacion) <= 33 ? 'reservado' : '');
+  return `<span class="t" title="Diagnóstico técnico">🧠 ${Math.round(p.tecnico)}%</span>${voz === 'voz' ? '<span class="t voz">🗣 voz</span>' : voz === 'reservado' ? '<span class="t res">🤫 reservado</span>' : ''}${af !== null && af !== undefined ? `<span class="t af" title="Afinidad con el rol asignado">afinidad ${Math.round(af)}%</span>` : ''}`;
+}
+const rolOpts = sel => '<option value="">— sin rol —</option>' + ROLES_EQUIPO.map(r => `<option ${r === sel ? 'selected' : ''}>${esc(r)}</option>`).join('');
+
+// ---------- 2 · Propuesta ----------
+function generar() {
+  if (!AL.length) { toast('No hay alumnos activos en esta aula', true); return; }
+  const tam = Math.min(7, Math.max(3, Number($('#tam').value) || 5)), modo = $('#modo').value;
+  PROP = ARMADO.armarEquipos(AL, PERF, tam, modo);
+  // Reutiliza los nombres de equipos que ya existen en el aula; si faltan, crea “Consultora 01…”
+  const usados = new Set(EQ.map(e => e.nombre)); NOMBRES = EQ.map(e => e.nombre).slice(0, PROP.length);
+  for (let i = 1; NOMBRES.length < PROP.length; i++) { const nm = 'Consultora ' + String(i).padStart(2, '0'); if (!usados.has(nm) && !NOMBRES.includes(nm)) NOMBRES.push(nm); }
+  $('#bPub').disabled = false; pintarProp();
+  toast(`Propuesta: ${PROP.length} consultoras · ${modo === 'reto' ? 'Modo Reto' : 'Afinidad'}`);
+}
+function pintarProp() {
+  $('#prop').innerHTML = PROP.map((t, ti) => {
+    const ev = t.filter(a => PERF[a.id]), tec = ev.length ? Math.round(ev.reduce((s, a) => s + Number(PERF[a.id].tecnico), 0) / ev.length) : null;
+    const faltan = ROLES_EQUIPO.filter(r => !t.some(a => a.rol === r));
+    return `<div class="eqx"><h3><span>${esc(NOMBRES[ti])}</span><small>${t.length} · 🧠 ${tec ?? '—'}%</small></h3>
+      ${t.map((a, i) => `<div class="mb"><div><b>${esc(a.alias)}</b><span class="nm">${esc(corto(a.nombre))}</span></div>
+        <div><select onchange="rolProp(${ti}, ${i}, this.value)">${rolOpts(a.rol)}</select></div>
+        <div class="tgs">${tagsPerfil(a, a.rol)}<select style="margin-left:auto;font-size:11px;padding:3px" title="Mover a otro equipo" onchange="moverProp(${ti}, ${i}, this.value)">${NOMBRES.map((nm, k) => `<option value="${k}" ${k === ti ? 'selected' : ''}>→ ${esc(nm)}</option>`).join('')}</select></div></div>`).join('')}
+      ${faltan.length ? `<div class="mb"><div class="tgs"><span class="t sin">Rol sin cubrir: ${faltan.map(esc).join(', ')}</span></div></div>` : ''}</div>`;
+  }).join('');
+}
+function rolProp(ti, i, v) { PROP[ti][i].rol = v || null; pintarProp(); }
+function moverProp(ti, i, k) { k = Number(k); if (k === ti) return; const [a] = PROP[ti].splice(i, 1); PROP[k].push(a); pintarProp(); }
+async function publicar() {
+  if (!PROP.length) return;
+  const n = PROP.flat().length;
+  if (!confirm(`¿Publicar ${PROP.length} consultoras con ${n} alumnos?\n\nSe reemplazan el equipo y el rol actuales de cada alumno. El ranking de consultoras se recalcula con los nuevos integrantes (los puntajes individuales no cambian). Conviene hacerlo al inicio del ciclo o de una unidad.`)) return;
+  $('#bPub').disabled = true;
+  const faltan = NOMBRES.filter(nm => !EQ.some(e => e.nombre === nm));
+  if (faltan.length) { const { error } = await sb.from('equipos').insert(faltan.map(nombre => ({ seccion_id: SECC.id, nombre }))); if (error) { toast('No se crearon los equipos: ' + error.message, true); $('#bPub').disabled = false; return; } }
+  const cambios = [];
+  PROP.forEach((t, ti) => t.forEach(a => { const ant = porId(a.id); cambios.push({ id: a.id, consultora: NOMBRES[ti], rol: a.rol || null, ca: ant?.consultora || null, ra: ant?.rol_consultora || null }); }));
+  const res = await Promise.all(cambios.map(c => sb.from('jugadores').update({ consultora: c.consultora, rol_consultora: c.rol }).eq('id', c.id)));
+  const fallos = res.filter(r => r.error).length;
+  sb.from('eq_cambios_rol').insert(cambios.filter((c, i) => !res[i].error).map(c => ({ jugador_id: c.id, consultora_antes: c.ca, consultora_nueva: c.consultora, rol_antes: c.ra, rol_nuevo: c.rol, origen: 'automatico' }))).then(() => {}, () => {});
+  if (fallos) toast(`${fallos} alumnos no se actualizaron. Revisa y vuelve a publicar.`, true); else toast(`✅ ${PROP.length} consultoras publicadas`);
+  PROP = []; $('#prop').innerHTML = ''; await cargar();
+}
+
+// ---------- 3 · Equipos actuales ----------
+function strikesDe(id) { return REP.filter(r => r.reportado_id === id && r.estado === 'Validado').length; }
+function pintarActuales() {
+  const g = {}; AL.forEach(a => { const k = a.consultora || '— Sin equipo —'; (g[k] = g[k] || []).push(a); });
+  const keys = Object.keys(g).sort((x, y) => (x.startsWith('—') ? 1 : 0) - (y.startsWith('—') ? 1 : 0) || x.localeCompare(y));
+  $('#actuales').innerHTML = keys.map(k => `<div class="eqx"><h3><span>${esc(k)}</span><small>${g[k].length}</small></h3>
+    ${g[k].map(a => { const s = strikesDe(a.id); return `<div class="mb"><div><b>${esc(a.alias)}</b><span class="nm">${esc(corto(a.nombre))}</span></div>
+      <div><select onchange="cambiarRol('${a.id}', this)">${rolOpts(a.rol_consultora)}</select></div>
+      <div class="tgs">${tagsPerfil(a, a.rol_consultora)}${s ? `<span class="t st">🟥 ${s} strike${s > 1 ? 's' : ''}</span>` : ''}</div></div>`; }).join('')}</div>`).join('') || '<div class="vac">No hay alumnos activos.</div>';
+}
+async function cambiarRol(id, sel) {
+  const a = porId(id), antes = a.rol_consultora, v = sel.value || null;
+  const { error } = await sb.from('jugadores').update({ rol_consultora: v }).eq('id', id);
+  if (error) { sel.value = antes || ''; toast('No se guardó: ' + error.message, true); return; }
+  a.rol_consultora = v;
+  sb.from('eq_cambios_rol').insert({ jugador_id: id, consultora_antes: a.consultora, consultora_nueva: a.consultora, rol_antes: antes, rol_nuevo: v, origen: 'manual' }).then(() => {}, () => {});
+  toast(`${a.alias}: ${v || 'sin rol'}`); pintarActuales();
+}
+
+// ---------- 4 · Reportes ----------
+function tarjetaRep(r) {
+  const de = porId(r.reportante_id), a = porId(r.reportado_id), url = /^https?:\/\//i.test(r.evidencia || '');
+  const f = new Date(r.creado).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return `<div class="rep ${r.estado}"><div><div class="q">${f}${r.semana ? ' · Semana ' + r.semana : ''} · <b>${esc(de?.alias || '¿?')}</b> (${esc(corto(de?.nombre))}) reporta a <b>${esc(a?.alias || '¿?')}</b> (${esc(corto(a?.nombre))}) · ${esc(a?.consultora || '')}</div>
+      <p>“${esc(r.motivo)}”</p>${r.evidencia ? `<div class="q" style="margin-top:6px">Evidencia: ${url ? `<a href="${esc(r.evidencia)}" target="_blank" rel="noopener noreferrer">${esc(r.evidencia)}</a>` : esc(r.evidencia)}</div>` : '<div class="q" style="margin-top:6px">Sin evidencia adjunta</div>'}
+      ${r.estado !== 'Pendiente' ? `<div class="q" style="margin-top:6px"><b>${r.estado === 'Validado' ? '🟥 Validado' : '✕ Rechazado'}</b>${r.nota_docente ? ' · Nota: ' + esc(r.nota_docente) : ''}</div>` : ''}</div>
+    <div>${r.estado === 'Pendiente' ? `<textarea id="nota${r.id}" placeholder="Nota (opcional). Si validas, el alumno verá esta nota."></textarea>
+      <div class="bt"><button class="btn red" onclick="resolver(${r.id}, 'Validado')">🟥 Validar strike</button><button class="sbtn" onclick="resolver(${r.id}, 'Rechazado')">Rechazar</button></div>`
+      : `<button class="sbtn" onclick="resolver(${r.id}, 'Pendiente')">↺ Volver a pendiente</button>`}</div></div>`;
+}
+function pintarReportes() {
+  const p = REP.filter(r => r.estado === 'Pendiente'), h = REP.filter(r => r.estado !== 'Pendiente');
+  $('#repCnt').textContent = `${p.length} pendiente${p.length === 1 ? '' : 's'}`;
+  $('#pendRep').innerHTML = p.map(tarjetaRep).join('') || '<div class="vac">No hay reportes pendientes. 🙌</div>';
+  $('#histRep').innerHTML = h.map(tarjetaRep).join('') || '<div class="vac">Aún no hay reportes resueltos.</div>';
+}
+async function resolver(id, estado) {
+  const r = REP.find(x => x.id === id), nota = document.getElementById('nota' + id)?.value.trim();
+  if (estado === 'Validado') { const a = porId(r.reportado_id), s = strikesDe(r.reportado_id) + 1; if (!confirm(`¿Validar el strike ${s} de 3 para ${a?.alias}?`)) return; }
+  const cambio = estado === 'Pendiente' ? { estado, resuelto: null } : { estado, resuelto: new Date().toISOString(), ...(nota ? { nota_docente: nota } : {}) };
+  const { error } = await sb.from('eq_reportes').update(cambio).eq('id', id);
+  if (error) { toast('No se guardó: ' + error.message, true); return; }
+  Object.assign(r, cambio);
+  if (estado === 'Validado' && strikesDe(r.reportado_id) >= 3) toast(`⚠️ ${porId(r.reportado_id)?.alias} llegó a 3 strikes: asigna la penalidad abajo`, true); else toast(`Reporte ${estado.toLowerCase()}`);
+  pintarReportes(); pintarStrikes(); pintarActuales();
+}
+
+// ---------- 5 · Strikes ----------
+function pintarStrikes() {
+  const L = AL.map(a => ({ a, s: strikesDe(a.id) })).filter(x => x.s > 0 || PEN[x.a.id]).sort((x, y) => y.s - x.s);
+  $('#strikes').innerHTML = L.map(({ a, s }) => { const pe = PEN[a.id]; return `<div class="${s >= 3 ? 'tres' : ''}"><b>${esc(a.alias)}</b> <small class="nm">${esc(corto(a.nombre))} · ${esc(a.consultora || 'sin equipo')}</small>
+      <div class="sq3">${'🟥'.repeat(Math.min(s, 3))}${'⬜'.repeat(Math.max(0, 3 - s))}${s > 3 ? ` <small>+${s - 3}</small>` : ''}</div>
+      ${pe ? `<div class="q"><b>Penalidad:</b> ${esc(pe.penalidad)}${pe.nota ? ' · ' + esc(pe.nota) : ''} · <b>${esc(pe.estado)}</b></div>
+          <div class="bt" style="display:flex;gap:8px;margin-top:6px">${pe.estado === 'Pendiente' ? `<button class="sbtn" onclick="cumplida('${a.id}')">✔ Marcar cumplida</button>` : ''}<button class="sbtn" onclick="quitarPena('${a.id}')">Quitar</button></div>`
+        : s >= 3 ? `<select id="pena${a.id}">${PENAS.map(p => `<option>${p}</option>`).join('')}</select><input id="pnota${a.id}" placeholder="Detalle (ej. sustenta el sábado, tema DHCP)"><button class="btn red" style="margin-top:8px;width:100%" onclick="asignarPena('${a.id}')">Asignar penalidad</button>`
+        : `<div class="q">${3 - s} strike${3 - s > 1 ? 's' : ''} más para la penalidad.</div>`}</div>`; }).join('') || '<div class="vac">Nadie tiene strikes. 🙌</div>';
+}
+async function asignarPena(id) {
+  const o = { jugador_id: id, penalidad: $('#pena' + id).value, nota: $('#pnota' + id).value.trim() || null, estado: 'Pendiente' };
+  const { error } = await sb.from('eq_penalidades').upsert(o, { onConflict: 'jugador_id' });
+  if (error) { toast('No se guardó: ' + error.message, true); return; }
+  PEN[id] = o; toast(`Penalidad asignada a ${porId(id)?.alias}`); pintarStrikes();
+}
+async function cumplida(id) {
+  const { error } = await sb.from('eq_penalidades').update({ estado: 'Cumplida' }).eq('jugador_id', id);
+  if (error) { toast('No se guardó: ' + error.message, true); return; }
+  PEN[id].estado = 'Cumplida'; pintarStrikes();
+}
+async function quitarPena(id) {
+  if (!confirm('¿Quitar la penalidad? Los strikes se mantienen.')) return;
+  const { error } = await sb.from('eq_penalidades').delete().eq('jugador_id', id);
+  if (error) { toast('No se quitó: ' + error.message, true); return; }
+  delete PEN[id]; pintarStrikes();
+}
+iniciar();
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611170655">
+<link rel="stylesheet" href="assets/app.css?v=202611190907">
 <style>
 .entr{display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;background:#0f1733;border:2px solid #2a3766;border-radius:14px;padding:14px;transition:border-color .15s,transform .15s}
 .entr:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -25,6 +25,7 @@
 <main class="amain">
   <div id="vbanner"></div>
   <div id="recordatorios"></div>
+  <div id="mision0"></div>
   <!-- A1 · RANKING -->
   <section class="vista" id="v-ranking">
     <div class="acol">
@@ -86,14 +87,23 @@
     </div>
   </section>
 </main>
+<div class="modal hide" id="mRep" onclick="if (event.target === this) cerrarReporte()"><div class="box plain">
+  <h2 class="pix" style="color:var(--navy)">🚩 REPORTAR A UN COMPAÑERO</h2>
+  <div class="nom" style="font-size:22px" id="rNom"></div>
+  <p class="sub" style="margin:0">Reporta solo hechos: tareas no entregadas, faltas a reuniones, mensajes sin respuesta. Tu docente revisa cada reporte y solo cuenta como strike si lo valida. Tu compañero no sabrá quién lo reportó.</p>
+  <textarea id="rMot" maxlength="500" placeholder="¿Qué pasó? Ej.: No entregó su parte del Gantt que le tocaba para el jueves y no respondió en el grupo." style="width:100%;min-height:90px;border-radius:12px;border:2px solid var(--line);padding:10px;font-family:inherit;font-size:15px;box-sizing:border-box"></textarea>
+  <input id="rEvi" maxlength="300" placeholder="Evidencia: link al tablero, captura en Drive, chat… (recomendado)" style="width:100%;border-radius:12px;border:2px solid var(--line);padding:10px;font-family:inherit;font-size:15px;box-sizing:border-box">
+  <small class="sub" id="rInfo" style="font-size:13px"></small>
+  <div style="display:flex;gap:10px;justify-content:center"><button class="sbtn" onclick="cerrarReporte()">Cancelar</button><button class="btn red" id="rBtn" onclick="enviarReporte()">Enviar reporte</button></div>
+</div></div>
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611170655"></script>
-<script src="assets/insignias.js?v=202611170655"></script>
-<script src="assets/comun.js?v=202611170655"></script>
+<script src="assets/config.js?v=202611190907"></script>
+<script src="assets/insignias.js?v=202611190907"></script>
+<script src="assets/comun.js?v=202611190907"></script>
 <script>
-let EQ = [], ENL = [], INSR = {};
+let EQ = [], ENL = [], INSR = {}, EQST = null;
 // Insignias visibles en el ranking: solo las que NO dependen de notas (las de nota se ven únicamente en el perfil propio)
 const INS_DEF = Object.fromEntries(calcInsignias({}).map(i => [i[0], i])), ORD_R = { secreta: 5, legendaria: 4, epica: 3, rara: 2, comun: 1 };
 const insDe = al => (INSR[al] || []).filter(k => INS_DEF[k]).sort((a, b) => ORD_R[INS_DEF[b][2]] - ORD_R[INS_DEF[a][2]]);
@@ -141,8 +151,10 @@ async function refrescar() {
     YO ? sb.from('feedback').select('texto, creado, semana').eq('jugador_id', YO.id).eq('visible_alumno', true).order('creado', { ascending: false }) : { data: [] },
     YO ? sb.rpc('mi_equipo') : { data: [] },
     sb.from('enlaces').select('titulo, url, descripcion, categoria, orden').order('categoria').order('orden').order('id'),
-    YO ? sb.rpc('insignias_ranking', { p_seccion: YO.seccion_id }) : { data: [] }
+    YO ? sb.rpc('insignias_ranking', { p_seccion: YO.seccion_id }) : { data: [] },
+    YO ? sb.rpc('eq_mi_estado') : { data: null }
   ]);
+  EQST = q[9].error ? null : q[9].data; pintarMision0();
   INSR = q[8].error ? {} : Object.fromEntries((q[8].data || []).map(x => [x.alias, x.insignias || []]));
   EQ = q[6].error ? [] : q[6].data || []; ENL = q[7].error ? [] : q[7].data || []; pintarEnlaces();
   const yoEq = EQ.find(x => x.es_yo); if (YO && yoEq) YO.rol_consultora = yoEq.rol_consultora;
@@ -281,8 +293,9 @@ function pintarExtras() {
   const tema = DET.slice().reverse().find(d => d.tema_grupal)?.tema_grupal;
   const guardC = guardarEditor('consEd', 'nuevaCons');
   $('#equipo').innerHTML = mio ? `<div class="eqh"><div><b>${esc(mio)}</b> <button class="abtn mini" title="Cambiar el nombre de tu consultora" onclick="editarCons()">✏️ Renombrar</button><div id="consEd"></div>${tema ? `<small>Tema actual: ${esc(tema)}</small>` : ''}</div><div class="eqp"><span class="pix">${c ? c.posicion + '°' : '—'}</span><small>${c ? f1(c.xp) + ' XP' : ''}</small></div></div>
-    ${(EQ.length ? EQ : miembros.map(m => ({ alias: m.alias, rol_consultora: m.rol_consultora, es_yo: m.alias === YO.alias }))).map(m => { const r = R.find(x => x.alias === m.alias) || m; return `<div class="rank ${m.es_yo ? 'yo' : ''}">${avatar(r, 'rav')}<span class="al" style="flex:1">${esc(m.alias)}${m.nombre ? `<small class="nreal">${esc(nombreCorto(m.nombre))}</small>` : ''}${m.es_yo ? rolSelect(m.rol_consultora) : `<small class="rol">${esc(m.rol_consultora || 'sin rol')}</small>`}</span><span class="xp">${f1(n(r.xp))} XP</span></div>`; }).join('')}
-    <div class="gris">Puesto ${c ? c.posicion : '—'} de ${CONS.length} consultoras. Sumen XP en los trabajos grupales. Cada integrante elige <b>un rol</b> y no se puede repetir dentro del equipo.</div>` : '<div class="gris">Aún no tienes equipo asignado.</div>';
+    ${(EQ.length ? EQ : miembros.map(m => ({ alias: m.alias, rol_consultora: m.rol_consultora, es_yo: m.alias === YO.alias }))).map(m => { const r = R.find(x => x.alias === m.alias) || m; return `<div class="rank ${m.es_yo ? 'yo' : ''}">${avatar(r, 'rav')}<span class="al" style="flex:1">${esc(m.alias)}${m.nombre ? `<small class="nreal">${esc(nombreCorto(m.nombre))}</small>` : ''}<small class="rol">${m.es_yo ? '🎯 ' : ''}${esc(m.rol_consultora || 'sin rol')}</small></span>${!m.es_yo && EQST ? `<button class="abtn mini" title="Reportar a ${esc(m.alias)} por no cumplir con el equipo" onclick='abrirReporte(${esc(JSON.stringify(m.alias))})'>🚩</button>` : ''}<span class="xp">${f1(n(r.xp))} XP</span></div>`; }).join('')}
+    ${strikesHTML()}
+    <div class="gris">Puesto ${c ? c.posicion : '—'} de ${CONS.length} consultoras. Sumen XP en los trabajos grupales. Tu <b>rol</b> lo asigna tu docente según la Misión 0. ¿Alguien no cumple con el equipo? Usa 🚩 para reportarlo (con evidencia): tu docente lo revisa y nunca se dice quién reportó.</div>` : `<div class="gris">Aún no tienes equipo asignado.${EQST && !EQST.evaluado ? ' Primero completa la <a href="evaluacion.html" style="color:var(--gold)">Misión 0: Reclutamiento</a>.' : ''}</div>`;
   guardC();
 }
 // ---------- Nombre de jugador y consultora ----------
@@ -293,14 +306,33 @@ function guardarEditor(caja, campo) {
 }
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const titulo = t => String(t).toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()), nombreCorto = nm => { const [ap, no] = String(nm).split(','); return no ? `${titulo(no.trim())} ${titulo(ap.trim())}` : titulo(nm); };
-function rolSelect(actual) {
-  const ocup = Object.fromEntries(EQ.filter(m => !m.es_yo && m.rol_consultora).map(m => [m.rol_consultora, m.alias]));
-  return `<select class="rolsel" title="Elige tu rol en la consultora" onchange="cambiarRol(this)"><option value="">— elige tu rol —</option>${ROLES.map(r => `<option value="${esc(r)}" ${r === actual ? 'selected' : ''} ${ocup[r] ? 'disabled' : ''}>${esc(r)}${ocup[r] ? ' · ocupado por ' + esc(ocup[r]) : ''}</option>`).join('')}</select>`;
+// ---------- Misión 0, reportes y strikes (los roles los asigna la docente) ----------
+function pintarMision0() {
+  const el = $('#mision0'); if (!el) return;
+  el.innerHTML = EQST && !EQST.evaluado ? `<a class="entr" href="evaluacion.html" style="margin-bottom:16px"><span class="eico">🎖️</span><span class="etx"><b>Misión 0: Reclutamiento</b><span>Responde el diagnóstico para que tu docente arme las consultoras y te asigne un rol. Toma unos 15 minutos.</span></span><span class="ego pix">EMPEZAR ▶</span></a>` : '';
 }
-async function cambiarRol(sel) {
-  const { data, error } = await sb.rpc('cambiar_mi_rol', { p_rol: sel.value });
-  if (error) { toast(/schema cache|function/i.test(error.message) ? 'Esta opción aún no está activa. Avísale a tu docente.' : error.message, true); await refrescar(); return; }
-  YO.rol_consultora = data || null; toast(data ? `Ahora eres ${data}` : 'Quitaste tu rol'); await refrescar();
+function strikesHTML() {
+  if (!EQST) return '';
+  const s = Number(EQST.strikes || 0), pe = EQST.penalidad;
+  if (!s && !pe) return '';
+  const mot = (EQST.motivos || []).map(m => `S${m.semana ?? '—'}: ${m.motivo}`).join(' · ');
+  return `<div class="meta" ${mot ? `data-tip="${esc(mot)}"` : ''}>Strikes: ${'🟥'.repeat(Math.min(s, 3))}${'⬜'.repeat(Math.max(0, 3 - s))}${pe ? `<br><b>Penalidad:</b> ${esc(pe.penalidad)}${pe.nota ? ' · ' + esc(pe.nota) : ''} (${esc(pe.estado)})` : s >= 3 ? '<br>Llegaste a 3 strikes: tu docente te indicará la penalidad.' : '<br>Al tercer strike hay penalidad (sustentación, trabajo o examen individual).'}</div>`;
+}
+let REP_A = null;
+function abrirReporte(alias) {
+  REP_A = alias; $('#rNom').textContent = alias; $('#rMot').value = ''; $('#rEvi').value = '';
+  $('#rInfo').textContent = EQST?.reportes_semana >= 3 ? 'Ya usaste tus 3 reportes de esta semana.' : `Te quedan ${3 - (EQST?.reportes_semana || 0)} reportes esta semana.`;
+  $('#mRep').classList.remove('hide'); $('#rMot').focus();
+}
+function cerrarReporte() { $('#mRep').classList.add('hide'); REP_A = null; }
+async function enviarReporte() {
+  const mot = $('#rMot').value.trim(), evi = $('#rEvi').value.trim();
+  if (mot.length < 15) { toast('Cuenta qué pasó con más detalle (mínimo 15 caracteres)', true); return; }
+  $('#rBtn').disabled = true;
+  const { data, error } = await sb.rpc('eq_reportar', { p_alias: REP_A, p_motivo: mot, p_evidencia: evi || null });
+  $('#rBtn').disabled = false;
+  if (error) { toast(/schema cache|function/i.test(error.message) ? 'Esta opción aún no está activa. Avísale a tu docente.' : error.message, true); return; }
+  cerrarReporte(); toast(`Reporte enviado. Tu docente lo revisará. (${data})`); log('reporte'); await refrescar();
 }
 function pintarEnlaces() {
   if (!ENL.length) { $('#enlaces').innerHTML = ''; return; }

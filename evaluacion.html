@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Misión 0: Reclutamiento</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css?v=202611190907">
+<style>
+.ev{max-width:760px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:18px}
+.ev .panel{padding:24px}
+.ev h1{font-size:15px;color:var(--gold);line-height:1.7;margin:0}
+.ev h2{font-size:11px}
+.ev p{color:#d6dcf2;font-weight:700;line-height:1.5;margin:0 0 12px}
+.ev .gris{color:#b8c2e6;font-size:13px;font-weight:700}
+.evbtn{background:var(--gold);color:#0f1733;border:0;border-radius:12px;padding:14px 20px;font-family:'Press Start 2P',monospace;font-size:11px;cursor:pointer;box-shadow:0 5px 0 #a87d00}
+.evbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #a87d00}
+.evbtn.sec{background:#2a3766;color:#fff;box-shadow:0 5px 0 #141c3d}
+.evbtn:disabled{opacity:.5;cursor:not-allowed}
+.acc{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:8px}
+.prog{height:12px;background:#0f1733;border:2px solid #2a3766;border-radius:999px;overflow:hidden}.prog i{display:block;height:100%;background:linear-gradient(90deg,#39ff14,#00e5ff);transition:width .3s}
+.qn{font-size:10px;color:#00e5ff;margin-bottom:10px}
+.qt{font-size:19px;font-weight:800;line-height:1.35;margin:0 0 16px}
+.ops{display:flex;flex-direction:column;gap:10px}
+.op{text-align:left;background:#0f1733;border:2px solid #2a3766;color:#fff;border-radius:12px;padding:14px 16px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.op:hover{border-color:#00e5ff}.op.on{border-color:var(--gold);background:#2a1d05;color:var(--gold)}
+.op.nose{color:#b8c2e6;border-style:dashed}
+.lk{border-bottom:1px solid #2a3766;padding:14px 0}.lk:last-child{border-bottom:0}
+.lk b{display:block;font-size:16px;margin-bottom:10px}
+.lks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.lks button{background:#0f1733;border:2px solid #2a3766;color:#b8c2e6;border-radius:10px;padding:9px 4px;font-weight:800;cursor:pointer;font-family:inherit;font-size:13px;line-height:1.2}
+.lks button small{display:block;font-size:10px;font-weight:700}
+.lks button.on{border-color:var(--gold);color:var(--gold);background:#2a1d05}
+.lk.falta b{color:#ff8a8a}
+.huida{position:relative;height:300px;border:2px dashed #2a3766;border-radius:16px;margin-top:10px;overflow:hidden;touch-action:manipulation}
+.huida button{position:absolute;top:50%;transform:translateY(-50%);border:0;border-radius:14px;padding:16px 18px;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;transition:left .25s,top .25s,transform .25s;max-width:46%}
+#bReto{left:6%;background:var(--red);color:#fff;box-shadow:0 5px 0 #8f1f1f;font-family:'Press Start 2P',monospace;font-size:11px;line-height:1.6}
+#bReto:active{transform:translateY(calc(-50% + 3px))}
+#bCom{right:6%;background:#2a3766;color:#d6dcf2;box-shadow:0 5px 0 #141c3d}
+#bCom.rendido{background:#5c5c5c;opacity:.6;cursor:default}
+.mhuida{min-height:48px;text-align:center;font-weight:800;color:var(--gold);margin-top:12px}
+.medfin{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.medfin .mi{font-size:90px;line-height:1;animation:pop .6s ease-out}
+.medfin .mt{font-size:14px;color:var(--gold)}
+@keyframes pop{0%{transform:scale(.2) rotate(-25deg);opacity:0}70%{transform:scale(1.15) rotate(6deg)}100%{transform:scale(1)}}
+.prev{background:#5c1a24;border:2px solid var(--red);border-radius:12px;padding:10px 14px;font-weight:800;font-size:13px}
+.reglas{margin:0 0 14px;padding-left:20px;color:#d6dcf2;font-weight:700;line-height:1.6}
+@media(max-width:600px){.lks button small{display:none}.qt{font-size:17px}.huida{height:340px}}
+</style>
+</head>
+<body class="arena">
+<header class="top atop">
+  <div class="pix">SISOPE ARENA</div>
+  <div class="who"><a href="alumno.html#perfil" class="cambiar">← Volver a la arena</a></div>
+</header>
+<div class="ev">
+  <div id="prev"></div>
+
+  <!-- Intro -->
+  <section class="panel" id="s-intro">
+    <h1 class="pix">MISIÓN 0 · RECLUTAMIENTO</h1>
+    <p style="margin-top:14px">Toda consultora de élite necesita conocer a su gente antes de armar sus equipos. Esta misión no da ni quita nota: sirve para que la docente forme consultoras equilibradas y asigne a cada uno un rol.</p>
+    <ol class="reglas">
+      <li><b>Fase 1 · Diagnóstico técnico</b> (<span id="nTec">10</span> preguntas). Si no sabes, marca “No lo sé”: adivinar solo te pondrá en un rol que no te corresponde.</li>
+      <li><b>Fase 2 · Perfil</b> (<span id="nPer">15</span> afirmaciones). Responde cómo eres, no cómo crees que deberías ser.</li>
+      <li><b>Fase 3 · Elige tu modo de juego.</b></li>
+    </ol>
+    <p class="gris">Tiempo estimado: 10 a 15 minutos. Solo puedes enviarla una vez.</p>
+    <div class="acc"><span></span><button class="evbtn" id="bEmpezar" disabled>Cargando…</button></div>
+  </section>
+
+  <!-- Fase 1 -->
+  <section class="panel hide" id="s-tec">
+    <h2 class="pix">FASE 1 · DIAGNÓSTICO TÉCNICO</h2>
+    <div class="prog"><i id="pgTec"></i></div>
+    <div style="margin-top:18px"><div class="qn pix" id="qNum"></div><p class="qt" id="qTxt"></p><div class="ops" id="qOps"></div></div>
+    <div class="acc"><button class="evbtn sec" id="bAtras">◀ Atrás</button><span class="gris" id="qAyuda">Elige una alternativa para avanzar</span></div>
+  </section>
+
+  <!-- Fase 2 -->
+  <section class="panel hide" id="s-perfil">
+    <h2 class="pix">FASE 2 · PERFIL DEL CONSULTOR</h2>
+    <p class="gris">1 = Nada como yo · 5 = Totalmente yo</p>
+    <div class="prog"><i id="pgPer"></i></div>
+    <div id="lks" style="margin-top:8px"></div>
+    <div class="acc"><button class="evbtn sec" onclick="irTec(PT.length - 1)">◀ Fase 1</button><button class="evbtn" onclick="irModo()">Continuar ▶</button></div>
+  </section>
+
+  <!-- Fase 3 -->
+  <section class="panel hide" id="s-modo">
+    <h2 class="pix">FASE 3 · ¿CÓMO QUIERES JUGAR?</h2>
+    <p>Hay dos formas de recibir tu rol en la consultora. Elige con sabiduría.</p>
+    <div class="huida" id="huida">
+      <button id="bReto" type="button">🔥 MODO RETO<br><small style="font-family:Nunito;font-size:12px">Un rol que me saque de mi zona de confort</small></button>
+      <button id="bCom" type="button">🛋️ Lo que mejor sé hacer</button>
+    </div>
+    <div class="mhuida" id="msgHuida"></div>
+  </section>
+
+  <!-- Final -->
+  <section class="panel hide" id="s-fin"><div class="medfin" id="fin"></div></section>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js?v=202611190907"></script>
+<script src="assets/comun.js?v=202611190907"></script>
+<script>
+let PT = [], PP = [], RESP = {}, IDX = 0, PREVIEW = false, ENVIANDO = false;
+const LIK = [[1, 'Nada'], [2, 'Poco'], [3, 'A veces'], [4, 'Bastante'], [5, 'Totalmente']];
+const mezclar = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+const ver = id => document.querySelectorAll('.ev > section').forEach(s => s.classList.toggle('hide', s.id !== id));
+
+async function iniciar() {
+  const ses = await sesionORedirigir(); if (!ses) return;
+  PREVIEW = await esDocente();
+  if (PREVIEW) $('#prev').innerHTML = '<div class="prev">👀 Vista previa de docente: puedes recorrer la misión, pero no se guarda nada.</div>';
+  if (!PREVIEW) {
+    const { data: st, error: e1 } = await sb.rpc('eq_mi_estado');
+    if (e1) { falla(e1); return; }
+    if (st?.evaluado) { yaHecha(); return; }
+  }
+  const { data, error } = await sb.rpc('eq_preguntas_alumno');
+  if (error) { falla(error); return; }
+  // Orden y alternativas al azar para cada alumno (se guarda el índice original)
+  PT = mezclar((data || []).filter(q => q.parte === 'tecnica')).map(q => ({ ...q, ops: mezclar((q.opciones || []).map((t, i) => [i, t])) }));
+  PP = (data || []).filter(q => q.parte === 'perfil');
+  $('#nTec').textContent = PT.length; $('#nPer').textContent = PP.length;
+  const b = $('#bEmpezar'); b.disabled = false; b.textContent = '¡ACEPTO LA MISIÓN! ▶'; b.onclick = () => PT.length ? irTec(0) : irPerfil();
+}
+function falla(e) {
+  $('#bEmpezar').textContent = 'No disponible';
+  toast(/schema cache|function/i.test(e.message) ? 'La Misión 0 aún no está activa. Avísale a tu docente.' : e.message, true);
+}
+function yaHecha() {
+  ver('s-fin');
+  $('#fin').innerHTML = `<div class="mi">✅</div><div class="mt pix">MISIÓN 0 COMPLETADA</div><p>Ya enviaste tu evaluación. Tu docente publicará las consultoras y verás tu rol en <b>Mi perfil → Mi equipo</b>.</p><a class="evbtn" href="alumno.html#perfil" style="text-decoration:none">Ir a mi perfil</a>`;
+}
+
+// ---------- Fase 1: una pregunta a la vez, avanza sola al elegir ----------
+function irTec(i) {
+  IDX = Math.max(0, i); const q = PT[IDX]; if (!q) { irPerfil(); return; }
+  ver('s-tec');
+  $('#qNum').textContent = `PREGUNTA ${IDX + 1} / ${PT.length}`;
+  $('#qTxt').textContent = q.texto;
+  $('#pgTec').style.width = (100 * IDX / PT.length) + '%';
+  const sel = RESP[q.id];
+  $('#qOps').innerHTML = q.ops.map(([orig, t]) => `<button class="op ${sel === orig ? 'on' : ''}" onclick="elegir(${q.id}, ${orig})">${esc(t)}</button>`).join('')
+    + `<button class="op nose ${sel === -1 ? 'on' : ''}" onclick="elegir(${q.id}, -1)">🤷 No lo sé</button>`;
+  $('#bAtras').style.visibility = IDX ? 'visible' : 'hidden';
+  $('#bAtras').onclick = () => irTec(IDX - 1);
+}
+function elegir(id, v) {
+  RESP[id] = v; irTec(IDX);
+  setTimeout(() => IDX + 1 < PT.length ? irTec(IDX + 1) : irPerfil(), 220);
+}
+
+// ---------- Fase 2: escala 1 a 5 ----------
+function irPerfil() { ver('s-perfil'); pintarLk(); window.scrollTo(0, 0); }
+function pintarLk(marcarFaltas) {
+  const hechas = PP.filter(q => RESP[q.id]).length;
+  $('#pgPer').style.width = (PP.length ? 100 * hechas / PP.length : 100) + '%';
+  $('#lks').innerHTML = PP.map(q => `<div class="lk ${marcarFaltas && !RESP[q.id] ? 'falta' : ''}" id="lk${q.id}"><b>${esc(q.texto)}</b><div class="lks">${LIK.map(([v, t]) => `<button class="${RESP[q.id] === v ? 'on' : ''}" onclick="likert(${q.id}, ${v})">${v}<small>${t}</small></button>`).join('')}</div></div>`).join('');
+}
+function likert(id, v) { RESP[id] = v; const y = window.scrollY; pintarLk(); window.scrollTo(0, y); }
+function irModo() {
+  const falta = PP.find(q => !RESP[q.id]);
+  if (falta) { pintarLk(true); document.getElementById('lk' + falta.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); toast('Te faltan afirmaciones por responder', true); return; }
+  ver('s-modo'); window.scrollTo(0, 0);
+}
+
+// ---------- Fase 3: el botón que huye ----------
+// Escapa 3 veces (al acercar el mouse, tocarlo o activarlo con teclado). Al tercer intento se rinde y activa el Modo Reto.
+let INTENTOS = 0, RENDIDO = false, ULTIMO = 0;
+const FRASES = ['¿Seguro? 🤨', '¡Atrápame! 😜', '🏳️ Me rindo'];
+function escapar(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (RENDIDO || ENVIANDO) return;
+  const ahora = Date.now(); if (ahora - ULTIMO < 400) return; ULTIMO = ahora;
+  INTENTOS++;
+  const b = $('#bCom'), c = $('#huida');
+  if (INTENTOS >= 3) {
+    RENDIDO = true; b.classList.add('rendido'); b.textContent = FRASES[2]; b.style.transform = 'translateY(-50%) scale(.75)';
+    $('#msgHuida').innerHTML = 'Buen intento, ingeniero. En la arena no existe la zona de confort.<br>🔥 <b>Modo Reto activado.</b>';
+    $('#bReto').style.transform = 'translateY(-50%) scale(1.12)';
+    setTimeout(() => enviar('reto'), 2000); return;
+  }
+  const W = c.clientWidth - b.offsetWidth, H = c.clientHeight - b.offsetHeight, x0 = b.offsetLeft, y0 = b.offsetTop;
+  let x = x0, y = y0;
+  for (let i = 0; i < 30; i++) { x = Math.random() * W; y = Math.random() * H; if (Math.hypot(x - x0, y - y0) > Math.min(W, H) * .5) break; }
+  b.style.right = 'auto'; b.style.left = Math.max(0, x) + 'px'; b.style.top = Math.max(0, y) + 'px';
+  b.style.transform = `scale(${1 - INTENTOS * .12})`;
+  b.textContent = FRASES[INTENTOS - 1];
+  $('#msgHuida').textContent = INTENTOS === 1 ? '¿A dónde vas? 👀' : 'Este botón tiene miedo… ¿y tú?';
+}
+(function () {
+  const b = $('#bCom');
+  b.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') escapar(e); });
+  b.addEventListener('pointerdown', escapar);
+  b.addEventListener('click', escapar);
+  b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') escapar(e); });
+  $('#bReto').addEventListener('click', () => enviar('reto'));
+})();
+
+async function enviar(modo) {
+  if (ENVIANDO) return; ENVIANDO = true; $('#bReto').disabled = true;
+  let tipo = INTENTOS === 0 ? 'sin_miedo' : 'lo_intentaste';
+  if (!PREVIEW) {
+    const { data, error } = await sb.rpc('eq_enviar', { p_resp: RESP, p_modo: modo, p_intentos: INTENTOS });
+    if (error) { ENVIANDO = false; $('#bReto').disabled = false; toast(/schema cache|function/i.test(error.message) ? 'La Misión 0 aún no está activa. Avísale a tu docente.' : error.message, true); return; }
+    tipo = data || tipo;
+    try { sb.rpc('registrar_actividad', { p_tipo: 'mision0', p_detalle: tipo }).then(() => {}, () => {}); } catch (e) {}
+  }
+  const m = medalla(tipo);
+  ver('s-fin'); window.scrollTo(0, 0);
+  $('#fin').innerHTML = `<div class="mi">${m[0]}</div><div class="mt pix">MEDALLA: ${esc(m[1].toUpperCase())}</div>
+    <p>${tipo === 'sin_miedo' ? 'Elegiste el Modo Reto a la primera. Así se hace, ingeniero.' : `Intentaste escapar ${INTENTOS} ${INTENTOS === 1 ? 'vez' : 'veces'}… pero el reto te encontró. 😉`}</p>
+    <p class="gris">Tu docente armará las consultoras con los resultados de todo el salón. Cuando las publique, verás tu equipo y tu rol en <b>Mi perfil → Mi equipo</b>.</p>
+    <a class="evbtn" href="alumno.html#perfil" style="text-decoration:none">Volver a la arena</a>`;
+}
+iniciar();
+</script>
+</body>
+</html>
