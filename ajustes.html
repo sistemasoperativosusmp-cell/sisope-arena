@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191619">
+<link rel="stylesheet" href="assets/app.css?v=202611191634">
 </head>
 <body>
 <header class="top">
@@ -17,7 +17,7 @@
   <div class="subtabs">
     <button data-s="sSecc">🏫 Secciones</button>
     <button data-s="sAlumnos" class="on">👥 Alumnos y alias</button>
-    <button data-s="sEquipos">🛡 Equipos</button>
+    <button onclick="location.href='equipo.html'" title="Misión 0, armado de consultoras, roles, reportes y strikes">🛡 Equipos ↗</button>
     <button data-s="sSemanas" data-h="semanas">📅 Semanas y temas</button>
     <button data-s="sConfig">⚙ Puntajes y reglas</button>
     <button data-s="sEtq">🏷 Etiquetas</button>
@@ -58,15 +58,6 @@
     </div>
     <p class="help">Los cambios se guardan al salir de cada celda. <b>Retirar</b> lo saca de listas, ranking y sorteos sin borrar su historial. <b>🗑</b> lo elimina con todos sus puntajes.</p>
     <p class="help"><b>🔑</b> da una contraseña temporal al alumno y crea su cuenta de acceso si aún no la tiene; al ingresar, el sistema le pide crear la suya. La foto la sube cada alumno desde <b>Mi perfil</b>.</p>
-  </section>
-
-  <!-- EQUIPOS -->
-  <section class="card aj hide" id="sEquipos">
-    <div class="ajhead"><h2 class="pix">EQUIPOS / CONSULTORAS · <span class="secNom"></span></h2><span class="avance" id="eqCuenta"></span></div>
-    <p class="help">Crea los equipos de esta aula y asigna a cada alumno. Si renombras un equipo, sus integrantes se actualizan solos; si lo eliminas, quedan “sin equipo”.</p>
-    <div class="ajform etq" style="grid-template-columns:1fr 1.5fr 70px auto;max-width:820px"><input id="qNombre" placeholder="Nombre (ej. Consultora Alfa, Los Kernel)"><input id="qLema" placeholder="Lema (opcional)"><input id="qColor" type="color" value="#6f3cc3" title="Color"><button class="btn green" onclick="agregarEq()">+ Crear equipo</button></div>
-    <div class="fbacc" style="justify-content:flex-start;margin-top:10px"><label class="help" style="margin:0">Crear varios rápido: <input id="qN" type="number" min="2" max="12" value="4" style="width:60px;padding:6px;border-radius:8px;border:2px solid var(--line)"> equipos</label><button class="sbtn" onclick="crearVarios()">⚡ Crear</button><button class="sbtn" onclick="repartir()">🎲 Repartir al azar a los que no tienen equipo</button></div>
-    <div class="eqgrid" id="equipos"></div>
   </section>
 
   <!-- CONFIG -->
@@ -141,8 +132,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191619"></script>
-<script src="assets/comun.js?v=202611191619"></script>
+<script src="assets/config.js?v=202611191634"></script>
+<script src="assets/comun.js?v=202611191634"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -247,7 +238,7 @@ const eqOpts = sel => '<option value="">— sin equipo —</option>' + EQ.map(e 
 async function cargarEq() {
   if (!SECC) return;
   const { data, error } = await sb.from('equipos').select('*').eq('seccion_id', SECC.id).order('nombre');
-  if (error) { $('#equipos').innerHTML = `<div class="empty">Falta ejecutar el SQL de equipos (${esc(error.message)})</div>`; return; }
+  if (error) { if ($('#equipos')) $('#equipos').innerHTML = `<div class="empty">Falta ejecutar el SQL de equipos (${esc(error.message)})</div>`; return; }
   EQ = data || []; $('#nCons').innerHTML = '<option value="">Equipo / consultora</option>' + EQ.map(e => `<option>${esc(e.nombre)}</option>`).join(''); pintarEq();
 }
 function pintarEq() {
@@ -535,7 +526,7 @@ async function borrarTodo() {
   $('#conf').value = ''; $('#btnBorrar').disabled = true; toast(data || 'Listo: semestre reiniciado'); await cargarAl();
 }
 
-document.querySelectorAll('.subtabs button').forEach(b => b.onclick = () => { document.querySelectorAll('.subtabs button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('section.aj').forEach(s => s.classList.toggle('hide', s.id !== b.dataset.s)); });
+document.querySelectorAll('.subtabs button[data-s]').forEach(b => b.onclick = () => { document.querySelectorAll('.subtabs button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('section.aj').forEach(s => s.classList.toggle('hide', s.id !== b.dataset.s)); });
 { const h = location.hash.slice(1); const b = h && document.querySelector(`.subtabs button[data-h="${h}"]`); if (b) b.click(); }
 $('#buscar').oninput = pintarAl; $('#verInact').onchange = pintarAl;
 iniciar();

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Equipos</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191619">
+<link rel="stylesheet" href="assets/app.css?v=202611191634">
 <style>
 main{display:flex;flex-direction:column;gap:20px}
 .card h2{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -42,6 +42,13 @@ main{display:flex;flex-direction:column;gap:20px}
 .stk select,.stk input{font-size:13px;padding:7px;border-radius:8px;border:2px solid var(--line);width:100%;box-sizing:border-box;margin-top:6px}
 .vac{color:var(--mute);font-weight:700;padding:10px 0}
   .stk .q,.stk .nm{font-size:12px;font-weight:700;color:var(--mute)}
+  .eqhd{display:flex;align-items:center;gap:6px;width:100%}.eqhd input[type=color]{width:30px;height:26px;border:0;padding:0;background:none;cursor:pointer}
+  .eqhd .eqn{flex:1;min-width:0;font-family:'Press Start 2P',monospace;font-size:10px;border:2px solid transparent;border-radius:8px;padding:5px;background:transparent}.eqhd .eqn:hover,.eqhd .eqn:focus{border-color:var(--line);background:#fff}
+  .eqhd button{border:0;background:none;cursor:pointer;font-size:14px}
+  .eql2{width:100%;box-sizing:border-box;border:0;border-bottom:1px solid #edf0f6;padding:7px 14px;font-size:12px;font-weight:700;color:var(--mute);font-style:italic}
+  .eqx{border-top:5px solid var(--c,#c8cfe0)}
+  .mb .mv{font-size:11px;padding:3px;max-width:150px}
+  .nuevoeq{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}.nuevoeq input{font-size:14px;padding:8px;border-radius:10px;border:2px solid var(--line)}
 details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
 @media(max-width:800px){.estado{grid-template-columns:repeat(2,minmax(0,1fr))}.rep{grid-template-columns:1fr}}
 </style>
@@ -54,6 +61,7 @@ details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
 </header>
 <nav class="tabs" id="nav"></nav>
 <main>
+  <div class="help" style="margin:0"><a href="ajustes.html">⚙ Ajustes</a> › <b>🛡 Equipos</b></div>
   <!-- 1 · Estado de la Misión 0 -->
   <section class="card">
     <h2 class="pix">1 · MISIÓN 0: RECLUTAMIENTO <span class="cnt3">Enlace para los alumnos: <a id="lnkEval" href="evaluacion.html" target="_blank">evaluacion.html</a></span></h2>
@@ -77,8 +85,9 @@ details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
 
   <!-- 3 · Equipos publicados -->
   <section class="card">
-    <h2 class="pix">3 · EQUIPOS ACTUALES <span class="cnt3">Para mover alumnos de equipo o renombrar: <a href="ajustes.html">Ajustes</a></span></h2>
-    <p class="help" style="margin-top:0">Los alumnos ven su rol en <b>Mi perfil → Mi equipo</b> y ya no pueden cambiarlo: solo tú lo haces aquí.</p>
+    <h2 class="pix">3 · EQUIPOS ACTUALES <span class="cnt3" id="eqCuenta"></span></h2>
+    <p class="help" style="margin-top:0">Toca el nombre para renombrar (sus integrantes se actualizan solos), cambia el color o el lema, usa “→ equipo” para mover a un alumno y el selector de rol para cambiar su rol. Los alumnos ven su equipo y rol en <b>Mi perfil → Mi equipo</b> y no pueden cambiar su rol.</p>
+    <div class="nuevoeq"><input id="qNombre" placeholder="Nuevo equipo (ej. Los Kernel)"><input id="qLema" placeholder="Lema (opcional)"><input id="qColor" type="color" value="#6f3cc3" title="Color" style="width:44px;padding:2px"><button class="btn green" onclick="agregarEq()">+ Crear equipo</button></div>
     <div class="eqs" id="actuales"></div>
   </section>
 
@@ -99,9 +108,9 @@ details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191619"></script>
-<script src="assets/comun.js?v=202611191619"></script>
-<script src="assets/armado.js?v=202611191619"></script>
+<script src="assets/config.js?v=202611191634"></script>
+<script src="assets/comun.js?v=202611191634"></script>
+<script src="assets/armado.js?v=202611191634"></script>
 <script>
 let AL = [], PERF = {}, EQ = [], REP = [], PEN = {}, PROP = [], NOMBRES = [];
 const PENAS = ['Sustentación individual', 'Trabajo adicional', 'Examen individual'];
@@ -202,12 +211,46 @@ async function publicar() {
 // ---------- 3 · Equipos actuales ----------
 function strikesDe(id) { return REP.filter(r => r.reportado_id === id && r.estado === 'Validado').length; }
 function pintarActuales() {
-  const g = {}; AL.forEach(a => { const k = a.consultora || '— Sin equipo —'; (g[k] = g[k] || []).push(a); });
-  const keys = Object.keys(g).sort((x, y) => (x.startsWith('—') ? 1 : 0) - (y.startsWith('—') ? 1 : 0) || x.localeCompare(y));
-  $('#actuales').innerHTML = keys.map(k => `<div class="eqx"><h3><span>${esc(k)}</span><small>${g[k].length}</small></h3>
-    ${g[k].map(a => { const s = strikesDe(a.id); return `<div class="mb"><div><b>${esc(a.alias)}</b><span class="nm">${esc(corto(a.nombre))}</span></div>
+  const g = {}; AL.forEach(a => { const k = a.consultora || ''; (g[k] = g[k] || []).push(a); });
+  const nombres = [...EQ.map(e => e.nombre), ...Object.keys(g).filter(k => k && !EQ.some(e => e.nombre === k)).sort()];
+  const sin = g[''] || [];
+  $('#eqCuenta').textContent = `${EQ.length} equipos · ${sin.length} sin equipo`;
+  const eqSel = a => `<select class="mv" title="Mover a otro equipo" onchange="asignar('${a.id}', this.value)"><option value="">→ sin equipo</option>${nombres.map(nm => `<option value="${esc(nm)}" ${nm === a.consultora ? 'selected' : ''}>→ ${esc(nm)}</option>`).join('')}</select>`;
+  const fila = a => { const s = strikesDe(a.id); return `<div class="mb"><div><b>${esc(a.alias)}</b><span class="nm">${esc(corto(a.nombre))}</span></div>
       <div><select onchange="cambiarRol('${a.id}', this)">${rolOpts(a.rol_consultora)}</select></div>
-      <div class="tgs">${tagsPerfil(a, a.rol_consultora)}${s ? `<span class="t st">🟥 ${s} strike${s > 1 ? 's' : ''}</span>` : ''}</div></div>`; }).join('')}</div>`).join('') || '<div class="vac">No hay alumnos activos.</div>';
+      <div class="tgs">${tagsPerfil(a, a.rol_consultora)}${s ? `<span class="t st">🟥 ${s} strike${s > 1 ? 's' : ''}</span>` : ''}<span style="margin-left:auto">${eqSel(a)}</span></div></div>`; };
+  $('#actuales').innerHTML = nombres.map(nm => { const e = EQ.find(x => x.nombre === nm), m = g[nm] || [];
+    return `<div class="eqx" style="--c:${esc(e?.color || '#c8cfe0')}"><h3>${e ? `<span class="eqhd"><input type="color" value="${esc(e.color || '#6f3cc3')}" onchange="editarEq(${e.id}, 'color', this.value)" title="Color"><input class="eqn" value="${esc(e.nombre)}" onchange="editarEq(${e.id}, 'nombre', this.value)" title="Renombrar"><small>${m.length}</small><button title="Eliminar equipo" onclick='borrarEq(${e.id}, ${esc(JSON.stringify(e.nombre))})'>🗑</button></span>` : `<span>${esc(nm)}</span><small>${m.length}</small>`}</h3>
+      ${e ? `<input class="eql2" value="${esc(e.lema || '')}" placeholder="Lema del equipo (opcional)" onchange="editarEq(${e.id}, 'lema', this.value)">` : ''}
+      ${m.map(fila).join('') || '<div class="mb"><div class="vac">Sin integrantes</div></div>'}</div>`; }).join('')
+    + `<div class="eqx"><h3><span>— Sin equipo —</span><small>${sin.length}</small></h3>${sin.map(fila).join('') || '<div class="mb"><div class="vac">Todos tienen equipo 🎉</div></div>'}</div>`;
+}
+async function agregarEq() {
+  const o = { seccion_id: SECC.id, nombre: $('#qNombre').value.trim(), lema: $('#qLema').value.trim() || null, color: $('#qColor').value };
+  if (!o.nombre) { toast('Escribe el nombre del equipo', true); return; }
+  const { error } = await sb.from('equipos').insert(o);
+  if (error) { toast(/unique|duplicate/.test(error.message) ? 'Ya existe un equipo con ese nombre' : 'No se creó: ' + error.message, true); return; }
+  $('#qNombre').value = ''; $('#qLema').value = ''; toast(`Equipo "${o.nombre}" creado`); await cargar();
+}
+async function editarEq(id, campo, valor) {
+  const v = String(valor).trim(); if (campo === 'nombre' && !v) { toast('El nombre no puede quedar vacío', true); return cargar(); }
+  const { error } = await sb.from('equipos').update({ [campo]: v || null }).eq('id', id);
+  if (error) { toast(/unique|duplicate/.test(error.message) ? 'Ya existe un equipo con ese nombre' : 'No se guardó: ' + error.message, true); return cargar(); }
+  if (campo === 'nombre') { toast('Equipo renombrado: sus integrantes se actualizaron'); await cargar(); } else { const e = EQ.find(x => x.id === id); if (e) e[campo] = v || null; if (campo === 'color') pintarActuales(); toast('Guardado'); }
+}
+async function borrarEq(id, nom) {
+  if (!confirm(`¿Eliminar el equipo "${nom}"? Sus integrantes quedarán sin equipo (no se borran puntajes).`)) return;
+  const { error } = await sb.from('equipos').delete().eq('id', id);
+  if (error) { toast('No se eliminó: ' + error.message, true); return; }
+  toast(`Equipo "${nom}" eliminado`); await cargar();
+}
+async function asignar(id, equipo) {
+  const a = porId(id), antes = a.consultora, v = equipo || null;
+  const { error } = await sb.from('jugadores').update({ consultora: v }).eq('id', id);
+  if (error) { toast('No se guardó: ' + error.message, true); pintarActuales(); return; }
+  a.consultora = v;
+  sb.from('eq_cambios_rol').insert({ jugador_id: id, consultora_antes: antes, consultora_nueva: v, rol_antes: a.rol_consultora, rol_nuevo: a.rol_consultora, origen: 'manual' }).then(() => {}, () => {});
+  toast(`${a.alias} → ${v || 'sin equipo'}`); pintarActuales();
 }
 async function cambiarRol(id, sel) {
   const a = porId(id), antes = a.rol_consultora, v = sel.value || null;
