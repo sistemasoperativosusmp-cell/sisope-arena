@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Docente</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191647">
+<link rel="stylesheet" href="assets/app.css?v=202611191651">
 </head>
 <body>
 <header class="top">
@@ -20,9 +20,9 @@
         <label>Semana<select id="semana"></select></label>
         <label>Fecha<select id="fecha"></select></label>
         <label>Práctica<select id="practica"><option>Practica 1</option><option>Practica 2</option><option>Practica 3</option><option>Practica 4</option></select></label>
-        <label>Unidad<select id="unidad"><option>UNIDAD I</option><option>UNIDAD II</option><option>UNIDAD III</option><option>UNIDAD IV</option></select></label>
+        <label>Unidad<select id="unidad" disabled title="Se asigna sola: Práctica 1 = Unidad I, Práctica 2 = Unidad II…"><option>UNIDAD I</option><option>UNIDAD II</option><option>UNIDAD III</option><option>UNIDAD IV</option></select></label>
       </div>
-      <p class="help" id="plan"></p><p class="help" id="diasAyuda"></p>
+      <p class="help" id="plan"></p><p class="help" id="undAviso" style="color:#a15c00"></p><p class="help" id="diasAyuda"></p>
       <button class="btn green big pix" id="iniciar">INICIAR / CONTINUAR SEMANA</button>
       <p class="help" style="text-align:center">Solo crea las filas que faltan: nunca borra lo ya registrado.</p>
     </section>
@@ -48,10 +48,18 @@
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191647"></script>
-<script src="assets/comun.js?v=202611191647"></script>
+<script src="assets/config.js?v=202611191651"></script>
+<script src="assets/comun.js?v=202611191651"></script>
 <script>
-let SEMANAS = [], FILAS = [], SESI = {};
+let SEMANAS = [], FILAS = [], SESI = {}, TIT_U = {};
+// Cada práctica corresponde a una unidad del sílabo (los títulos se editan en Ajustes → Semanas y temas)
+const ROM = ['I', 'II', 'III', 'IV'], UND_DEF = { I: 'Virtualización', II: 'Administración de identidad y accesos', III: 'Servicios de infraestructura de red', IV: 'Plataformas de tipo empresarial' };
+const unidadDe = prac => 'UNIDAD ' + ROM[(Number(String(prac || '').slice(-1)) || 1) - 1];
+function pintarUnidad() {
+  $('#unidad').value = unidadDe($('#practica').value);
+  const s = SEMANAS.find(x => x.semana === semanaSel()) || {};
+  $('#undAviso').textContent = s.unidad && s.unidad !== $('#unidad').value ? `⚠ En el plan esta semana figuraba ${s.unidad}; al iniciar la semana se corrige a ${$('#unidad').value}.` : '';
+}
 const ORDEN = { Presente: 'Tarde', Tarde: 'Ausente', Ausente: 'Presente' };
 
 async function iniciar() {
@@ -63,6 +71,9 @@ async function iniciar() {
   SESI = ses2; const e2 = null, cfg = { valor: SECC.semana_actual };
   if (e1 || e2) { console.error('semanas/config', e1, e2); toast('No se pudo leer semanas/config: ' + (e1 || e2).message, true); }
   SEMANAS = sem || [];
+  const { data: tu } = await sb.from('config').select('clave, valor').like('clave', 'TituloUnidad%');
+  TIT_U = Object.fromEntries((tu || []).map(x => [x.clave.replace('TituloUnidad', ''), x.valor]));
+  $('#unidad').innerHTML = ROM.map(r => `<option value="UNIDAD ${r}">UNIDAD ${r} · ${esc((TIT_U[r] || '').trim() || UND_DEF[r])}</option>`).join('');
   if (!SEMANAS.length) { toast('La tabla "semanas" llegó vacía. Revisa el diagnóstico en Supabase.', true); }
   $('#semana').innerHTML = SEMANAS.map(s => `<option value="${s.semana}">Semana ${s.semana}${s.tema ? ' · ' + esc(s.tema) : ''}</option>`).join('');
   const deseada = String(parseInt(cfg?.valor, 10) || 1);
@@ -78,8 +89,8 @@ function completarSesion() {
   lista.sort();
   const sug = guardada || lista.find(f => f >= hoy) || lista[lista.length - 1];
   $('#fecha').innerHTML = lista.map(f => `<option value="${f}" ${f === sug ? 'selected' : ''}>${fechaLarga(f)}${f === hoy ? ' · hoy' : ''}</option>`).join('');
-  if (s.practica) $('#practica').value = s.practica;
-  if (s.unidad) $('#unidad').value = s.unidad;
+  $('#practica').value = s.practica || 'Practica 1';
+  pintarUnidad();
   $('#plan').innerHTML = `Tema: <b>${esc(s.tema || '—')}</b> · Trabajo grupal: <b>${esc(s.tipo_grupal || '—')}</b>. El tema se edita en <a href="ajustes.html#semanas">Ajustes → Semanas y temas</a>; el tipo de trabajo, en <a href="grupal.html">Trabajo grupal</a>.`;
   $('#diasAyuda').innerHTML = `Fechas disponibles: solo ${(SECC.dias && SECC.dias.length ? SECC.dias : [0, 1, 2, 3, 4, 5, 6]).map(d => DIAS_L[d]).join(', ')}. Cámbialo en <a href="ajustes.html">Ajustes → Secciones</a>.`;
   $('#iniciar').textContent = 'INICIAR / CONTINUAR SEMANA ' + semanaSel();
@@ -118,6 +129,7 @@ async function cargarStats() {
   $('#stVic').textContent = (v || []).length;
 }
 
+$('#practica').addEventListener('change', pintarUnidad);
 $('#semana').addEventListener('change', async () => { completarSesion(); await cargarAsistencia(); });
 $('#iniciar').addEventListener('click', async () => {
   if (!semanaSel()) { toast('Primero elige una semana válida.', true); return; }
