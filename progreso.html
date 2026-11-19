@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191819">
+<link rel="stylesheet" href="assets/app.css?v=202611191835">
 <style>
 .evo{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .evo0{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
@@ -23,6 +23,7 @@
 .vdt{font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;white-space:nowrap}
 .vdt.ok{background:#e3f5dc;color:#24600f}.vdt.sube{background:#e3ecff;color:#1d4fb0}.vdt.mal{background:#fde8e8;color:#a02424}.vdt.pend{background:#eef1f7;color:var(--mute)}
 .meta3{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 12px}.meta3 div{background:#f7f8fc;border:2px solid var(--line);border-radius:12px;padding:8px 14px;font-weight:800}.meta3 b{font-size:22px;display:block}
+.avciclo{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12px;font-weight:800;color:var(--mute);margin:2px 0 10px}.avciclo b{color:#6f3cc3}
 </style>
 </head>
 <body>
@@ -58,7 +59,7 @@
     <div><span class="niv bien">✓ Bien</span><p>0 a 2 puntos de alerta.</p></div>
     <div class="ancho"><span class="tag" style="background:#eef1f7;color:var(--ink)">Alertas</span><p><b>+3</b> necesita más de 20 en el EF · <b>+2</b> necesita más de 14 en el EF · <b>+2</b> rinde menos del 60% del promedio de la clase (<b>+1</b> si es menos del 80%) · <b>+2</b> 3 o más semanas sin hablar (<b>+1</b> si son 2) · <b>+1</b> 2 o más ausencias · <b>+1</b> se escapó de clase alguna vez · <b>+1</b> algún laboratorio no cumplido · <b>+1</b> alguna falta · <b>+1</b> sus últimas 3 semanas van peor que antes · <b>+1</b> 2 o más etiquetas “por mejorar”.</p></div>
     <div class="ancho"><span class="tag" style="background:#e7efff;color:#1d4fb0">Perfil</span><p><b>Perfil observado</b> (indicios a partir de los datos, no diagnósticos): 🧠 Hábil · 👑 Líder · 🙋 Participativo · 🤐 Tímido (escribe bien, habla poco) · 😴 Poco compromiso (labs no cumplidos o sin entregar) · 🚪 Falta mucho · ⏰ Impuntual · 🚩 Revisar posible copia (escrito alto vs. oral o parcial bajo). Cada uno trae una sugerencia de cómo trabajar con el alumno.</p></div>
-    <div class="ancho"><span class="tag" style="background:#eef8ea;color:#24600f">Sílabo</span><p><b>Alineación con el sílabo 2026:</b> logro por unidad (<span id="undLey">I Virtualización · II Identidad y accesos · III Infraestructura de red · IV Plataformas empresariales</span>) y competencias SO2 y SO6 (clave), SO4 (relacionada) más objetivos transversales. Niveles: En inicio &lt;55% · En proceso 55–69% · Logrado 70–89% · Destacado ≥90%.</p></div>
+    <div class="ancho"><span class="tag" style="background:#eef8ea;color:#24600f">Sílabo</span><p><b>Alineación con el sílabo 2026:</b> logro por unidad (<span id="undLey">I Virtualización · II Identidad y accesos · III Infraestructura de red · IV Plataformas empresariales</span>) y competencias SO2 y SO6 (clave), SO4 (relacionada) más objetivos transversales. En las rúbricas Deficiente = 0%, Bueno = 75%, Excelente = 100%; laboratorio y quiz en proporción a su nota. La investigación (T4) se mide contra lo esperado a la fecha (un aporte extra cada ~3.5 semanas). Arriba se ve en qué semana de las 14 va el ciclo. Niveles: En inicio &lt;55% · En proceso 55–69% · Logrado 70–89% · Destacado ≥90%.</p></div>
     <div><span class="tag" style="background:#efe7fb;color:#5a2fa6">Radar</span><p>Cada eje compara su promedio semanal con <b>el mejor de la clase (100%)</b>. Morado = alumno, naranja punteado = promedio de la clase.</p></div>
   </div></section>
 </main>
@@ -67,9 +68,9 @@
 <div class="modal hide" id="mIns" onclick="if (event.target === this) cerrarIns()"><div class="box plain det"><div class="dethead"><h2 class="pix" style="color:var(--navy)">INSIGNIAS DEL AULA</h2><button class="sbtn" onclick="cerrarIns()">✕ Cerrar</button></div><div id="mInsCuerpo" style="width:100%"></div></div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191819"></script>
-<script src="assets/insignias.js?v=202611191819"></script>
-<script src="assets/comun.js?v=202611191819"></script>
+<script src="assets/config.js?v=202611191835"></script>
+<script src="assets/insignias.js?v=202611191835"></script>
+<script src="assets/comun.js?v=202611191835"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -161,28 +162,33 @@ const COMP = [
   ['SO2', 'Diseña, implementa y evalúa soluciones de infraestructura local, híbrida y cloud', 'Competencia clave · laboratorios, conocimiento técnico y análisis en el trabajo grupal'],
   ['SO6', 'Administra y brinda soporte a sistemas on-premise y cloud', 'Competencia clave · laboratorios, quiz, foro técnico y respuestas correctas en el Juego del Miedo'],
   ['SO4', 'Actúa con responsabilidad profesional y ética', 'Competencia relacionada · asistencia, puntualidad, entregas cumplidas y conducta en equipo'],
-  ['T1', 'Comunicación efectiva', 'Transversal · comunicación en el grupal y participación oral'],
+  ['T1', 'Comunicación efectiva', 'Transversal · comunicación en el grupal (Bueno = 75%) y voz por clase (2 o más = 100%)'],
   ['T2', 'Pensamiento crítico', 'Transversal · análisis crítico (grupal) y argumentación (foro)'],
-  ['T3', 'Trabajo en equipo y liderazgo', 'Transversal · rol en el trabajo grupal'],
-  ['T4', 'Investigación autónoma', 'Transversal · bonificaciones por ir más allá y quiz de certificación']
+  ['T3', 'Trabajo en equipo y liderazgo', 'Transversal · rol en el grupal: Lideró 100% · Apoyó 80% · Habló 60% · Intentando 40% · No participó 0%'],
+  ['T4', 'Investigación autónoma', 'Transversal · aportes extra (bonus en grupal, foro o laboratorio, o certificación). Meta: uno cada ~3.5 semanas (4 en el ciclo)']
 ];
 const UND_DEF = Object.fromEntries(UNIDADES.map(u => [u[1], u[2]]));
 const tituloU = r => (CFG['TituloUnidad' + r] || '').trim() || UND_DEF[r];   // editable en Ajustes → Semanas y temas
+const TOT_SEM = () => Math.max(14, ...Object.keys(SEMS).map(Number).filter(x => x <= 20));
 const nivelLogro = p => p === null ? ['—', 'nl0'] : p >= 0.9 ? ['Destacado', 'nl4'] : p >= 0.7 ? ['Logrado', 'nl3'] : p >= 0.55 ? ['En proceso', 'nl2'] : ['En inicio', 'nl1'];
 function competencias(fs, nt) {
   const prom = arr => { const v = arr.filter(x => x !== null && x !== undefined && !isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
   const pas = fs.filter(d => d.semana < ACT || d.semana === ACT);
   const lab = pas.map(d => d.lab === null ? null : Math.max(0, n(d.lab)) / 3), quiz = pas.map(d => d.quiz === null ? null : Math.min(1, n(d.quiz) / 3));
   const jmAcc = (() => { const a = pas.reduce((s, d) => s + n(d.jm_aciertos), 0), f = pas.reduce((s, d) => s + n(d.jm_fallos), 0); return a + f ? a / (a + f) : null; })();
-  const lid = { 'Lideró': 1, 'Apoyó': 0.67, 'Habló': 0.33, 'Intentando': 0.17, 'No participó': 0 };
+  // Escala equilibrada: en las rúbricas Deficiente 0 → 0%, Bueno 0.5 → 75% (logrado), Excelente 1 → 100%
+  const rub = v => v === null || v === undefined ? null : n(v) >= 1 ? 1 : n(v) >= 0.5 ? 0.75 : 0;
+  const lid = { 'Lideró': 1, 'Apoyó': 0.8, 'Habló': 0.6, 'Intentando': 0.4, 'No participó': 0 };
+  // Investigación: se espera un aporte extra (bonus en grupal, foro o laboratorio, o certificación) cada ~3.5 semanas → 4 en las 14 semanas
+  const aportes = pas.filter(d => n(d.extra) > 0 || n(d.foro_bonus) > 0 || n(d.lab_bonus) > 0).length + (pas.some(d => n(d.quiz) >= 4) ? 1 : 0);
   const c = {
-    SO2: prom([...lab, ...pas.map(d => d.gr_tecnico === null ? null : n(d.gr_tecnico)), ...pas.map(d => d.gr_analisis === null ? null : n(d.gr_analisis))]),
-    SO6: prom([...lab, ...quiz, ...pas.map(d => d.foro_tecnico === null ? null : n(d.foro_tecnico)), jmAcc]),
+    SO2: prom([...lab, ...pas.map(d => rub(d.gr_tecnico)), ...pas.map(d => rub(d.gr_analisis))]),
+    SO6: prom([...lab, ...quiz, ...pas.map(d => rub(d.foro_tecnico)), jmAcc]),
     SO4: prom([...pas.map(d => d.se_escapo ? 0.25 : d.asistencia === 'Presente' ? 1 : d.asistencia === 'Tarde' ? 0.5 : 0), ...pas.map(d => d.lab === null ? null : n(d.lab) < 0 ? 0 : 1), ...pas.map(d => n(d.falta) > 0 ? 0 : null), ...(pas.some(d => n(d.falta) > 0) ? [] : pas.length ? [1] : [])]),
-    T1: prom([...pas.map(d => d.gr_comunicacion === null ? null : n(d.gr_comunicacion)), ...pas.filter(d => d.asistencia !== 'Ausente').map(d => Math.min(1, voz(d) / 3))]),
-    T2: prom([...pas.map(d => d.gr_analisis === null ? null : n(d.gr_analisis)), ...pas.map(d => d.foro_analisis === null ? null : n(d.foro_analisis))]),
+    T1: prom([...pas.map(d => rub(d.gr_comunicacion)), ...pas.filter(d => d.asistencia !== 'Ausente').map(d => Math.min(1, voz(d) / 2))]),
+    T2: prom([...pas.map(d => rub(d.gr_analisis)), ...pas.map(d => rub(d.foro_analisis))]),
     T3: prom(pas.map(d => d.participacion_grupal ? lid[d.participacion_grupal] : null)),
-    T4: pas.length ? Math.min(1, (pas.filter(d => n(d.extra) > 0 || n(d.foro_bonus) > 0).length * 0.35) + (pas.some(d => n(d.quiz) >= 4) ? 0.4 : 0) + 0.25) : null
+    T4: pas.length >= 2 ? Math.min(1, aportes / Math.max(1, ACT / 3.5)) : null
   };
   const und = UNIDADES.map(([p]) => { const v = nt['p' + p.slice(-1)]; return fs.some(d => d.practica === p) ? Math.max(0, Math.min(1, Number(v || 0) / 20)) : null; });
   return { comp: c, und };
@@ -346,7 +352,7 @@ async function elegir(id) {
     </div>
     <div class="alin">
       <div class="pbox"><h4>Logro por unidad del sílabo <small>(nota de la práctica de cada unidad)</small></h4><div class="unds">${UNIDADES.map(([p, r, t], i) => { const v = x.und[i], [lv, cl] = nivelLogro(v); return `<div class="und ${cl}"><small>Unidad ${r}</small><b>${esc(tituloU(r))}</b><div class="ubar"><i class="${cl}" style="width:${v === null ? 0 : v * 100}%"></i></div><span>${v === null ? 'Aún no inicia' : r2(v * 20) + ' / 20 · ' + lv}</span></div>`; }).join('')}</div></div>
-      <div class="pbox"><h4>Competencias del sílabo y objetivos formativos <small>(meta: 70% = Logrado)</small></h4><div class="comps">${COMP.map(([k, t, d]) => { const v = x.comp[k], [lv, cl] = nivelLogro(v); return `<div class="comp" data-tip="${esc(d)}"><span class="ck ${k.startsWith('SO') ? 'so' : 'tr'}">${k}</span><span class="ct">${esc(t)}</span><div class="cbar"><i class="${cl}" style="width:${v === null ? 0 : Math.round(v * 100)}%"></i><em style="left:70%"></em></div><b class="${cl}">${v === null ? '—' : Math.round(v * 100) + '%'}</b><small class="${cl}">${lv}</small></div>`; }).join('')}</div></div>
+      <div class="pbox"><h4>Competencias del sílabo y objetivos formativos <small>(calidad de lo hecho hasta hoy · meta: 70% = Logrado)</small></h4><div class="avciclo" title="Cuánto del ciclo ya pasó: las competencias se miden sobre lo que ya se hizo"><span>Avance del ciclo: semana ${ACT} de ${TOT_SEM()}</span><div class="ubar"><i style="width:${Math.min(100, Math.round(100 * ACT / TOT_SEM()))}%;background:#6f3cc3"></i></div><b>${Math.min(100, Math.round(100 * ACT / TOT_SEM()))}%</b></div><div class="comps">${COMP.map(([k, t, d]) => { const v = x.comp[k], [lv, cl] = nivelLogro(v); return `<div class="comp" data-tip="${esc(d)}"><span class="ck ${k.startsWith('SO') ? 'so' : 'tr'}">${k}</span><span class="ct">${esc(t)}</span><div class="cbar"><i class="${cl}" style="width:${v === null ? 0 : Math.round(v * 100)}%"></i><em style="left:70%"></em></div><b class="${cl}">${v === null ? '—' : Math.round(v * 100) + '%'}</b><small class="${cl}">${lv}</small></div>`; }).join('')}</div></div>
     </div>
     <div class="pfila">
       <div class="pbox ancho2"><h4>Insignias <small>(${x.ins.filter(i => i[4]).length} de ${x.ins.length} · las grises aún no las gana)</small></h4><div class="dins">${x.ins.map(i => insMini(i)).join('')}</div></div>
