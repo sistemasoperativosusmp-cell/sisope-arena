@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191808">
+<link rel="stylesheet" href="assets/app.css?v=202611191819">
 </head>
 <body>
 <header class="top">
@@ -81,7 +81,7 @@
     <p class="help">El plan del curso, compartido por todas tus aulas. Al iniciar una semana en <b>Inicio</b> se usan estos datos. Si cambias el tema, la unidad, la práctica o el tipo de trabajo de una semana ya iniciada, se actualiza también lo registrado de esa semana. Cambiar la <b>práctica</b> mueve los puntajes de esa semana a la otra práctica.</p>
     <div class="pbox" style="margin-bottom:14px"><h4 style="margin:0 0 8px">Títulos de las unidades <small style="color:var(--mute);font-weight:700">· se muestran en Progreso (logro por unidad). Déjalo vacío para usar el título del sílabo.</small></h4>
       <div id="undTit" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px"></div></div>
-    <div class="altabla"><div class="smr alc"><div>Semana</div><div>Unidad</div><div>Práctica</div><div>Tema</div><div>Trabajo grupal</div><div>Meta XP</div><div></div></div><div id="semanas"></div></div>
+    <div class="altabla"><div class="smr alc"><div>Semana</div><div>Unidad</div><div>Práctica <small style="font-weight:600">(según unidad)</small></div><div>Tema</div><div>Trabajo grupal</div><div>Meta XP</div><div></div></div><div id="semanas"></div></div>
     <button class="btn green" style="margin-top:12px" onclick="agregarSemana()">+ Agregar semana</button>
   </section>
 
@@ -134,8 +134,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191808"></script>
-<script src="assets/comun.js?v=202611191808"></script>
+<script src="assets/config.js?v=202611191819"></script>
+<script src="assets/comun.js?v=202611191819"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -397,16 +397,21 @@ async function cargarSemanas() {
   SEMS = data || []; const ini = new Set((usadas || []).map(x => x.semana));
   const op = (lista, v) => `<option value="">—</option>` + lista.map(x => `<option ${x === v ? 'selected' : ''}>${x}</option>`).join('');
   $('#semanas').innerHTML = SEMS.map(w => `<div class="smr" data-s="${w.semana}"><div><b>S${w.semana}</b>${ini.has(w.semana) ? ' <small class="ok" title="Ya iniciada en alguna aula">●</small>' : ''}</div>
-    <select data-c="unidad">${op(UNIDADES, w.unidad)}</select><select data-c="practica">${op(PRACTICAS, w.practica)}</select><input data-c="tema" value="${esc(w.tema || '')}" placeholder="Tema de la semana"><select data-c="tipo_grupal">${op(TIPOS_GR, w.tipo_grupal)}</select><input data-c="xp_objetivo" type="number" step="0.5" min="0" value="${w.xp_objetivo ?? ''}">
+    <select data-c="unidad">${op(UNIDADES, w.unidad)}</select><span style="font-weight:800;color:var(--mute);padding:0 6px" title="Va con la unidad: Unidad I = Práctica 1…">${w.unidad ? 'Práctica ' + (['UNIDAD I', 'UNIDAD II', 'UNIDAD III', 'UNIDAD IV'].indexOf(w.unidad) + 1) : esc((w.practica || '—').replace('Practica', 'Práctica'))}</span><input data-c="tema" value="${esc(w.tema || '')}" placeholder="Tema de la semana"><select data-c="tipo_grupal">${op(TIPOS_GR, w.tipo_grupal)}</select><input data-c="xp_objetivo" type="number" step="0.5" min="0" value="${w.xp_objetivo ?? ''}">
     <button class="sbtn mini" title="${ini.has(w.semana) ? 'Ya tiene registros: no se puede borrar' : 'Borrar semana'}" ${ini.has(w.semana) ? 'disabled' : ''} onclick="borrarSemana(${w.semana})">🗑</button></div>`).join('') || '<div class="empty">Sin semanas.</div>';
   document.querySelectorAll('#semanas [data-c]').forEach(el => el.onchange = () => guardarSemana(Number(el.closest('.smr').dataset.s), el.dataset.c, el.value, el));
 }
 async function guardarSemana(sem, campo, valor, el) {
   const w = SEMS.find(x => x.semana === sem), antes = w[campo];
   if (campo === 'practica' && antes && valor !== antes && !confirm(`¿Mover la semana ${sem} de ${antes} a ${valor || 'ninguna práctica'}? Sus puntajes pasarán a contar en esa práctica.`)) { el.value = antes ?? ''; return; }
+  // La práctica va con la unidad: Unidad I = Práctica 1, Unidad II = Práctica 2…
+  const prac = campo === 'unidad' && valor ? 'Practica ' + (['UNIDAD I', 'UNIDAD II', 'UNIDAD III', 'UNIDAD IV'].indexOf(valor) + 1) : null;
+  if (prac && w.practica && prac !== w.practica && !confirm(`La semana ${sem} pasará de ${w.practica.replace('Practica', 'Práctica')} a ${prac.replace('Practica', 'Práctica')} (va con ${valor}). Sus puntajes pasarán a contar en esa práctica. ¿Continuar?`)) { el.value = antes ?? ''; return; }
   const { error } = await sb.rpc('set_semana', { p_semana: sem, p_campo: campo, p_valor: valor });
   if (error) { el.value = antes ?? ''; toast(/schema cache|function/i.test(error.message) ? 'Falta ejecutar el script 20 en Supabase' : 'No se guardó: ' + error.message, true); return; }
-  w[campo] = valor || null; toast(`Semana ${sem} actualizada`);
+  w[campo] = valor || null;
+  if (prac && prac !== w.practica) { const { error: e2 } = await sb.rpc('set_semana', { p_semana: sem, p_campo: 'practica', p_valor: prac }); if (e2) { toast('La unidad se guardó, pero no la práctica: ' + e2.message, true); return; } w.practica = prac; cargarSemanas(); }
+  toast(`Semana ${sem} actualizada${prac ? ` · ${valor} = ${prac.replace('Practica', 'Práctica')}` : ''}`);
 }
 async function agregarSemana() {
   const sig = Math.max(0, ...SEMS.map(x => x.semana)) + 1; if (sig > 20) { toast('Máximo 20 semanas', true); return; }
