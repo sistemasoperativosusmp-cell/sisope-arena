@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191634">
+<link rel="stylesheet" href="assets/app.css?v=202611191647">
 <style>
 .evo{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .evo0{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
@@ -58,7 +58,7 @@
     <div><span class="niv bien">✓ Bien</span><p>0 a 2 puntos de alerta.</p></div>
     <div class="ancho"><span class="tag" style="background:#eef1f7;color:var(--ink)">Alertas</span><p><b>+3</b> necesita más de 20 en el EF · <b>+2</b> necesita más de 14 en el EF · <b>+2</b> rinde menos del 60% del promedio de la clase (<b>+1</b> si es menos del 80%) · <b>+2</b> 3 o más semanas sin hablar (<b>+1</b> si son 2) · <b>+1</b> 2 o más ausencias · <b>+1</b> algún laboratorio no cumplido · <b>+1</b> alguna falta · <b>+1</b> sus últimas 3 semanas van peor que antes · <b>+1</b> 2 o más etiquetas “por mejorar”.</p></div>
     <div class="ancho"><span class="tag" style="background:#e7efff;color:#1d4fb0">Perfil</span><p><b>Perfil observado</b> (indicios a partir de los datos, no diagnósticos): 🧠 Hábil · 👑 Líder · 🙋 Participativo · 🤐 Tímido (escribe bien, habla poco) · 😴 Poco compromiso (labs no cumplidos o sin entregar) · 🚪 Falta mucho · ⏰ Impuntual · 🚩 Revisar posible copia (escrito alto vs. oral o parcial bajo). Cada uno trae una sugerencia de cómo trabajar con el alumno.</p></div>
-    <div class="ancho"><span class="tag" style="background:#eef8ea;color:#24600f">Sílabo</span><p><b>Alineación con el sílabo 2026:</b> logro por unidad (I Virtualización · II Identidad y accesos · III Infraestructura de red · IV Plataformas empresariales) y competencias SO2 y SO6 (clave), SO4 (relacionada) más objetivos transversales. Niveles: En inicio &lt;55% · En proceso 55–69% · Logrado 70–89% · Destacado ≥90%.</p></div>
+    <div class="ancho"><span class="tag" style="background:#eef8ea;color:#24600f">Sílabo</span><p><b>Alineación con el sílabo 2026:</b> logro por unidad (<span id="undLey">I Virtualización · II Identidad y accesos · III Infraestructura de red · IV Plataformas empresariales</span>) y competencias SO2 y SO6 (clave), SO4 (relacionada) más objetivos transversales. Niveles: En inicio &lt;55% · En proceso 55–69% · Logrado 70–89% · Destacado ≥90%.</p></div>
     <div><span class="tag" style="background:#efe7fb;color:#5a2fa6">Radar</span><p>Cada eje compara su promedio semanal con <b>el mejor de la clase (100%)</b>. Morado = alumno, naranja punteado = promedio de la clase.</p></div>
   </div></section>
 </main>
@@ -67,9 +67,9 @@
 <div class="modal hide" id="mIns" onclick="if (event.target === this) cerrarIns()"><div class="box plain det"><div class="dethead"><h2 class="pix" style="color:var(--navy)">INSIGNIAS DEL AULA</h2><button class="sbtn" onclick="cerrarIns()">✕ Cerrar</button></div><div id="mInsCuerpo" style="width:100%"></div></div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191634"></script>
-<script src="assets/insignias.js?v=202611191634"></script>
-<script src="assets/comun.js?v=202611191634"></script>
+<script src="assets/config.js?v=202611191647"></script>
+<script src="assets/insignias.js?v=202611191647"></script>
+<script src="assets/comun.js?v=202611191647"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -105,6 +105,7 @@ async function iniciar() {
   ETQ = Object.fromEntries(q[4].data.map(x => [x.nombre, x])); const pod = await podiosSeccion(SECC.id); SEMS = Object.fromEntries(q[5].data.map(x => [x.semana, { ...x, kahoot_podio: pod[x.semana]?.kahoot_podio || 3 }]));
   CFG = Object.fromEntries(q[6].data.map(x => [x.clave, x.valor])); ACT = SECC.semana_actual || 1;
   $('#semAct').textContent = SECC.nombre + ' · semana ' + ACT;
+  $('#undLey').textContent = UNIDADES.map(u => u[1] + ' ' + tituloU(u[1])).join(' · ');
   calcular(); pintarLista();
   const prim = ordenados()[0]; if (prim) elegir(prim.id);
 }
@@ -164,6 +165,8 @@ const COMP = [
   ['T3', 'Trabajo en equipo y liderazgo', 'Transversal · rol en el trabajo grupal'],
   ['T4', 'Investigación autónoma', 'Transversal · bonificaciones por ir más allá y quiz de certificación']
 ];
+const UND_DEF = Object.fromEntries(UNIDADES.map(u => [u[1], u[2]]));
+const tituloU = r => (CFG['TituloUnidad' + r] || '').trim() || UND_DEF[r];   // editable en Ajustes → Semanas y temas
 const nivelLogro = p => p === null ? ['—', 'nl0'] : p >= 0.9 ? ['Destacado', 'nl4'] : p >= 0.7 ? ['Logrado', 'nl3'] : p >= 0.55 ? ['En proceso', 'nl2'] : ['En inicio', 'nl1'];
 function competencias(fs, nt) {
   const prom = arr => { const v = arr.filter(x => x !== null && x !== undefined && !isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
@@ -341,7 +344,7 @@ async function elegir(id) {
       <div class="chart ancho2"><h4>Voz por semana <small>(cuánto habló: aciertos + voluntarias + participación grupal)</small></h4>${barras(x)}</div>
     </div>
     <div class="alin">
-      <div class="pbox"><h4>Logro por unidad del sílabo <small>(nota de la práctica de cada unidad)</small></h4><div class="unds">${UNIDADES.map(([p, r, t], i) => { const v = x.und[i], [lv, cl] = nivelLogro(v); return `<div class="und ${cl}"><small>Unidad ${r}</small><b>${esc(t)}</b><div class="ubar"><i class="${cl}" style="width:${v === null ? 0 : v * 100}%"></i></div><span>${v === null ? 'Aún no inicia' : r2(v * 20) + ' / 20 · ' + lv}</span></div>`; }).join('')}</div></div>
+      <div class="pbox"><h4>Logro por unidad del sílabo <small>(nota de la práctica de cada unidad)</small></h4><div class="unds">${UNIDADES.map(([p, r, t], i) => { const v = x.und[i], [lv, cl] = nivelLogro(v); return `<div class="und ${cl}"><small>Unidad ${r}</small><b>${esc(tituloU(r))}</b><div class="ubar"><i class="${cl}" style="width:${v === null ? 0 : v * 100}%"></i></div><span>${v === null ? 'Aún no inicia' : r2(v * 20) + ' / 20 · ' + lv}</span></div>`; }).join('')}</div></div>
       <div class="pbox"><h4>Competencias del sílabo y objetivos formativos <small>(meta: 70% = Logrado)</small></h4><div class="comps">${COMP.map(([k, t, d]) => { const v = x.comp[k], [lv, cl] = nivelLogro(v); return `<div class="comp" data-tip="${esc(d)}"><span class="ck ${k.startsWith('SO') ? 'so' : 'tr'}">${k}</span><span class="ct">${esc(t)}</span><div class="cbar"><i class="${cl}" style="width:${v === null ? 0 : Math.round(v * 100)}%"></i><em style="left:70%"></em></div><b class="${cl}">${v === null ? '—' : Math.round(v * 100) + '%'}</b><small class="${cl}">${lv}</small></div>`; }).join('')}</div></div>
     </div>
     <div class="pfila">

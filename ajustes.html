@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191634">
+<link rel="stylesheet" href="assets/app.css?v=202611191647">
 </head>
 <body>
 <header class="top">
@@ -79,6 +79,8 @@
   <section class="card aj hide" id="sSemanas">
     <h2 class="pix">SEMANAS Y TEMAS</h2>
     <p class="help">El plan del curso, compartido por todas tus aulas. Al iniciar una semana en <b>Inicio</b> se usan estos datos. Si cambias el tema, la unidad, la práctica o el tipo de trabajo de una semana ya iniciada, se actualiza también lo registrado de esa semana. Cambiar la <b>práctica</b> mueve los puntajes de esa semana a la otra práctica.</p>
+    <div class="pbox" style="margin-bottom:14px"><h4 style="margin:0 0 8px">Títulos de las unidades <small style="color:var(--mute);font-weight:700">· se muestran en Progreso (logro por unidad). Déjalo vacío para usar el título del sílabo.</small></h4>
+      <div id="undTit" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px"></div></div>
     <div class="altabla"><div class="smr alc"><div>Semana</div><div>Unidad</div><div>Práctica</div><div>Tema</div><div>Trabajo grupal</div><div>Meta XP</div><div></div></div><div id="semanas"></div></div>
     <button class="btn green" style="margin-top:12px" onclick="agregarSemana()">+ Agregar semana</button>
   </section>
@@ -132,8 +134,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191634"></script>
-<script src="assets/comun.js?v=202611191634"></script>
+<script src="assets/config.js?v=202611191647"></script>
+<script src="assets/comun.js?v=202611191647"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -375,7 +377,21 @@ async function borrarEtq(id, nom) {
 // ---------- Semanas y temas ----------
 let SEMS = [];
 const UNIDADES = ['UNIDAD I', 'UNIDAD II', 'UNIDAD III', 'UNIDAD IV'], PRACTICAS = ['Practica 1', 'Practica 2', 'Practica 3', 'Practica 4'], TIPOS_GR = ['Taller grupal', 'Juego de roles', 'TikTok', 'Responsabilidad social', 'Debate', 'Exposición', 'Examen', '—'];
+// ---------- Títulos de las unidades (config TituloUnidadI … TituloUnidadIV) ----------
+const UND_DEF = { I: 'Virtualización', II: 'Administración de identidad y accesos', III: 'Servicios de infraestructura de red', IV: 'Plataformas de tipo empresarial' };
+async function cargarUnidades() {
+  const { data } = await sb.from('config').select('clave, valor').like('clave', 'TituloUnidad%');
+  const m = Object.fromEntries((data || []).map(x => [x.clave, x.valor]));
+  $('#undTit').innerHTML = Object.entries(UND_DEF).map(([r, def]) => `<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:800;color:var(--mute)">UNIDAD ${r}<input data-u="${r}" value="${esc(m['TituloUnidad' + r] || '')}" placeholder="${esc(def)}" maxlength="80" style="font-size:14px;padding:8px;border-radius:10px;border:2px solid var(--line);color:var(--ink)"></label>`).join('');
+  document.querySelectorAll('#undTit [data-u]').forEach(el => el.onchange = async () => {
+    const clave = 'TituloUnidad' + el.dataset.u, v = el.value.trim();
+    const { error } = v ? await sb.from('config').upsert({ clave, valor: v, descripcion: 'Título de la Unidad ' + el.dataset.u }, { onConflict: 'clave' }) : await sb.from('config').delete().eq('clave', clave);
+    if (error) { toast('No se guardó: ' + error.message, true); return; }
+    toast(v ? `Unidad ${el.dataset.u}: ${v}` : `Unidad ${el.dataset.u}: vuelve al título del sílabo`);
+  });
+}
 async function cargarSemanas() {
+  cargarUnidades();
   const [{ data, error }, { data: usadas }] = await Promise.all([sb.from('semanas').select('*').order('semana'), sb.from('sesiones').select('semana')]);
   if (error) { $('#semanas').innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
   SEMS = data || []; const ini = new Set((usadas || []).map(x => x.semana));
