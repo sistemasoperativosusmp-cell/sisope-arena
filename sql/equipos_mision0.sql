@@ -244,3 +244,8 @@ select * from (values
   ('perfil', 15, 'Prefiero trabajar en segundo plano y que otro presente.', null, null, '{"com":-1}')
 ) as v(parte, orden, texto, opciones, correcta, pesos)
 where not exists (select 1 from public.eq_preguntas);
+
+-- 10) Acceso de la app a las tablas (la seguridad real la ponen las políticas RLS de arriba: solo la docente)
+grant select, insert, update, delete on public.eq_preguntas, public.eq_perfil, public.eq_reportes, public.eq_penalidades, public.eq_cambios_rol to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+notify pgrst, 'reload schema';
