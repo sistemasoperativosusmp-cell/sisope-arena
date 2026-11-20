@@ -303,8 +303,8 @@ nav.menu a.on{color:#fff}
 .phead>div{flex:1 1 auto;min-width:0}.phead .niv.big{flex:0 0 auto;width:auto}
 /* Ajustes */
 .subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.subtabs button{border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 16px;font-weight:800;cursor:pointer;color:var(--ink)}
-.subtabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}.subtabs button.peligro.on{background:#c23030;border-color:#c23030}
+.subtabs button,.subtabs a.stb{text-decoration:none;display:inline-block;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 16px;font-weight:800;cursor:pointer;color:var(--ink)}
+.subtabs button.on,.subtabs a.stb.on{background:var(--navy);border-color:var(--navy);color:#fff}.subtabs button.peligro.on{background:#c23030;border-color:#c23030}
 .aj h2{font-size:12px}.ajhead{display:flex;justify-content:space-between;align-items:center}
 .ajform{display:grid;grid-template-columns:1.2fr 1.5fr 1.1fr 1fr 1fr auto;gap:8px}
 .ajform.etq{grid-template-columns:80px 1fr 160px auto;max-width:640px}

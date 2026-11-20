@@ -4,9 +4,10 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Equipos</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191929">
+<link rel="stylesheet" href="assets/app.css?v=202611191935">
 <style>
 main{display:flex;flex-direction:column;gap:20px}
+main>.subtabs{margin-bottom:-6px}
 .card h2{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .cnt3{font-family:Nunito,sans-serif;font-size:13px;font-weight:800;color:var(--mute)}
 .estado{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
@@ -62,7 +63,18 @@ details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
 </header>
 <nav class="tabs" id="nav"></nav>
 <main>
-  <div class="help" style="margin:0"><a href="ajustes.html">⚙ Ajustes</a> › <b>🛡 Equipos</b></div>
+  <div class="subtabs">
+    <a href="ajustes.html#secciones" class="stb">🏫 Secciones</a>
+    <a href="ajustes.html#alumnos" class="stb">👥 Alumnos y alias</a>
+    <a href="equipo.html" class="stb on">🛡 Equipos</a>
+    <a href="ajustes.html#semanas" class="stb">📅 Semanas y temas</a>
+    <a href="ajustes.html#puntajes" class="stb">⚙ Puntajes y reglas</a>
+    <a href="ajustes.html#etiquetas" class="stb">🏷 Etiquetas</a>
+    <a href="ajustes.html#enlaces" class="stb">🔗 Enlaces</a>
+    <a href="ajustes.html#memoria" class="stb">🧠 Memoria Técnica</a>
+    <a href="ajustes.html#seguridad" class="stb">🔒 Seguridad</a>
+    <a href="ajustes.html#semestre" class="stb peligro">🧹 Nuevo semestre</a>
+  </div>
   <!-- 1 · Estado de la Misión 0 -->
   <section class="card">
     <h2 class="pix">1 · MISIÓN 0: RECLUTAMIENTO <span class="cnt3">Enlace para los alumnos: <a id="lnkEval" href="evaluacion.html" target="_blank">evaluacion.html</a></span></h2>
@@ -109,9 +121,9 @@ details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191929"></script>
-<script src="assets/comun.js?v=202611191929"></script>
-<script src="assets/armado.js?v=202611191929"></script>
+<script src="assets/config.js?v=202611191935"></script>
+<script src="assets/comun.js?v=202611191935"></script>
+<script src="assets/armado.js?v=202611191935"></script>
 <script>
 let AL = [], PERF = {}, EQ = [], REP = [], PEN = {}, PROP = [], NOMBRES = [];
 const PENAS = ['Sustentación individual', 'Trabajo adicional', 'Examen individual'];

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191929">
+<link rel="stylesheet" href="assets/app.css?v=202611191935">
 </head>
 <body>
 <header class="top">
@@ -15,16 +15,16 @@
 <nav class="tabs" id="nav"></nav>
 <main>
   <div class="subtabs">
-    <button data-s="sSecc">🏫 Secciones</button>
-    <button data-s="sAlumnos" class="on">👥 Alumnos y alias</button>
+    <button data-s="sSecc" data-h="secciones">🏫 Secciones</button>
+    <button data-s="sAlumnos" data-h="alumnos" class="on">👥 Alumnos y alias</button>
     <button onclick="location.href='equipo.html'" title="Misión 0, armado de consultoras, roles, reportes y strikes">🛡 Equipos</button>
     <button data-s="sSemanas" data-h="semanas">📅 Semanas y temas</button>
-    <button data-s="sConfig">⚙ Puntajes y reglas</button>
-    <button data-s="sEtq">🏷 Etiquetas</button>
-    <button data-s="sEnl">🔗 Enlaces</button>
+    <button data-s="sConfig" data-h="puntajes">⚙ Puntajes y reglas</button>
+    <button data-s="sEtq" data-h="etiquetas">🏷 Etiquetas</button>
+    <button data-s="sEnl" data-h="enlaces">🔗 Enlaces</button>
     <button data-s="sMem" data-h="memoria">🧠 Memoria Técnica</button>
-    <button data-s="sSeg">🔒 Seguridad</button>
-    <button data-s="sSem" class="peligro">🧹 Nuevo semestre</button>
+    <button data-s="sSeg" data-h="seguridad">🔒 Seguridad</button>
+    <button data-s="sSem" data-h="semestre" class="peligro">🧹 Nuevo semestre</button>
   </div>
 
   <!-- SECCIONES -->
@@ -134,8 +134,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191929"></script>
-<script src="assets/comun.js?v=202611191929"></script>
+<script src="assets/config.js?v=202611191935"></script>
+<script src="assets/comun.js?v=202611191935"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -547,7 +547,7 @@ async function borrarTodo() {
   $('#conf').value = ''; $('#btnBorrar').disabled = true; toast(data || 'Listo: semestre reiniciado'); await cargarAl();
 }
 
-document.querySelectorAll('.subtabs button[data-s]').forEach(b => b.onclick = () => { document.querySelectorAll('.subtabs button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('section.aj').forEach(s => s.classList.toggle('hide', s.id !== b.dataset.s)); });
+document.querySelectorAll('.subtabs button[data-s]').forEach(b => b.onclick = () => { if (b.dataset.h) history.replaceState(null, '', '#' + b.dataset.h); document.querySelectorAll('.subtabs button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('section.aj').forEach(s => s.classList.toggle('hide', s.id !== b.dataset.s)); });
 { const h = location.hash.slice(1); const b = h && document.querySelector(`.subtabs button[data-h="${h}"]`); if (b) b.click(); }
 $('#buscar').oninput = pintarAl; $('#verInact').onchange = pintarAl;
 iniciar();
