@@ -92,3 +92,12 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 
 // Roles de la consultora (deben coincidir con los pesos de las preguntas en eq_preguntas)
 const ROLES_EQUIPO = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
+
+// Pie de página en todas las páginas
+function pintarPie() {
+  if (document.getElementById('pie')) return;
+  const f = document.createElement('footer'); f.id = 'pie'; f.className = 'pie';
+  f.innerHTML = `© ${new Date().getFullYear()} Sistemas Operativos - Deltatorre · Todos los derechos reservados`;
+  document.body.appendChild(f);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pintarPie); else pintarPie();

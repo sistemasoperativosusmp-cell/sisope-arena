@@ -648,3 +648,8 @@ body:not(.arena) .top{background:var(--usmp-azul);border-bottom:4px solid var(--
 body:not(.arena) nav.menu a.on{background:var(--usmp-azul)!important;border-color:var(--usmp-azul)!important;color:#fff!important;box-shadow:inset 0 -3px 0 var(--usmp-rojo)}
 body:not(.arena) nav.menu a:hover:not(.on){border-color:var(--usmp-azul);color:var(--usmp-azul)}
 body:not(.arena) nav.tabs .mgt{color:var(--usmp-rojo)}
+
+/* Pie de página */
+.pie{text-align:center;font-size:12px;font-weight:700;color:var(--mute);padding:22px 16px 26px;letter-spacing:.2px}
+body.arena .pie{color:#8fa0bf}
+.login ~ .pie{position:fixed;left:0;right:0;bottom:0;padding:10px;color:#8fa0bf}
