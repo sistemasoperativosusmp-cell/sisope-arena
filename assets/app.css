@@ -640,3 +640,11 @@ html:has(body.arena),html:has(.login){background:#050807}body.arena{min-height:1
 .chip.Escapo{background:#ffd9b8;border-color:#e2741c;color:#5a2a00}
 #bEsc.on{background:#e2741c;border-color:#e2741c;color:#fff}
 .astrip span.es{background:#e2741c;color:#fff}
+
+/* ===== Portal docente con los colores institucionales USMP (azul marino y rojo) =====
+   Para ajustar a los códigos exactos del manual de marca, cambia solo estas dos variables. */
+body:not(.arena){--usmp-azul:#0b2559;--usmp-rojo:#c8102e;--navy:var(--usmp-azul);--red:var(--usmp-rojo)}
+body:not(.arena) .top{background:var(--usmp-azul);border-bottom:4px solid var(--usmp-rojo)}
+body:not(.arena) nav.menu a.on{background:var(--usmp-azul)!important;border-color:var(--usmp-azul)!important;color:#fff!important;box-shadow:inset 0 -3px 0 var(--usmp-rojo)}
+body:not(.arena) nav.menu a:hover:not(.on){border-color:var(--usmp-azul);color:var(--usmp-azul)}
+body:not(.arena) nav.tabs .mgt{color:var(--usmp-rojo)}
