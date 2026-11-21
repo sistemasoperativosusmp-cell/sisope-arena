@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611191945">
+<link rel="stylesheet" href="assets/app.css?v=202611210623">
 <style>
 .evo{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .evo0{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
@@ -24,6 +24,13 @@
 .vdt.ok{background:#e3f5dc;color:#24600f}.vdt.sube{background:#e3ecff;color:#1d4fb0}.vdt.mal{background:#fde8e8;color:#a02424}.vdt.pend{background:#eef1f7;color:var(--mute)}
 .meta3{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 12px}.meta3 div{background:#f7f8fc;border:2px solid var(--line);border-radius:12px;padding:8px 14px;font-weight:800}.meta3 b{font-size:22px;display:block}
 .avciclo{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12px;font-weight:800;color:var(--mute);margin:2px 0 10px}.avciclo b{color:#6f3cc3}
+.m0g{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.m0k{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}.m0k b{font-size:26px;color:var(--navy)}.m0k span{font-size:12px;font-weight:800;color:var(--mute)}
+.m0l{font-size:12px;font-weight:800;color:var(--mute);margin:10px 0 5px}
+.m0t{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px;margin:0 5px 5px 0;cursor:help}
+.m0t.ok{background:#e3f5dc;color:#24600f}.m0t.mal{background:#fde8e8;color:#a02424}.m0t.nose{background:#fff1c2;color:#7a5a00}
+.m0af{display:grid;grid-template-columns:170px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:12px;font-weight:700;margin-bottom:5px}.m0af b{text-align:right}.m0af .ubar i{background:#9aa6c5}.m0af.yo{color:var(--navy)}.m0af.yo .ubar i{background:var(--navy)}
+@media(max-width:900px){.m0g{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -64,18 +71,22 @@
   </div></section>
 </main>
 <div class="tip hide" id="tip"></div>
+<div class="modal hide" id="mPrompt" onclick="if (event.target === this) this.classList.add('hide')"><div class="box plain det"><div class="dethead"><div><h2 class="pix" style="color:var(--navy);text-align:left">🤖 PROMPT PARA IA</h2><div class="sub" id="mPromptAl" style="text-align:left"></div></div><button class="sbtn" onclick="$('#mPrompt').classList.add('hide')">✕ Cerrar</button></div>
+  <p class="help" style="margin:0;align-self:flex-start">Copia este texto y pégalo en Claude (u otra IA). Usa el <b>alias</b> del alumno y no su nombre real ni su correo. Puedes editarlo antes de copiar.</p>
+  <textarea id="mPromptTxt" style="width:100%;min-height:420px;font-family:ui-monospace,monospace;font-size:12.5px;border:2px solid var(--line);border-radius:12px;padding:12px;box-sizing:border-box"></textarea>
+  <button class="btn green" onclick="copiarPrompt()" style="align-self:flex-end">📋 Copiar prompt</button></div></div>
 <div class="modal hide" id="mSeg" onclick="if (event.target === this) this.classList.add('hide')"><div class="box plain det"><div class="dethead"><h2 class="pix" style="color:var(--navy)">SEGUIMIENTO DESDE LA MISIÓN 0</h2><button class="sbtn" onclick="$('#mSeg').classList.add('hide')">✕ Cerrar</button></div><div id="mSegCuerpo" style="width:100%"></div></div></div>
 <div class="modal hide" id="mIns" onclick="if (event.target === this) cerrarIns()"><div class="box plain det"><div class="dethead"><h2 class="pix" style="color:var(--navy)">INSIGNIAS DEL AULA</h2><button class="sbtn" onclick="cerrarIns()">✕ Cerrar</button></div><div id="mInsCuerpo" style="width:100%"></div></div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611191945"></script>
-<script src="assets/insignias.js?v=202611191945"></script>
-<script src="assets/comun.js?v=202611191945"></script>
+<script src="assets/config.js?v=202611210623"></script>
+<script src="assets/insignias.js?v=202611210623"></script>
+<script src="assets/comun.js?v=202611210623"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
 const VOZ_GR = { 'Lideró': 3, 'Apoyó': 2, 'Habló': 1, 'Intentando': 0.5 };
-let SOLOFB = false, FB = {}, RANK = {}, RCONS = [], M0 = {}, STK = {};
+let SOLOFB = false, FB = {}, RANK = {}, RCONS = [], M0 = {}, STK = {}, EQP = [];
 let FILP = '', J = [], DET = [], NOT = {}, OBS = [], ETQ = {}, SEMS = {}, CFG = {}, ACT = 1, FIL = '', SEL = null, RES = {};
 const n = v => Number(v || 0), r1 = v => String(Math.round(v * 10) / 10), r2 = v => (Math.round(v * 100) / 100).toFixed(2);
 
@@ -95,8 +106,11 @@ async function iniciar() {
     sb.from('feedback').select('jugador_id, creado, semana, visible_alumno, jugadores!inner(seccion_id)').eq('jugadores.seccion_id', SECC.id).order('creado', { ascending: false })
   ]);
   const [rk, rc, m0, st] = await Promise.all([sb.from('v_ranking').select('*').eq('seccion_id', SECC.id), sb.from('v_ranking_consultoras').select('*').eq('seccion_id', SECC.id),
-    sb.from('eq_perfil').select('jugador_id, tecnico, comunicacion, afinidad, modo_elegido, intentos_escape, enviado'), sb.from('eq_reportes').select('reportado_id, semana').eq('estado', 'Validado')]);
+    sb.from('eq_perfil').select('jugador_id, tecnico, comunicacion, afinidad, respuestas, modo_elegido, intentos_escape, enviado'), sb.from('eq_reportes').select('reportado_id, semana').eq('estado', 'Validado')]);
   M0 = m0.error ? {} : Object.fromEntries((m0.data || []).map(x => [x.jugador_id, x]));
+  { let r = await sb.from('eq_preguntas').select('id, parte, orden, texto, opciones, correcta, tema').eq('activa', true).order('orden');
+    if (r.error && /tema/.test(r.error.message)) r = await sb.from('eq_preguntas').select('id, parte, orden, texto, opciones, correcta').eq('activa', true).order('orden');
+    EQP = r.error ? [] : (r.data || []).filter(q => q.parte === 'tecnica'); }
   STK = {}; if (!st.error) (st.data || []).forEach(r => (STK[r.reportado_id] = STK[r.reportado_id] || []).push(r.semana));
   RANK = Object.fromEntries((rk.data || []).map(x => [x.alias, x])); RCONS = rc.data || [];
   FB = {}; (q[7].data || []).forEach(f => (FB[f.jugador_id] = FB[f.jugador_id] || []).push(f));
@@ -230,6 +244,91 @@ function necesitaFb(x) {
   if (!mot.length && !ult && ACT >= 4) mot.push(['mid', 'Aún no recibe ningún feedback en el ciclo']);
   return { mot, ult, dias };
 }
+// ---------- Resultado de la Misión 0 (examen de entrada): fortalezas y debilidades por tema ----------
+const temaQ = q => (q.tema || '').trim() || q.texto;
+function m0Detalle(id) {
+  const m = M0[id]; if (!m) return null;
+  const r = m.respuestas || {}, hay = Object.keys(r).length > 0;
+  const items = EQP.map(q => { const v = r[q.id] ?? r[String(q.id)]; const est = v === undefined || v === null ? 'sin' : Number(v) === -1 ? 'nose' : Number(v) === Number(q.correcta) ? 'ok' : 'mal'; return { q, est, v }; });
+  const af = Object.entries(m.afinidad || {}).sort((a, b) => b[1] - a[1]);
+  return { m, hay, items, ok: items.filter(i => i.est === 'ok'), mal: items.filter(i => i.est === 'mal'), nose: items.filter(i => i.est === 'nose'), af };
+}
+function m0HTML(x) {
+  const d = m0Detalle(x.j.id);
+  if (!d) return `<div class="pbox ancho2"><h4>🎖️ Misión 0 · examen de entrada</h4><div class="vac2">Aún no rinde la Misión 0. Aparece en <a href="equipo.html">Ajustes → Equipos</a> como pendiente.</div></div>`;
+  const com = Number(d.m.comunicacion), rol = x.j.rol_consultora;
+  const chip = (i, cls) => `<span class="m0t ${cls}" title="${esc(i.q.texto)}${i.est === 'mal' && i.q.opciones ? '\nRespondió: ' + esc(i.q.opciones[i.v] ?? '—') + '\nCorrecta: ' + esc(i.q.opciones[i.q.correcta] ?? '—') : ''}">${esc(temaQ(i.q))}</span>`;
+  return `<div class="pbox ancho2"><h4>🎖️ Misión 0 · examen de entrada <small>(${new Date(d.m.enviado).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })} · pasa el mouse por un tema para ver la pregunta)</small></h4>
+    <div class="m0g">
+      <div><div class="m0k"><b>${Math.round(d.m.tecnico)}%</b><span>diagnóstico técnico</span></div>
+        ${d.hay ? `<div class="m0l">💪 Domina (${d.ok.length})</div><div>${d.ok.map(i => chip(i, 'ok')).join('') || '<span class="vac2">—</span>'}</div>
+        <div class="m0l">⚠️ Debilidades: respondió mal (${d.mal.length})</div><div>${d.mal.map(i => chip(i, 'mal')).join('') || '<span class="vac2">Ninguna 🎉</span>'}</div>
+        <div class="m0l">🤷 Marcó "No lo sé" (${d.nose.length})</div><div>${d.nose.map(i => chip(i, 'nose')).join('') || '<span class="vac2">—</span>'}</div>` : '<div class="vac2">No hay detalle por pregunta (evaluación cargada sin respuestas, por ejemplo un alumno demo).</div>'}</div>
+      <div><div class="m0k"><b>${Math.round(com)}%</b><span>comunicación · ${com <= 33 ? '🤫 reservado' : com >= 67 ? '🗣 le gusta hablar' : '💬 intermedio'}</span></div>
+        <div class="m0l">Afinidad por rol${rol ? ` · asignado: <b>${esc(rol)}</b>` : ''}</div>
+        ${d.af.map(([r, v]) => `<div class="m0af ${r === rol ? 'yo' : ''}"><span>${esc(r)}</span><div class="ubar"><i style="width:${Math.round(v)}%"></i></div><b>${Math.round(v)}%</b></div>`).join('') || '<div class="vac2">—</div>'}
+        <div class="m0l">${Number(d.m.intentos_escape) ? `🫠 Intentó escapar del Modo Reto ${d.m.intentos_escape} ${Number(d.m.intentos_escape) === 1 ? 'vez' : 'veces'}` : '😈 Eligió el Modo Reto a la primera'}</div></div>
+    </div></div>`;
+}
+// ---------- Prompt para analizar al alumno con una IA (usa el alias, no el nombre real) ----------
+function promptAlumno(x) {
+  const d = m0Detalle(x.j.id), nt = x.nt || {}, r2s = v => v === null || v === undefined ? '—' : Number(v).toFixed(2);
+  const etq = OBS.filter(o => o.jugador_id === x.j.id && (o.etiquetas || []).length).sort((a, b) => a.semana - b.semana).map(o => `S${o.semana}: ${o.etiquetas.join(', ')}`);
+  const comp = COMP.map(([k, t]) => `- ${k} ${t}: ${x.comp[k] === null ? 'sin datos' : Math.round(x.comp[k] * 100) + '% (' + nivelLogro(x.comp[k])[0] + ')'}`).join('\n');
+  const und = UNIDADES.map(([p, r], i) => `- Unidad ${r} (${tituloU(r)}): ${x.und[i] === null ? 'aún no inicia' : (x.und[i] * 20).toFixed(2) + '/20'}`).join('\n');
+  const sem = x.sem.map(e => `S${e.s}: ${r1(e.t)} pts (clase ${r1(e.cl)}), voz ${r1(e.v)}${e.as !== 'Presente' ? ', ' + e.as.toLowerCase() : ''}`).join(' · ');
+  const e = x.evo;
+  return `Actúa como un docente universitario experto en Sistemas Operativos, Infraestructura TI y Cloud (Azure), y en pedagogía para estudiantes de Ingeniería de Computación y Sistemas.
+
+Analiza el desempeño de este estudiante del curso Sistemas Operativos y Plataformas (USMP) a partir de los datos de la plataforma SISOPE Arena. Ciclo de 14 semanas; vamos en la semana ${ACT}.
+
+ESTUDIANTE: ${x.j.alias} (alias)${x.j.consultora ? ' · equipo: ' + x.j.consultora : ''}${x.j.rol_consultora ? ' · rol: ' + x.j.rol_consultora : ''}
+
+1) EXAMEN DE ENTRADA (Misión 0)
+${d ? `- Diagnóstico técnico: ${Math.round(d.m.tecnico)}%
+- Comunicación (autoevaluación): ${Math.round(d.m.comunicacion)}% (${Number(d.m.comunicacion) <= 33 ? 'reservado' : Number(d.m.comunicacion) >= 67 ? 'le gusta hablar' : 'intermedio'})
+${d.hay ? `- Domina: ${d.ok.map(i => temaQ(i.q)).join('; ') || 'ninguno'}
+- Respondió mal: ${d.mal.map(i => temaQ(i.q)).join('; ') || 'ninguno'}
+- No sabía: ${d.nose.map(i => temaQ(i.q)).join('; ') || 'ninguno'}` : '- Sin detalle por pregunta'}
+- Afinidad por rol: ${d.af.map(([r, v]) => r + ' ' + Math.round(v) + '%').join(', ')}
+- Modo Reto: ${Number(d.m.intentos_escape) ? 'intentó evitarlo ' + d.m.intentos_escape + (Number(d.m.intentos_escape) === 1 ? ' vez' : ' veces') : 'lo eligió a la primera'}` : '- No rindió la Misión 0'}
+
+2) NOTAS
+- Prácticas: P1 ${r2s(nt.p1)} · P2 ${r2s(nt.p2)} · P3 ${r2s(nt.p3)} · P4 ${r2s(nt.p4)} · promedio PE ${r2s(nt.pe)}
+- Parcial: ${r2s(nt.ep_final ?? nt.ep)} · Final: ${r2s(nt.ef_final ?? nt.ef)} · Promedio final actual: ${r2s(nt.pf)} · Condición: ${nt.condicion || '—'}${nt.condicion && nt.condicion !== 'APROBADO' ? ' · necesita ' + r2s(nt.ef_minimo) + ' en el examen final' : ''}
+
+3) LOGRO POR UNIDAD
+${und}
+
+4) COMPETENCIAS DEL SÍLABO Y OBJETIVOS FORMATIVOS (meta 70%)
+${comp}
+
+5) PARTICIPACIÓN Y CONDUCTA
+- Rendimiento vs. promedio de la clase: ${Math.round(x.rend * 100)}%
+- Asistencia: ${x.sem.length ? Math.round(100 * x.sem.filter(s => s.as !== 'Ausente').length / x.sem.length) : 0}% · ausencias ${x.aus} · semanas sin hablar ${x.silencio}
+- Labs no cumplidos: ${x.labNo} · faltas en el grupal: ${x.faltas} · strikes de su equipo: ${e.stk}
+- Voz en clase: primeras semanas ${v1(e.vIni)} → últimas ${v1(e.vFin)} por clase (${e.habla[1]})
+- Compromiso: primeras semanas ${pc(e.cIni)} → últimas ${pc(e.cFin)} (${e.trab[1]})
+- Por semana: ${sem || 'sin datos'}
+- Etiquetas de la docente: ${etq.join(' · ') || 'ninguna'}
+- Perfil observado: ${x.perfiles.map(p => PERF[p.k][1] + ' (' + p.txt + ')').join('; ') || 'sin rasgos marcados'}
+- Alertas: ${x.al.map(a => a[1]).join('; ') || 'ninguna'} · Nivel: ${x.nivel}
+
+QUÉ NECESITO
+1. Diagnóstico breve: fortalezas y debilidades técnicas y blandas, conectando el examen de entrada con su desempeño actual.
+2. Riesgo académico y su causa más probable (separa hechos de suposiciones).
+3. Plan de mejora para las semanas que quedan: 3 a 5 acciones concretas (temas a reforzar, laboratorios, rol en el equipo, cómo hacerlo participar).
+4. Un mensaje de feedback para el estudiante: motivador, honesto, de máximo 120 palabras, en segunda persona.
+5. Qué debería observar yo en las próximas 2 clases para confirmar el diagnóstico.`;
+}
+function verPrompt() {
+  const x = RES[SEL]; if (!x) return;
+  $('#mPromptTxt').value = promptAlumno(x); $('#mPromptAl').textContent = x.j.nombre + ' · ' + x.j.alias; $('#mPrompt').classList.remove('hide');
+}
+async function copiarPrompt() {
+  try { await navigator.clipboard.writeText($('#mPromptTxt').value); toast('Prompt copiado: pégalo en Claude u otra IA'); } catch (e) { $('#mPromptTxt').select(); document.execCommand('copy'); toast('Prompt copiado'); }
+}
+
 // ---------- Evolución desde la Misión 0: ¿el tímido ya habla? ¿el flojo ya trabaja? ----------
 // Compara sus primeras 3 semanas de clase con las últimas 3. El punto de partida de comunicación es su autoevaluación en la Misión 0.
 function evolucion(x, fs) {
@@ -336,10 +435,11 @@ async function elegir(id) {
   const asis = x.sem.length ? Math.round(100 * x.sem.filter(s => s.as !== 'Ausente').length / x.sem.length) : 0;
   const etq = OBS.filter(o => o.jugador_id === id && (o.etiquetas || []).length).sort((a, b) => a.semana - b.semana);
   $('#panel').innerHTML = `
-    <div class="phead"><div><div class="nom2">${esc(j.nombre)}</div><div class="sub2">${esc(j.alias)}${j.consultora ? ' · ' + esc(j.consultora) : ''}${j.rol_consultora ? ' · ' + esc(j.rol_consultora) : ''}</div></div><span class="niv big ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span></div>
+    <div class="phead"><div><div class="nom2">${esc(j.nombre)}</div><div class="sub2">${esc(j.alias)}${j.consultora ? ' · ' + esc(j.consultora) : ''}${j.rol_consultora ? ' · ' + esc(j.rol_consultora) : ''}</div></div><span style="display:flex;gap:8px;align-items:center"><button class="sbtn" onclick="verPrompt()" title="Arma un texto con los datos del alumno para pedirle a una IA un análisis y un plan">🤖 Prompt para IA</button><span class="niv big ${NIV[x.nivel][0]}">${NIV[x.nivel][1]} ${x.nivel}</span></span></div>
     ${x.al.length ? `<div class="alertas">${x.al.map(a => `<span><b>+${a[0]}</b> ${esc(a[1])}</span>`).join('')}</div>` : '<div class="alertas ok"><span>Sin alertas: va bien.</span></div>'}
     ${x.fb?.mot.length ? `<div class="fbrec"><span class="fbico">💬</span><div><b>Te recomendamos darle feedback</b>${x.fb.mot.map(m => `<small class="m-${m[0]}">• ${esc(m[1])}</small>`).join('')}<small class="gris2">${x.fb.ult ? `Último feedback: hace ${x.fb.dias} día(s).` : 'Todavía no le has dado feedback.'} Puedes marcarlo como visible para que lo lea en su perfil.</small></div><button class="btn green" onclick="irFeedback()">✍️ Escribir feedback</button></div>` : ''}
     <div class="perfil">${x.perfiles.length || cartasEtq(x).length ? x.perfiles.map(p => `<div class="pfc ${PERF[p.k][2]}"><div class="pft">${PERF[p.k][0]} <b>${esc(PERF[p.k][1])}</b><small>${esc(p.txt)}</small></div><div class="pfa">💡 ${esc(PERF[p.k][3])}</div></div>`).join('') + cartasEtq(x).join('') : '<div class="vac2">Sin rasgos marcados todavía (se calculan con más semanas de datos).</div>'}</div>
+    ${m0HTML(x)}
     ${evoHTML(x)}
     <div class="kpis">
       ${kpi('PE (prácticas)', r2(nt.pe ?? 0), '/ 20')}${kpi('PF actual', r2(nt.pf ?? 0), nt.condicion || '')}${kpi('EF mínimo', nt.condicion === 'APROBADO' ? '—' : Number(nt.ef_minimo) > 20 ? '> 20' : r2(nt.ef_minimo ?? 0), 'para aprobar')}
