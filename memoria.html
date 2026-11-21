@@ -67,6 +67,14 @@ textarea{width:100%;height:220px;background:#0a1426;color:var(--tx);border:1px s
 .tr .pt{font-weight:700;color:var(--gold)}.tr small{display:block;color:var(--mu);font-size:10.5px;font-weight:400}
 .nota{font-size:11.5px;color:var(--mu);line-height:1.45;margin-top:10px}
 .gain{font-size:30px;text-align:center;color:var(--gold);font-family:'Space Grotesk',sans-serif;font-weight:700;margin:6px 0}
+.sug{margin-top:14px;border-top:1px solid var(--ln);padding-top:12px}
+.sug textarea{height:70px;font-family:Inter,system-ui,sans-serif;font-size:13px}
+.sugacc{display:flex;justify-content:space-between;align-items:center;margin:6px 0 10px}.sugacc small{color:var(--mu);font-size:11px}
+.sgi{background:var(--p2);border:1px solid var(--ln);border-radius:10px;padding:9px 10px;margin-bottom:8px;font-size:13px;line-height:1.4}
+.sgi.oc{opacity:.5}.sgi .sgm{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;font-size:11px;color:var(--mu)}
+.sgi .vt{background:var(--p);border:1px solid var(--ln);color:var(--tx);border-radius:999px;padding:3px 9px;font-size:12px}.sgi .vt.on{border-color:var(--gold);color:var(--gold)}
+.sgi .rsp{margin-top:7px;padding:7px 9px;border-left:3px solid var(--ok);background:#0d2a22;border-radius:6px;font-size:12.5px}
+.sgi .mod{background:none;border:1px solid var(--ln);color:var(--mu);border-radius:7px;padding:2px 7px;font-size:11px}
 @media(max-width:900px){.lay{grid-template-columns:1fr}.side{position:static}}
 @media(max-width:600px){#grid{grid-template-columns:repeat(3,1fr);gap:7px}.card{height:118px}.b.term .txt{font-size:15px}.b.def .txt{font-size:11px}.f{font-size:24px}}
 </style>
@@ -93,6 +101,12 @@ textarea{width:100%;height:220px;background:#0a1426;color:var(--tx);border:1px s
       <div id="top"><div class="nota">Cargando…</div></div>
       <p class="nota">📅 Cada semana de clase se desbloquean nuevos términos del curso.</p>
       <p class="nota">Suman puntos solo las partidas en modo <b>Individual</b> con los mazos del curso. El duelo y “Mis términos” son de práctica.<br>Puntos = 10 × pares + precisión + mejor racha + rapidez.</p>
+      <div class="sug">
+        <h3>💬 Sugerencias anónimas</h3>
+        <p class="nota" id="sugAyuda">¿Cómo mejorarías este juego? Tu sugerencia se publica <b>sin tu nombre</b> para tu aula. Apoya las que te gusten con 👍.</p>
+        <div id="sugForm"><textarea id="sugTxt" maxlength="300" placeholder="Ej.: un mazo solo de comandos de PowerShell"></textarea><div class="sugacc"><small id="sugCnt">0/300</small><button class="btn pri" id="sugBtn">Enviar</button></div></div>
+        <div id="sugLista"><div class="nota">Cargando…</div></div>
+      </div>
     </aside>
   </div>
 </div>
@@ -100,7 +114,7 @@ textarea{width:100%;height:220px;background:#0a1426;color:var(--tx);border:1px s
 <div id="toast"></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611211205"></script>
+<script src="assets/config.js?v=202611211242"></script>
 <script>
 document.getElementById('anio').textContent = new Date().getFullYear();
 const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, window.SISOPE_CONFIG.SUPABASE_KEY);
@@ -272,6 +286,7 @@ $('per').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
   if(!data.session){location.replace('index.html');return;}
   const {data:yo}=await sb.from('jugadores').select('alias, seccion_id').eq('correo',data.session.user.email.toLowerCase()).maybeSingle();
   YO=yo;cargarTop();
+  {const {data:d}=await sb.rpc('es_docente');DOC=d===true;}cargarSug();
   await cargarMazos();
 })();
 // ---------- Mazos del curso desde Supabase (la docente los administra en Ajustes → Memoria Técnica) ----------
@@ -292,6 +307,35 @@ async function cargarMazos(){
   DECKS=D;fillDecks();if(D.sem)$('deck').value='sem';
   start();
 }
+// ---------- Sugerencias anónimas del juego ----------
+let DOC=false;const JUEGO='memoria';
+const hace=t=>{const m=(Date.now()-new Date(t))/6e4;return m<60?`hace ${Math.max(1,Math.round(m))} min`:m<1440?`hace ${Math.round(m/60)} h`:`hace ${Math.round(m/1440)} d`;};
+async function cargarSug(){
+  if(DOC){$('sugForm').style.display='none';$('sugAyuda').innerHTML='Vista docente: ves las sugerencias de <b>todas tus aulas</b>, sin el nombre de quien escribió. Puedes responder, ocultar o borrar.';}
+  else if(!YO){$('sugForm').style.display='none';}
+  const {data,error}=await sb.rpc('sugerencias_juego',{p_juego:JUEGO});
+  if(error){$('sugLista').innerHTML=`<div class="nota">${/schema cache|function/i.test(error.message)?'Las sugerencias aún no están activas. Avísale a tu docente.':esc(error.message)}</div>`;return;}
+  const L=data||[];
+  $('sugLista').innerHTML=L.length?L.map(x=>`<div class="sgi ${x.oculta?'oc':''}">${esc(x.texto)}
+    <div class="sgm">${DOC?`<span>👍 ${x.votos}</span>`:x.mia?`<span>👍 ${x.votos} · tuya</span>`:`<button class="vt ${x.mi_voto?'on':''}" onclick="votarSug(${x.id})">👍 ${x.mi_voto?'Me sumé':'Me sumo'} · ${x.votos}</button>`}<span>${hace(x.creado)}</span>${DOC&&x.aula?`<span>· ${esc(x.aula)}</span>`:''}${x.oculta?'<span>· oculta</span>':''}
+    ${DOC?`<button class="mod" onclick="modSug(${x.id},'responder')">💬 Responder</button><button class="mod" onclick="modSug(${x.id},'${x.oculta?'mostrar':'ocultar'}')">${x.oculta?'👁 Mostrar':'🙈 Ocultar'}</button><button class="mod" onclick="modSug(${x.id},'borrar')">🗑</button>`:''}</div>
+    ${x.respuesta?`<div class="rsp"><b>Docente:</b> ${esc(x.respuesta)}</div>`:''}</div>`).join(''):'<div class="nota">Aún no hay sugerencias. ¡Sé el primero!</div>';
+}
+async function votarSug(id){const {error}=await sb.rpc('votar_sugerencia',{p_id:id});if(error){toast(esc(error.message));return;}cargarSug();}
+async function modSug(id,acc){
+  let r=null;
+  if(acc==='responder'){r=prompt('Tu respuesta (la verán los alumnos de esa aula). Déjala vacía para quitarla:');if(r===null)return;}
+  if(acc==='borrar'&&!confirm('¿Borrar esta sugerencia?'))return;
+  const {error}=await sb.rpc('moderar_sugerencia',{p_id:id,p_accion:acc,p_respuesta:r});if(error){toast(esc(error.message));return;}cargarSug();
+}
+$('sugTxt').addEventListener('input',()=>{$('sugCnt').textContent=$('sugTxt').value.length+'/300';});
+$('sugBtn').onclick=async()=>{
+  const t=$('sugTxt').value.trim();if(t.length<5){toast('Escribe tu sugerencia (mínimo 5 caracteres)');return;}
+  $('sugBtn').disabled=true;const {error}=await sb.rpc('sugerir',{p_juego:JUEGO,p_texto:t});$('sugBtn').disabled=false;
+  if(error){toast(/schema cache|function/i.test(error.message)?'Las sugerencias aún no están activas. Avísale a tu docente.':esc(error.message));return;}
+  $('sugTxt').value='';$('sugCnt').textContent='0/300';toast('<b>¡Gracias!</b> Tu sugerencia se publicó sin tu nombre.');cargarSug();
+};
+
 let tt;function toast(h){const t=$('toast');t.innerHTML=h;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3800);}
 function modal(h){$('mbox').innerHTML=h;$('modal').style.display='flex';}
 function closeM(){$('modal').style.display='none';}
