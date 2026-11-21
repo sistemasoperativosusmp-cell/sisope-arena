@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611211249">
+<link rel="stylesheet" href="assets/app.css?v=202611211251">
 </head>
 <body>
 <header class="top">
@@ -23,6 +23,7 @@
     <button data-s="sEtq" data-h="etiquetas">🏷 Etiquetas</button>
     <button data-s="sEnl" data-h="enlaces">🔗 Enlaces</button>
     <button data-s="sMem" data-h="memoria">🧠 Memoria Técnica</button>
+    <button data-s="sPupi" data-h="pupiletras">🔎 Pupiletras</button>
     <button data-s="sSeg" data-h="seguridad">🔒 Seguridad</button>
     <button data-s="sSem" data-h="semestre" class="peligro">🧹 Nuevo semestre</button>
   </div>
@@ -94,6 +95,15 @@
   </section>
 
   <!-- MEMORIA TÉCNICA -->
+  <section class="card aj hide" id="sPupi">
+    <h2 class="pix">PUPILETRAS · TEMAS Y PALABRAS</h2>
+    <p class="help" style="margin-top:0">Cada tema tiene palabras <b>✅ correctas</b> (las que el alumno debe encontrar) e <b>🚫 intrusas</b> (escondidas pero que NO son del tema: si las marca, pierde puntos). Cada partida toma al azar hasta 8 correctas y 2 intrusas; un tema necesita al menos 3 correctas para aparecer en el juego. La <b>palabra en la sopa</b> va sin espacios ni símbolos (máx. 12 letras) y el <b>nombre a mostrar</b> es opcional (ej. HYPERV → “Hyper-V”). 💬 Las sugerencias anónimas del juego se leen y responden <a href="pupiletras.html" target="_blank">dentro del juego →</a></p>
+    <div class="pupi">
+      <div class="ptemas"><div id="pTemas"></div><div class="ajform" style="grid-template-columns:1fr auto;margin-top:8px"><input id="pNuevo" maxlength="60" placeholder="Nuevo tema (ej. Comandos Linux)"><button class="btn green" onclick="nuevoTema()">+ Tema</button></div></div>
+      <div class="ppal" id="pPanel"><div class="empty">Elige un tema.</div></div>
+    </div>
+  </section>
+
   <section class="card aj hide" id="sMem">
     <h2 class="pix">MEMORIA TÉCNICA · TÉRMINOS DEL JUEGO</h2>
     <p class="help" style="margin-top:0">💬 Los alumnos dejan <b>sugerencias anónimas</b> dentro del juego. <a href="memoria.html" target="_blank">Abrir el juego para leerlas y responderlas →</a></p>
@@ -135,8 +145,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611211249"></script>
-<script src="assets/comun.js?v=202611211249"></script>
+<script src="assets/config.js?v=202611211251"></script>
+<script src="assets/comun.js?v=202611211251"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -153,7 +163,7 @@ async function iniciar() {
   await cargarSeccion();
   $('#secNom').textContent = SECC ? SECC.nombre.toUpperCase() : 'SIN SECCIÓN'; document.querySelectorAll('.secNom').forEach(e => e.textContent = $('#secNom').textContent);
   await cargarEq();
-  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc(), cargarEnl(), cargarSemanas(), cargarMem()]); cargarIntentos();
+  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc(), cargarEnl(), cargarSemanas(), cargarMem(), cargarPupi()]); cargarIntentos();
 }
 
 // ---------- Alumnos ----------
@@ -483,6 +493,54 @@ async function borrarEnl(id) { if (!confirm('¿Borrar este enlace?')) return; co
 
 // ---------- Memoria Técnica ----------
 let MEM = [], MEMSEM = [];
+// ---------- Pupiletras: temas y palabras (correctas e intrusas) ----------
+let PT = [], PP = [], PSEL = null;
+const claveDe = w => String(w || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z]/g, '');
+async function cargarPupi() {
+  const [t, p] = await Promise.all([sb.from('pupi_temas').select('*').order('orden').order('id'), sb.from('pupi_palabras').select('*').order('intruso').order('id')]);
+  if (t.error) { $('#pTemas').innerHTML = `<div class="empty">${/does not exist|schema cache|relation/i.test(t.error.message) ? 'Falta ejecutar el script 38 en Supabase.' : esc(t.error.message)}</div>`; return; }
+  PT = t.data || []; PP = p.data || []; if (!PT.some(x => x.id === PSEL)) PSEL = PT[0]?.id ?? null; pintarPupi();
+}
+function pintarPupi() {
+  $('#pTemas').innerHTML = PT.map(t => { const c = PP.filter(p => p.tema_id === t.id && !p.intruso).length, x = PP.filter(p => p.tema_id === t.id && p.intruso).length;
+    return `<button class="ptema ${t.id === PSEL ? 'on' : ''} ${t.activo ? '' : 'off'}" onclick="PSEL=${t.id};pintarPupi()"><b>${esc(t.nombre)}</b><small>${c} correctas · ${x} intrusas${t.activo ? '' : ' · oculto'}${c < 3 ? ' · ⚠ faltan correctas' : ''}</small></button>`; }).join('') || '<div class="empty">Aún no hay temas.</div>';
+  const t = PT.find(x => x.id === PSEL); if (!t) { $('#pPanel').innerHTML = '<div class="empty">Crea un tema para empezar.</div>'; return; }
+  const ps = PP.filter(p => p.tema_id === t.id);
+  $('#pPanel').innerHTML = `<div class="ajform" style="grid-template-columns:1fr auto auto;align-items:center"><input value="${esc(t.nombre)}" maxlength="60" onchange="editTema(${t.id}, 'nombre', this.value)" title="Nombre del tema"><label class="help" style="margin:0;display:flex;gap:6px;align-items:center;white-space:nowrap"><input type="checkbox" ${t.activo ? 'checked' : ''} onchange="editTema(${t.id}, 'activo', this.checked)"> Visible en el juego</label><button class="sbtn" onclick="borrarTema(${t.id})">🗑 Borrar tema</button></div>
+    <div class="ajform" style="grid-template-columns:1fr 1fr 130px 2fr auto;margin-top:10px"><input id="pPal" maxlength="40" placeholder="Palabra en la sopa (ej. HYPERV)"><input id="pMos" maxlength="40" placeholder="Se muestra como (opcional)"><select id="pTipo"><option value="0">✅ Correcta</option><option value="1">🚫 Intrusa</option></select><input id="pExp" maxlength="200" placeholder="Explicación (qué es / por qué no va)"><button class="btn green" onclick="agregarPal()">+ Agregar</button></div>
+    <details class="imp"><summary>📋 Cargar varias a la vez</summary><p class="help">Una por línea: <b>Palabra | Explicación</b> (o pegadas desde Excel en dos columnas). Elige si son correctas o intrusas.</p>
+      <textarea id="pImp" rows="5" placeholder="VirtualBox | Hipervisor tipo 2 gratuito de Oracle"></textarea>
+      <div style="display:flex;gap:8px;align-items:center"><select id="pImpTipo"><option value="0">✅ Correctas</option><option value="1">🚫 Intrusas</option></select><button class="btn green" onclick="importarPal()">Importar</button></div></details>
+    <div class="altabla"><div class="pwr alc"><div>Palabra en la sopa</div><div>Se muestra como</div><div>Tipo</div><div>Explicación</div><div>Letras</div><div></div></div>
+      ${ps.map(p => `<div class="pwr ${p.intruso ? 'intr' : ''}"><input value="${esc(p.palabra)}" maxlength="40" onchange="editPal(${p.id}, 'palabra', this.value, this)"><input value="${esc(p.mostrar || '')}" maxlength="40" placeholder="—" onchange="editPal(${p.id}, 'mostrar', this.value, this)"><select onchange="editPal(${p.id}, 'intruso', this.value === '1', this)"><option value="0" ${p.intruso ? '' : 'selected'}>✅ Correcta</option><option value="1" ${p.intruso ? 'selected' : ''}>🚫 Intrusa</option></select><input value="${esc(p.explicacion || '')}" maxlength="200" onchange="editPal(${p.id}, 'explicacion', this.value, this)"><span class="${(p.clave || '').length > 12 ? 'mal' : ''}" title="${esc(p.clave)}">${(p.clave || '').length}</span><button class="sbtn mini" onclick="borrarPal(${p.id})">🗑</button></div>`).join('') || '<div class="empty">Este tema aún no tiene palabras.</div>'}</div>`;
+}
+async function nuevoTema() { const n = $('#pNuevo').value.trim(); if (n.length < 2) { toast('Escribe el nombre del tema', true); return; }
+  const { data, error } = await sb.from('pupi_temas').insert({ nombre: n, orden: PT.length + 1 }).select().single(); if (error) { toast('No se creó: ' + error.message, true); return; }
+  $('#pNuevo').value = ''; PSEL = data.id; toast(`Tema "${n}" creado: agrégale palabras`); cargarPupi(); }
+async function editTema(id, campo, valor) { const { error } = await sb.from('pupi_temas').update({ [campo]: typeof valor === 'string' ? valor.trim() : valor }).eq('id', id); if (error) { toast('No se guardó: ' + error.message, true); return; } toast('Guardado'); cargarPupi(); }
+async function borrarTema(id) { const t = PT.find(x => x.id === id); if (!confirm(`¿Borrar el tema "${t.nombre}" con todas sus palabras?`)) return; const { error } = await sb.from('pupi_temas').delete().eq('id', id); if (error) { toast('No se borró: ' + error.message, true); return; } PSEL = null; cargarPupi(); }
+function validaPal(w) { const k = claveDe(w); if (k.length < 2) return 'La palabra necesita al menos 2 letras'; if (k.length > 12) return `"${k}" tiene ${k.length} letras: máximo 12 para que quepa en la sopa`; return null; }
+async function agregarPal() {
+  const o = { tema_id: PSEL, palabra: $('#pPal').value.trim(), mostrar: $('#pMos').value.trim() || null, explicacion: $('#pExp').value.trim() || null, intruso: $('#pTipo').value === '1' };
+  const m = validaPal(o.palabra); if (m) { toast(m, true); return; }
+  if (PP.some(p => p.tema_id === PSEL && p.clave === claveDe(o.palabra))) { toast('Esa palabra ya está en el tema', true); return; }
+  const { error } = await sb.from('pupi_palabras').insert(o); if (error) { toast('No se agregó: ' + error.message, true); return; }
+  ['#pPal', '#pMos', '#pExp'].forEach(x => $(x).value = ''); toast('Palabra agregada'); await cargarPupi(); $('#pPal').focus();
+}
+async function editPal(id, campo, valor, el) {
+  if (campo === 'palabra') { const m = validaPal(valor); if (m) { toast(m, true); el.value = PP.find(p => p.id === id).palabra; return; } }
+  const { error } = await sb.from('pupi_palabras').update({ [campo]: typeof valor === 'string' ? (valor.trim() || null) : valor }).eq('id', id);
+  if (error) { toast('No se guardó: ' + error.message, true); cargarPupi(); return; } toast('Guardado'); if (campo !== 'explicacion' && campo !== 'mostrar') cargarPupi();
+}
+async function borrarPal(id) { const { error } = await sb.from('pupi_palabras').delete().eq('id', id); if (error) { toast('No se borró: ' + error.message, true); return; } cargarPupi(); }
+async function importarPal() {
+  const intr = $('#pImpTipo').value === '1', filas = $('#pImp').value.split(/\r?\n/).map(l => l.split(/\t|\|/).map(x => x.trim())).filter(c => c[0]);
+  const malas = filas.filter(c => validaPal(c[0])); if (malas.length) { toast(`Revisa: ${malas.map(c => c[0]).slice(0, 3).join(', ')} (2 a 12 letras)`, true); return; }
+  const nuevas = filas.filter(c => !PP.some(p => p.tema_id === PSEL && p.clave === claveDe(c[0]))).map(c => ({ tema_id: PSEL, palabra: c[0], explicacion: c[1] || null, intruso: intr }));
+  if (!nuevas.length) { toast('No hay palabras nuevas (ya estaban en el tema)', true); return; }
+  const { error } = await sb.from('pupi_palabras').insert(nuevas); if (error) { toast('No se importó: ' + error.message, true); return; }
+  $('#pImp').value = ''; toast(`${nuevas.length} palabra(s) agregada(s)`); cargarPupi();
+}
 async function cargarMem() {
   const [{ data, error }, { data: sem }] = await Promise.all([sb.from('memoria_terminos').select('*').order('semana').order('termino'), sb.from('semanas').select('semana, unidad, tema').order('semana')]);
   if (error) { $('#memLista').innerHTML = `<div class="empty">${/relation|schema cache/i.test(error.message) ? 'Falta ejecutar el script 27 en Supabase.' : esc(error.message)}</div>`; return; }

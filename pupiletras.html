@@ -106,7 +106,7 @@ footer{text-align:center;font-size:12px;color:#8fa0bf;padding:22px 16px 26px}
 <div id="toast"></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611211249"></script>
+<script src="assets/config.js?v=202611211251"></script>
 <script>
 document.getElementById('anio').textContent = new Date().getFullYear();
 const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, window.SISOPE_CONFIG.SUPABASE_KEY);
@@ -163,7 +163,19 @@ const TEMAS = {
     ['ZEROTRUST', 'Zero Trust', 'Nunca confiar, verificar siempre.'], ['BITLOCKER', 'BitLocker', 'Cifrado de disco de Windows.']],
     x: [['EXCEL', 'Excel', 'Es una hoja de cálculo, no un mecanismo de seguridad.'], ['RAM', 'RAM', 'Es memoria del equipo, no un control de identidad.']] }
 };
-$('tema').innerHTML = Object.entries(TEMAS).map(([k, t]) => `<option value="${k}">${t.n}</option>`).join('');
+let TEMAS_JUEGO = TEMAS;   // se reemplaza por los temas de Ajustes → Pupiletras si existen
+const pintarTemas = () => { $('tema').innerHTML = Object.entries(TEMAS_JUEGO).map(([k, t]) => `<option value="${k}">${esc(t.n)}</option>`).join(''); };
+pintarTemas();
+async function cargarTemasBD() {
+  const [{ data: T, error }, { data: P }] = await Promise.all([sb.from('pupi_temas').select('id, nombre, orden').eq('activo', true).order('orden').order('id'), sb.from('pupi_palabras').select('tema_id, palabra, clave, mostrar, explicacion, intruso')]);
+  if (error || !T || !T.length) return;
+  const M = {};
+  T.forEach(t => { const ps = (P || []).filter(p => p.tema_id === t.id && p.clave && p.clave.length >= 2 && p.clave.length <= N);
+    const w = ps.filter(p => !p.intruso).map(p => [p.clave, p.mostrar || p.palabra, p.explicacion || '']), x = ps.filter(p => p.intruso).map(p => [p.clave, p.mostrar || p.palabra, p.explicacion || '']);
+    if (w.length >= 3) M['t' + t.id] = { n: t.nombre, w, x }; });
+  if (Object.keys(M).length) { TEMAS_JUEGO = M; pintarTemas(); }
+}
+const mezclar = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const N = 12, LET = 'ABCDEFGHIJKLMNOPRSTUVWXYZ';
 let G = null, timer = null, YO = null, PER = '7', DOC = false;
 
@@ -191,10 +203,12 @@ function generar(palabras, nivel) {
   return null;
 }
 function start() {
-  const t = TEMAS[$('tema').value], nivel = Number($('nivel').value);
-  const validas = t.w.map(x => x[0]), intr = t.x.map(x => x[0]).filter(w => !validas.includes(w));
+  const base = TEMAS_JUEGO[$('tema').value], nivel = Number($('nivel').value);
+  // Cada partida toma hasta 8 correctas y 2 intrusas al azar del tema
+  const t = { n: base.n, w: mezclar(base.w).slice(0, 8), x: mezclar(base.x.filter(x => !base.w.some(w => w[0] === x[0]))).slice(0, 2) };
+  const validas = t.w.map(x => x[0]), intr = t.x.map(x => x[0]);
   const gen = generar([...validas, ...intr], nivel); if (!gen) { toast('No se pudo armar la sopa, intenta otra vez'); return; }
-  G = { tema: $('tema').value, nivel, g: gen.g, pos: gen.pos, validas, intr, hall: new Set(), intrHall: new Set(), errores: 0, intentos: 0, racha: 0, best: 0, t0: Date.now(), fin: false };
+  G = { tema: $('tema').value, T: t, nivel, g: gen.g, pos: gen.pos, validas, intr, hall: new Set(), intrHall: new Set(), errores: 0, intentos: 0, racha: 0, best: 0, t0: Date.now(), fin: false };
   clearInterval(timer); timer = setInterval(hud, 1000);
   $('ltit').textContent = t.n; $('lsub').textContent = `${validas.length} palabras · nivel ${['', 'fácil', 'normal', 'difícil'][nivel]}`; $('nintr').textContent = intr.length;
   pintar(); hud();
@@ -203,7 +217,7 @@ function pintar() {
   const gr = $('grid'); gr.style.gridTemplateColumns = `repeat(${N}, auto)`; gr.style.setProperty('--n', N);
   const okC = new Set([...G.hall].flatMap(w => G.pos[w])), malC = new Set([...G.intrHall].flatMap(w => G.pos[w]));
   gr.innerHTML = G.g.flat().map((ch, i) => `<div class="cel ${okC.has(i) ? 'ok' : malC.has(i) ? 'mal' : ''}" data-i="${i}">${ch}</div>`).join('');
-  const t = TEMAS[G.tema];
+  const t = G.T;
   $('pals').innerHTML = t.w.map(([w, nom]) => `<div class="pal ${G.hall.has(w) ? 'ok' : ''}"><span>${esc(nom)}</span><small>${G.hall.has(w) ? '✔' : w.length + ' letras'}</small></div>`).join('');
 }
 const secs = () => Math.floor(((G.finT || Date.now()) - G.t0) / 1000), fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -233,10 +247,10 @@ function comprobar() {
   G.intentos++;
   if (w && G.validas.includes(w) && !G.hall.has(w)) {
     G.hall.add(w); G.racha++; G.best = Math.max(G.best, G.racha);
-    const d = TEMAS[G.tema].w.find(x => x[0] === w); toast(`<b>✔ ${esc(d[1])}</b>: ${esc(d[2])}${G.racha > 1 ? `<br>🔥 Racha x${G.racha}` : ''}`);
+    const d = G.T.w.find(x => x[0] === w); toast(`<b>✔ ${esc(d[1])}</b>: ${esc(d[2])}${G.racha > 1 ? `<br>🔥 Racha x${G.racha}` : ''}`);
   } else if (w && G.intr.includes(w) && !G.intrHall.has(w)) {
     G.intrHall.add(w); G.errores++; G.racha = 0;
-    const d = TEMAS[G.tema].x.find(x => x[0] === w); toast(`<b>❌ ¡Intruso! ${esc(d[1])}</b>: ${esc(d[2])}`, true);
+    const d = G.T.x.find(x => x[0] === w); toast(`<b>❌ ¡Intruso! ${esc(d[1])}</b>: ${esc(d[2])}`, true);
   } else if (!w && sel.length >= 3) { G.errores++; G.racha = 0; toast('<b>❌ Esa no es una palabra del tema.</b> Sigue buscando.', true); }
   else { G.intentos--; }
   pintar(); hud();
@@ -244,7 +258,7 @@ function comprobar() {
 }
 function fin() {
   G.fin = true; G.finT = Date.now(); clearInterval(timer); hud();
-  const s = secs(), t = TEMAS[G.tema], prec = Math.round(100 * G.validas.length / Math.max(G.validas.length, G.intentos));
+  const s = secs(), t = G.T, prec = Math.round(100 * G.validas.length / Math.max(G.validas.length, G.intentos));
   const head = G.errores === 0 ? '🧠 ¡Perfecto, sin errores!' : prec >= 70 ? '💪 ¡Bien hecho!' : '📚 A repasar los conceptos';
   const noHall = G.intr.filter(w => !G.intrHall.has(w));
   modal(`<div class="big">${G.errores === 0 ? '⭐⭐⭐' : prec >= 70 ? '⭐⭐' : '⭐'}</div><h2 style="text-align:center">${head}</h2>
@@ -257,7 +271,7 @@ function fin() {
   if (YO) guardar(G.validas.length, Math.max(G.validas.length, G.intentos), Math.max(s, G.validas.length * 2), Math.min(G.best, G.validas.length));
 }
 async function guardar(pares, intentos, segundos, racha) {
-  const { data, error } = await sb.rpc('registrar_entrenamiento', { p_juego: JUEGO, p_mazo: TEMAS[G.tema].n, p_pares: pares, p_intentos: intentos, p_segundos: segundos, p_racha: racha });
+  const { data, error } = await sb.rpc('registrar_entrenamiento', { p_juego: JUEGO, p_mazo: G.T.n, p_pares: pares, p_intentos: intentos, p_segundos: segundos, p_racha: racha });
   const g = $('gain'); if (!g) return;
   if (error) { g.style.fontSize = '14px'; g.textContent = /schema cache|function|Juego no válido/i.test(error.message) ? 'El registro de puntos de este juego aún no está activo. Avísale a tu docente.' : error.message; return; }
   g.textContent = `+${data} puntos`; cargarTop();
@@ -311,8 +325,8 @@ $('start').onclick = start; $('tema').onchange = start; $('nivel').onchange = st
   const { data: yo } = await sb.from('jugadores').select('alias, seccion_id').eq('correo', data.session.user.email.toLowerCase()).maybeSingle();
   YO = yo; { const { data: d } = await sb.rpc('es_docente'); DOC = d === true; }
   cargarTop(); cargarSug();
+  await cargarTemasBD(); start();
 })();
-start();
 </script>
 </body>
 </html>

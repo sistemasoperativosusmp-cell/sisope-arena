@@ -669,3 +669,13 @@ body.arena .pie{color:#8fa0bf}
   .fila .ab{height:40px;min-width:36px;padding:0 6px}
   .fila .q b{font-size:13px}
 }
+
+/* Ajustes → Pupiletras */
+.pupi{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;align-items:start;margin-top:10px}
+.ptema{display:block;width:100%;text-align:left;background:#fff;border:2px solid var(--line);border-radius:12px;padding:9px 12px;margin-bottom:6px;cursor:pointer;color:var(--ink)}
+.ptema b{display:block;font-size:14px}.ptema small{font-size:12px;font-weight:700;color:var(--mute)}
+.ptema.on{border-color:var(--navy);box-shadow:inset 4px 0 0 var(--navy)}.ptema.off{opacity:.55}
+.pwr{display:grid;grid-template-columns:minmax(140px,1fr) minmax(130px,1fr) 130px minmax(240px,2.4fr) 46px 44px;gap:6px;padding:6px 10px;border-bottom:1px solid #edf0f6;align-items:center;min-width:820px}
+.pwr input,.pwr select{width:100%;padding:7px;border:2px solid var(--line);border-radius:8px;font-size:13px}
+.pwr.intr{background:#fff6f6}.pwr span{text-align:center;font-weight:800;color:var(--mute)}.pwr span.mal{color:#c23030}
+@media(max-width:1000px){.pupi{grid-template-columns:1fr}}
