@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611210703">
+<link rel="stylesheet" href="assets/app.css?v=202611211205">
 <style>
 .entr{display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;background:#0f1733;border:2px solid #2a3766;border-radius:14px;padding:14px;transition:border-color .15s,transform .15s}
 .entr:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -17,6 +17,10 @@
 .afl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}.afl b{width:100%;font-size:13px}
 .aft{font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px}.aft.ok{background:#0d2a1b;color:#39ff14;border:1px solid #39ff1455}.aft.bajo{background:#2a0d14;color:#ff8a9e;border:1px solid #ff3b5c55}
 .apr{display:grid;grid-template-columns:32px minmax(0,1fr) 90px 48px;gap:8px;align-items:center;margin-bottom:8px;font-weight:800;font-size:13px}.apr.yo span{color:var(--gold)}.apr b{text-align:right}
+.obsbar{position:sticky;top:0;z-index:50;display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#ffd23f;color:#0f1733;padding:8px 18px;font-weight:700;font-size:13px}
+.obsbar select{font:inherit;font-weight:800;padding:5px 8px;border-radius:8px;border:2px solid #0f1733;max-width:320px}
+.obsbar a{color:#0f1733;font-weight:800;margin-left:auto}
+body.observador .who .cambiar{display:none}
 </style>
 </head>
 <body class="arena">
@@ -114,9 +118,9 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611210703"></script>
-<script src="assets/insignias.js?v=202611210703"></script>
-<script src="assets/comun.js?v=202611210703"></script>
+<script src="assets/config.js?v=202611211205"></script>
+<script src="assets/insignias.js?v=202611211205"></script>
+<script src="assets/comun.js?v=202611211205"></script>
 <script>
 let EQ = [], ENL = [], INSR = {}, EQST = null;
 // Insignias visibles en el ranking: solo las que NO dependen de notas (las de nota se ven únicamente en el perfil propio)
@@ -125,7 +129,10 @@ const insDe = al => (INSR[al] || []).filter(k => INS_DEF[k]).sort((a, b) => ORD_
 const insChip = (k, cls) => `<img class="${cls} r-${INS_DEF[k][2]}" src="assets/insignias/${k}.webp" alt="" title="${esc(INS_DEF[k][1])} · ${RAREZA[INS_DEF[k][2]]}">`;
 const insRank = al => { const l = insDe(al); return l.length ? `<span class="rins" title="${l.length} insignia(s) visibles en el ranking">${insChip(l[0], 'rimg')}<b>🏅${l.length}</b></span>` : ''; };
 // Registro de actividad para el reporte de la docente (la base ignora repeticiones seguidas y a los docentes)
-const log = (tipo, detalle) => { try { sb.rpc('registrar_actividad', { p_tipo: tipo, p_detalle: detalle ?? null }).then(() => {}, () => {}); } catch (e) {} };
+// Modo observador: la docente abre alumno.html?ver=<id> y ve el portal como ese alumno, en solo lectura
+const VER = new URLSearchParams(location.search).get('ver'); let OBS = false;
+const soloLectura = () => { if (OBS) { toast('👀 Modo observador: solo lectura, no se guardan cambios', true); return true; } return false; };
+const log = (tipo, detalle) => { if (OBS) return; try { sb.rpc('registrar_actividad', { p_tipo: tipo, p_detalle: detalle ?? null }).then(() => {}, () => {}); } catch (e) {} };
 const GANADAS = new Set();
 let MED = [], SEMACT = 1, CONS = [], SK = null, YO = null, R = [], NOTAS = null, DET = [], SEMS = {}, CFG = {}, FILTRO = 'Todas';
 const n = v => Number(v || 0), f1 = v => String(Math.round(v * 100) / 100), sg = v => (v > 0 ? '+' : v < 0 ? '−' : '') + f1(Math.abs(v));
@@ -137,8 +144,13 @@ async function iniciar() {
   if (ses.user.user_metadata?.debe_cambiar) { location.replace('reset.html?temporal=1'); return; }
   const doc = await esDocente();
   $('#quien').innerHTML = doc ? '<a href="docente.html" style="color:#f2b705">Panel docente</a>' : '';
-  const { data: yo } = await sb.from('jugadores').select('id, alias, nombre, consultora, rol_consultora, avatar_url, seccion_id').eq('correo', ses.user.email.toLowerCase()).maybeSingle();
-  YO = yo;
+  const COLS = 'id, alias, nombre, consultora, rol_consultora, avatar_url, seccion_id';
+  if (VER && doc) {
+    const { data: obs } = await sb.from('jugadores').select(COLS).eq('id', VER).maybeSingle();
+    if (obs) { OBS = true; YO = obs; pintarObservador(); }
+    else toast('No se encontró al alumno a observar', true);
+  }
+  if (!OBS) { const { data: yo } = await sb.from('jugadores').select(COLS).eq('correo', ses.user.email.toLowerCase()).maybeSingle(); YO = yo; }
   const [{ data: s }, { data: c }, { data: sec }, pod] = await Promise.all([sb.from('semanas').select('semana, tema, practica'), sb.from('config').select('clave, valor'), YO ? sb.from('secciones').select('nombre, semana_actual').eq('id', YO.seccion_id).maybeSingle() : { data: null }, YO ? podiosSeccion(YO.seccion_id) : {}]);
   SEMS = Object.fromEntries((s || []).map(x => [x.semana, { ...x, kahoot_podio: pod[x.semana]?.kahoot_podio || 3 }])); CFG = Object.fromEntries((c || []).map(x => [x.clave, x.valor]));
   SEMACT = sec?.semana_actual || 1; $('#vivo').textContent = `EN VIVO · ${sec ? sec.nombre + ' · ' : ''}semana ${SEMACT}`;
@@ -165,10 +177,10 @@ async function refrescar() {
     YO ? sb.from('detalle').select('*').eq('jugador_id', YO.id).order('semana') : { data: [] },
     YO ? sb.from('v_medallas').select('*').eq('seccion_id', YO.seccion_id) : { data: [] },
     YO ? sb.from('feedback').select('texto, creado, semana').eq('jugador_id', YO.id).eq('visible_alumno', true).order('creado', { ascending: false }) : { data: [] },
-    YO ? sb.rpc('mi_equipo') : { data: [] },
+    YO ? (OBS ? sb.rpc('ver_equipo', { p_jugador: YO.id }) : sb.rpc('mi_equipo')) : { data: [] },
     sb.from('enlaces').select('titulo, url, descripcion, categoria, orden').order('categoria').order('orden').order('id'),
     YO ? sb.rpc('insignias_ranking', { p_seccion: YO.seccion_id }) : { data: [] },
-    YO ? sb.rpc('eq_mi_estado') : { data: null }
+    YO ? (OBS ? sb.rpc('ver_eq_estado', { p_jugador: YO.id }) : sb.rpc('eq_mi_estado')) : { data: null }
   ]);
   EQST = q[9].error ? null : q[9].data; pintarMision0();
   INSR = q[8].error ? {} : Object.fromEntries((q[8].data || []).map(x => [x.alias, x.insignias || []]));
@@ -177,6 +189,17 @@ async function refrescar() {
   if (q[0].error) { toast('Error al leer el ranking: ' + q[0].error.message, true); return; }
   R = q[0].data || []; NOTAS = q[2].data; DET = q[3].data || [];
   MED = q[4].data || []; CONS = q[1].data || []; pintarRanking(CONS); pintarPerfil(q[5].data || []); pintarMedallas(); pintarPuntajes(); pintarSkills(); pintarRecordatorios();
+}
+
+// ---------- Modo observador: barra superior para la docente ----------
+async function pintarObservador() {
+  document.body.classList.add('observador');
+  const b = document.createElement('div'); b.className = 'obsbar';
+  b.innerHTML = `<span>👀 <b>MODO OBSERVADOR</b> · Ves el portal tal como lo ve <b>${esc(YO.nombre)}</b> (${esc(YO.alias)}). Solo lectura: no se guardan cambios ni se registra actividad.</span><select id="obsSel" title="Ver a otro alumno"></select><a href="progreso.html">← Volver al panel docente</a>`;
+  document.body.prepend(b);
+  const { data } = await sb.from('jugadores').select('id, nombre, alias').eq('seccion_id', YO.seccion_id).eq('activo', true).order('nombre');
+  $('#obsSel').innerHTML = (data || []).map(a => `<option value="${a.id}" ${a.id === YO.id ? 'selected' : ''}>${esc(a.nombre)} · ${esc(a.alias)}</option>`).join('');
+  $('#obsSel').onchange = e => { location.href = `alumno.html?ver=${e.target.value}${location.hash}`; };
 }
 
 // ---------- A1 · Ranking ----------
@@ -285,6 +308,7 @@ function pintarPerfil(fb) {
 
 // ---------- Foto de perfil: se recorta cuadrada, se reduce a 256 px (webp) y se guarda en Supabase Storage ----------
 async function subirFoto(file) {
+  if (soloLectura()) return;
   if (!file || !YO) return;
   if (!file.type.startsWith('image/')) { toast('Elige una imagen', true); return; }
   toast('Subiendo foto…');
@@ -350,7 +374,7 @@ let EQPROG = null;
 async function cargarEqProg() {
   const el = $('#eqProg'); if (!el || !YO) return;
   if (!YO.consultora) { el.innerHTML = '<div class="gris">Cuando tu docente publique las consultoras verás aquí el progreso de tu equipo.</div>'; return; }
-  const { data, error } = await sb.rpc('mi_equipo_semanas');
+  const { data, error } = OBS ? await sb.rpc('ver_equipo_semanas', { p_jugador: YO.id }) : await sb.rpc('mi_equipo_semanas');
   if (error) { el.innerHTML = `<div class="gris">${/schema cache|function/i.test(error.message) ? 'El progreso del equipo aún no está activo. Avísale a tu docente.' : esc(error.message)}</div>`; return; }
   const L = (data || []).filter(x => x.equipo !== null); if (!L.length) { el.innerHTML = '<div class="gris">Aún no hay semanas registradas.</div>'; return; }
   const W = 560, H = 200, Lm = 32, T = 12, B = 26, vals = L.flatMap(x => [n(x.equipo), n(x.clase)]), hi = Math.max(1, ...vals), lo = Math.min(0, ...vals);
@@ -385,6 +409,7 @@ function strikesHTML() {
 }
 let REP_A = null;
 function abrirReporte(alias) {
+  if (soloLectura()) return;
   REP_A = alias; $('#rNom').textContent = alias; $('#rMot').value = ''; $('#rEvi').value = '';
   $('#rInfo').textContent = EQST?.reportes_semana >= 3 ? 'Ya usaste tus 3 reportes de esta semana.' : `Te quedan ${3 - (EQST?.reportes_semana || 0)} reportes esta semana.`;
   $('#mRep').classList.remove('hide'); $('#rMot').focus();
@@ -410,7 +435,7 @@ let MEMPER = '7';
 async function cargarMemTop() {
   const { data, error } = await sb.rpc('top_entrenamiento', { p_juego: 'memoria', p_dias: MEMPER ? Number(MEMPER) : null });
   if (error) { $('#memTop').innerHTML = `<div class="gris">${/schema cache|function/i.test(error.message) ? 'El top aún no está activo. Avísale a tu docente.' : esc(error.message)}</div>`; $('#memMis').textContent = ''; return; }
-  const L = data || [], yo = L.find(x => x.es_yo);
+  const L = (data || []).map(x => OBS ? { ...x, es_yo: x.alias === YO.alias } : x), yo = L.find(x => x.es_yo);
   $('#memMis').textContent = yo ? `Tus puntos ${MEMPER ? '(7 días)' : '(histórico)'}: ${yo.total} · puesto ${yo.posicion}° · mejor partida ${yo.mejor}` : 'Aún no tienes puntos: ¡juega tu primera partida!';
   $('#memTop').innerHTML = L.length ? L.slice(0, 10).map(x => `<div class="rank ${x.es_yo ? 'yo' : ''}"><span class="pos">${x.posicion <= 3 ? ['🥇', '🥈', '🥉'][x.posicion - 1] : x.posicion}</span>${avatar(x, 'rav')}<span class="al">${esc(x.alias)}<small class="nreal">${x.partidas} partida${x.partidas > 1 ? 's' : ''} · mejor ${x.mejor}</small></span><span class="xp">${x.total}</span></div>`).join('') + (yo && yo.posicion > 10 ? `<div class="rank yo"><span class="pos">${yo.posicion}</span>${avatar(yo, 'rav')}<span class="al">${esc(yo.alias)}</span><span class="xp">${yo.total}</span></div>` : '') : '<div class="gris">Nadie ha jugado todavía. ¡Sé el primero!</div>';
 }
@@ -421,6 +446,7 @@ function editarAlias() {
   $('#nuevoAlias').focus(); $('#nuevoAlias').select();
 }
 async function guardarAlias() {
+  if (soloLectura()) return;
   const v = $('#nuevoAlias').value.trim(); if (v === YO.alias) { $('#aliasEd').innerHTML = ''; return; }
   const { data, error } = await sb.rpc('cambiar_mi_alias', { p_alias: v });
   if (error) { toast(/schema cache|function/i.test(error.message) ? 'Esta opción aún no está activa. Avísale a tu docente.' : error.message, true); return; }
@@ -432,6 +458,7 @@ function editarCons() {
   $('#nuevaCons').focus(); $('#nuevaCons').select();
 }
 async function guardarCons() {
+  if (soloLectura()) return;
   const v = $('#nuevaCons').value.trim(); if (v === YO.consultora) { $('#consEd').innerHTML = ''; return; }
   if (!confirm(`¿Cambiar el nombre de tu consultora a "${v}"? Lo verá todo tu equipo y el aula.`)) return;
   const { data, error } = await sb.rpc('renombrar_mi_consultora', { p_nombre: v });
