@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611211242">
+<link rel="stylesheet" href="assets/app.css?v=202611211249">
 <style>
 .entr{display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;background:#0f1733;border:2px solid #2a3766;border-radius:14px;padding:14px;transition:border-color .15s,transform .15s}
 .entr:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -98,6 +98,7 @@ body.observador .who .cambiar{display:none}
     <div class="acol">
       <div class="panel"><h2 class="pix">ACTIVIDADES DE ENTRENAMIENTO</h2>
         <a class="entr" href="memoria.html"><span class="eico">🧠</span><span class="etx"><b>Memoria Técnica</b><span>Voltea las cartas y une cada término con su definición. Mazos por unidad: virtualización, servicios de red, identidad y Azure.</span><span class="emis" id="memMis">Cargando tus puntos…</span></span><span class="ego pix">JUGAR ▶</span></a>
+        <a class="entr" href="pupiletras.html" style="margin-top:10px"><span class="eico">🔎</span><span class="etx"><b>Pupiletras</b><span>Encuentra fabricantes, servicios y conceptos del curso en la sopa de letras… y cuidado con los intrusos: si marcas uno, pierdes puntos.</span></span><span class="ego pix">JUGAR ▶</span></a>
       </div>
       <div id="enlaces"><div class="empty">Cargando…</div></div>
     </div>
@@ -118,9 +119,9 @@ body.observador .who .cambiar{display:none}
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611211242"></script>
-<script src="assets/insignias.js?v=202611211242"></script>
-<script src="assets/comun.js?v=202611211242"></script>
+<script src="assets/config.js?v=202611211249"></script>
+<script src="assets/insignias.js?v=202611211249"></script>
+<script src="assets/comun.js?v=202611211249"></script>
 <script>
 let EQ = [], ENL = [], INSR = {}, EQST = null;
 // Insignias visibles en el ranking: solo las que NO dependen de notas (las de nota se ven únicamente en el perfil propio)

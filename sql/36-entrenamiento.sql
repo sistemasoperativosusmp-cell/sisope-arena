@@ -1,5 +1,5 @@
 -- =====================================================================
--- SISOPE Arena · Script 36 · Puntos y Top de Memoria Técnica (Entrenamiento)
+-- SISOPE Arena · Script 36 · Puntos y Top de los juegos de Entrenamiento (Memoria Técnica y Pupiletras)
 -- Reemplaza al antiguo "24_entrenamiento.sql". Se puede volver a ejecutar: no borra partidas.
 --   · tabla entrenamiento (cada partida)
 --   · registrar_entrenamiento(...)  → valida la partida y calcula los puntos EN EL SERVIDOR
@@ -34,7 +34,7 @@ returns int language plpgsql security definer set search_path = public as $$
 declare v_id uuid := public.mi_jugador_id(); v_pts int; v_prec numeric; v_vel numeric;
 begin
   if v_id is null then raise exception 'Solo las cuentas de alumno suman puntos'; end if;
-  if coalesce(p_juego, '') <> 'memoria' then raise exception 'Juego no válido'; end if;
+  if coalesce(p_juego, '') not in ('memoria', 'pupiletras') then raise exception 'Juego no válido'; end if;
   if p_pares is null or p_pares < 3 or p_pares > 12 then raise exception 'Número de pares no válido'; end if;
   if p_intentos is null or p_intentos < p_pares or p_intentos > p_pares * 20 then raise exception 'Intentos no válidos'; end if;
   if p_segundos is null or p_segundos < p_pares * 2 or p_segundos > 7200 then raise exception 'Tiempo no válido'; end if;
