@@ -114,7 +114,7 @@ footer{text-align:center;font-size:12px;color:#8fa0bf;padding:22px 16px 26px}
 <div id="toast"></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611211255"></script>
+<script src="assets/config.js?v=202611211303"></script>
 <script>
 document.getElementById('anio').textContent = new Date().getFullYear();
 const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, window.SISOPE_CONFIG.SUPABASE_KEY);
@@ -286,14 +286,14 @@ function fin() {
 async function guardar(pares, intentos, segundos, racha) {
   const { data, error } = await sb.rpc('registrar_entrenamiento', { p_juego: JUEGO, p_mazo: G.T.n, p_pares: pares, p_intentos: intentos, p_segundos: segundos, p_racha: racha });
   const g = $('gain'); if (!g) return;
-  if (error) { g.style.fontSize = '14px'; g.textContent = /schema cache|function|Juego no válido/i.test(error.message) ? 'El registro de puntos de este juego aún no está activo. Avísale a tu docente.' : error.message; return; }
+  if (error) { toast('No se guardó la partida: ' + esc(error.message), true); g.style.fontSize = '14px'; g.textContent = /schema cache|function|Juego no válido/i.test(error.message) ? 'El registro de puntos de este juego aún no está activo. Avísale a tu docente.' : error.message; return; }
   g.textContent = `+${data} puntos`; cargarTop();
 }
 async function cargarTop() {
   const { data, error } = await sb.rpc('top_entrenamiento', { p_juego: JUEGO, p_dias: PER ? Number(PER) : null });
   if (error) { $('top').innerHTML = `<div class="nota">${/schema cache|function/i.test(error.message) ? 'El top aún no está activo.' : esc(error.message)}</div>`; return; }
   const L = data || [], yo = L.find(x => x.es_yo);
-  $('me').innerHTML = YO ? `<span class="chip">👾 <b>${esc(YO.alias)}</b></span><span class="chip">Puntos ${PER ? '(7 días)' : ''} <b>${yo ? yo.total : 0}</b></span><span class="chip">Puesto <b>${yo ? yo.posicion + '°' : '—'}</b></span>` : '';
+  $('me').innerHTML = YO ? `<span class="chip">👾 <b>${esc(YO.alias)}</b></span><span class="chip">Puntos ${PER ? '(7 días)' : ''} <b>${yo ? yo.total : 0}</b></span><span class="chip">Puesto <b>${yo ? yo.posicion + '°' : '—'}</b></span>` : `<span class="chip" style="border-color:var(--gold);color:var(--gold)" title="Tu cuenta no es de alumno: puedes jugar, pero la partida no se guarda ni aparece en el top">👩‍🏫 Modo docente · no suma al top</span>`;
   const av = x => x.avatar_url ? `<img src="${esc(/^https?:/.test(x.avatar_url) ? x.avatar_url : window.SISOPE_CONFIG.SUPABASE_URL + '/storage/v1/object/public/' + x.avatar_url)}" alt="">` : `<span class="ini">${esc((x.alias || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase())}</span>`;
   $('top').innerHTML = L.length ? L.slice(0, 10).map(x => `<div class="tr ${x.es_yo ? 'yo' : ''}"><span class="ps">${x.posicion <= 3 ? ['🥇', '🥈', '🥉'][x.posicion - 1] : x.posicion}</span>${av(x)}<span class="al">${esc(x.alias)}<small>${x.partidas} partida${x.partidas > 1 ? 's' : ''} · mejor ${x.mejor}</small></span><span class="pt">${x.total}</span></div>`).join('') : '<div class="nota">Nadie ha jugado todavía. ¡Sé el primero!</div>';
 }
