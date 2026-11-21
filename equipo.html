@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Equipos</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611210659">
+<link rel="stylesheet" href="assets/app.css?v=202611210703">
 <style>
 main{display:flex;flex-direction:column;gap:20px}
 main>.subtabs{margin-bottom:-6px}
@@ -99,7 +99,7 @@ details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
   <!-- 3 · Equipos publicados -->
   <section class="card">
     <h2 class="pix">3 · EQUIPOS ACTUALES <span class="cnt3" id="eqCuenta"></span></h2>
-    <p class="help" style="margin-top:0">Toca el nombre para renombrar (sus integrantes se actualizan solos), cambia el color o el lema, usa “→ equipo” para mover a un alumno y el selector de rol para cambiar su rol. Los alumnos ven su equipo y rol en <b>Mi perfil → Mi equipo</b> y no pueden cambiar su rol.</p>
+    <p class="help" style="margin-top:0">Toca el nombre para renombrar (sus integrantes se actualizan solos), cambia el color o el lema, usa “→ equipo” para mover a un alumno y el selector de rol para cambiar su rol. Los alumnos ven su equipo y rol en la pestaña <b>Equipo</b> y no pueden cambiar su rol.</p>
     <div class="nuevoeq"><input id="qNombre" placeholder="Nuevo equipo (ej. Los Kernel)"><input id="qLema" placeholder="Lema (opcional)"><input id="qColor" type="color" value="#6f3cc3" title="Color" style="width:44px;padding:2px"><button class="btn green" onclick="agregarEq()">+ Crear equipo</button></div>
     <div class="eqs" id="actuales"></div>
   </section>
@@ -121,9 +121,9 @@ details summary{cursor:pointer;font-weight:800;color:var(--navy);margin:10px 0}
 </main>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611210659"></script>
-<script src="assets/comun.js?v=202611210659"></script>
-<script src="assets/armado.js?v=202611210659"></script>
+<script src="assets/config.js?v=202611210703"></script>
+<script src="assets/comun.js?v=202611210703"></script>
+<script src="assets/armado.js?v=202611210703"></script>
 <script>
 let AL = [], PERF = {}, EQ = [], REP = [], PEN = {}, PROP = [], NOMBRES = [];
 const PENAS = ['Sustentación individual', 'Trabajo adicional', 'Examen individual'];

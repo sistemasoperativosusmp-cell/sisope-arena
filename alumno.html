@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611210659">
+<link rel="stylesheet" href="assets/app.css?v=202611210703">
 <style>
 .entr{display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;background:#0f1733;border:2px solid #2a3766;border-radius:14px;padding:14px;transition:border-color .15s,transform .15s}
 .entr:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -14,12 +14,15 @@
 .segt{display:flex;gap:6px;margin-bottom:8px}.segt button{flex:1;background:#0f1733;border:2px solid #2a3766;color:#b8c2e6;border-radius:10px;padding:6px;font-weight:800;cursor:pointer}.segt button.on{border-color:var(--gold);color:var(--gold)}
 #enlaces .panel{margin-top:16px}
 @media(max-width:600px){.entr{flex-wrap:wrap}.entr .ego{width:100%;text-align:center}}
+.afl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}.afl b{width:100%;font-size:13px}
+.aft{font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px}.aft.ok{background:#0d2a1b;color:#39ff14;border:1px solid #39ff1455}.aft.bajo{background:#2a0d14;color:#ff8a9e;border:1px solid #ff3b5c55}
+.apr{display:grid;grid-template-columns:32px minmax(0,1fr) 90px 48px;gap:8px;align-items:center;margin-bottom:8px;font-weight:800;font-size:13px}.apr.yo span{color:var(--gold)}.apr b{text-align:right}
 </style>
 </head>
 <body class="arena">
 <header class="top atop">
   <div class="pix">SISOPE ARENA</div>
-  <nav class="anav"><a href="#ranking" data-v="ranking">Ranking</a><a href="#perfil" data-v="perfil">Mi perfil</a><a href="#puntajes" data-v="puntajes">Mis puntajes</a><a href="#entrenamiento" data-v="entrenamiento">Entrenamiento</a></nav>
+  <nav class="anav"><a href="#ranking" data-v="ranking">Ranking</a><a href="#perfil" data-v="perfil">Mi perfil</a><a href="#equipo" data-v="equipo">Equipo</a><a href="#puntajes" data-v="puntajes">Mis puntajes</a><a href="#entrenamiento" data-v="entrenamiento">Entrenamiento</a></nav>
   <div class="who"><a href="reset.html" class="cambiar">🔑 Contraseña</a><span class="live"><i></i><span id="vivo">EN VIVO</span></span><span id="quien"></span><button class="btn ghost" onclick="salir()">Salir</button></div>
 </header>
 <main class="amain">
@@ -50,7 +53,7 @@
       <div class="panel nivbar" id="nivbar"></div>
       <div class="pgrid">
         <div class="panel"><h2 class="pix">MIS HABILIDADES</h2><div class="lg2"><span><i style="background:#39ff14"></i>Tú</span><span><i class="dash"></i>Promedio de la clase</span></div><div id="skills"><div class="gris">Cargando…</div></div></div>
-        <div class="panel"><h2 class="pix">MI EQUIPO</h2><div id="equipo"></div></div>
+        <div class="panel"><h2 class="pix">MI AFINIDAD POR TEMA</h2><div id="afinidad"><div class="gris">Cargando…</div></div></div>
       </div>
       <div class="pgrid">
         <div class="panel"><h2 class="pix">MIS MEDALLAS</h2><div id="mismed"></div></div>
@@ -59,6 +62,18 @@
         <div class="panel"><h2 class="pix">INSIGNIAS <span id="insCont" class="insc"></span></h2><div class="insig2" id="insignias"></div><p class="gris">Las grises aún están bloqueadas: debajo dice cómo ganarlas. Las secretas se revelan al conseguirlas. En el ranking tus compañeros solo ven las insignias que no dependen de tus notas.</p></div>
 
       <div class="panel" id="fbpanel"><h2 class="pix">MENSAJES DE TU DOCENTE</h2><div id="feedback"></div></div>
+    </div>
+  </section>
+
+  <!-- A2b · EQUIPO -->
+  <section class="vista hide" id="v-equipo">
+    <div class="acol">
+      <div class="panel"><h2 class="pix">MI EQUIPO</h2><div id="equipo"></div></div>
+      <div class="panel"><h2 class="pix">PROGRESO DEL EQUIPO</h2><div class="lg2"><span><i style="background:#39ff14"></i>Mi equipo</span><span><i class="dash"></i>Promedio de la clase</span></div><div id="eqProg"><div class="gris">Cargando…</div></div></div>
+    </div>
+    <div class="aside">
+      <div class="panel"><h2 class="pix">APORTE DE CADA INTEGRANTE</h2><div id="eqAporte"></div></div>
+      <div class="panel"><h2 class="pix">RANKING DE CONSULTORAS</h2><div id="consultoras2"></div></div>
     </div>
   </section>
 
@@ -99,9 +114,9 @@
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611210659"></script>
-<script src="assets/insignias.js?v=202611210659"></script>
-<script src="assets/comun.js?v=202611210659"></script>
+<script src="assets/config.js?v=202611210703"></script>
+<script src="assets/insignias.js?v=202611210703"></script>
+<script src="assets/comun.js?v=202611210703"></script>
 <script>
 let EQ = [], ENL = [], INSR = {}, EQST = null;
 // Insignias visibles en el ranking: solo las que NO dependen de notas (las de nota se ven únicamente en el perfil propio)
@@ -137,6 +152,7 @@ async function iniciar() {
 function mostrar() {
   let v = (location.hash || '#ranking').slice(1); if (v === 'enlaces') v = 'entrenamiento';
   if (v === 'entrenamiento') cargarMemTop();
+  if (v === 'equipo') cargarEqProg();
   document.querySelectorAll('.vista').forEach(s => s.classList.toggle('hide', s.id !== 'v-' + v));
   document.querySelectorAll('.anav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
   if (YO) log('vista', v);
@@ -299,6 +315,53 @@ function pintarExtras() {
     ${strikesHTML()}
     <div class="gris">Puesto ${c ? c.posicion : '—'} de ${CONS.length} consultoras. Sumen XP en los trabajos grupales. Tu <b>rol</b> lo asigna tu docente según la Misión 0. ¿Alguien no cumple con el equipo? Usa 🚩 para reportarlo (con evidencia): tu docente lo revisa y nunca se dice quién reportó.</div>` : `<div class="gris">Aún no tienes equipo asignado.${EQST && !EQST.evaluado ? ' Primero completa la <a href="evaluacion.html" style="color:var(--gold)">Misión 0: Reclutamiento</a>.' : ''} Cuando tu docente publique las consultoras verás aquí a tus compañeros, tu rol y el botón 🚩 Reportar por si alguien no cumple.</div>`;
   guardC();
+  pintarAfinidad(); pintarEquipoExtra();
+  if (!$('#v-equipo')?.classList.contains('hide')) cargarEqProg();
+}
+// ---------- Mi afinidad por tema: cada semana = laboratorio + trabajo grupal (sobre 6 puntos) ----------
+function misionSem(d) {
+  const labOk = d.lab !== null && d.lab !== undefined, grOk = [d.gr_comunicacion, d.gr_tecnico, d.gr_analisis].some(v => v !== null && v !== undefined);
+  if (!labOk && !grOk) return null;
+  const lab = labOk ? Math.max(0, n(d.lab)) + n(d.lab_bonus) : 0, gr = n(d.gr_comunicacion) + n(d.gr_tecnico) + n(d.gr_analisis) + n(d.extra) - n(d.falta);
+  return { af: Math.max(0, Math.min(1, (lab + (grOk ? gr : 0)) / ((labOk ? 3 : 0) + (grOk ? 3 : 0)))), lab: labOk ? lab : null, gr: grOk ? gr : null, noCumplio: labOk && n(d.lab) < 0 };
+}
+function pintarAfinidad() {
+  const el = $('#afinidad'); if (!el) return;
+  const L = DET.filter(d => d.semana <= SEMACT).sort((a, b) => a.semana - b.semana).map(d => { const m = misionSem(d); return m ? { s: d.semana, tema: SEMS[d.semana]?.tema || 'Semana ' + d.semana, ...m } : null; }).filter(Boolean);
+  if (!L.length) { el.innerHTML = '<div class="gris">Aún no hay laboratorios ni trabajos grupales calificados. Cada semana es una misión: laboratorio + trabajo grupal.</div>'; return; }
+  const W = 360, H = 170, Lm = 30, T = 10, B = 26, bw = Math.min(30, (W - Lm) / L.length - 6), X = i => Lm + 4 + i * (W - Lm) / L.length, Y = v => T + (1 - v) * (H - T - B);
+  const col = v => v >= 0.9 ? '#39ff14' : v >= 0.7 ? '#00e5ff' : v >= 0.55 ? '#ffd23f' : '#ff3b5c';
+  let g = [0, 0.7, 1].map(v => `<line x1="${Lm}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="${v === 0.7 ? '#6c5ad6' : '#1d3a2c'}" ${v === 0.7 ? 'stroke-dasharray="3 3"' : ''}/><text x="${Lm - 4}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle" fill="#8fa0bf" font-size="9">${Math.round(v * 100)}%</text>`).join('');
+  g += L.map((t, i) => { const x0 = X(i), h = Y(0) - Y(t.af); return `${h > 0 ? `<rect x="${x0}" y="${Y(t.af)}" width="${bw}" height="${h}" rx="3" fill="${col(t.af)}"/>` : ''}<text x="${x0 + bw / 2}" y="${H - 10}" text-anchor="middle" fill="#b8c2e6" font-size="9">S${t.s}</text><rect x="${x0}" y="${T}" width="${bw}" height="${H - T - B}" fill="transparent" data-tip="S${t.s} · ${esc(t.tema)}: ${Math.round(t.af * 100)}% (lab ${t.lab === null ? '—' : f1(t.lab)} · grupal ${t.gr === null ? '—' : f1(t.gr)})${t.noCumplio ? ' · no cumpliste el laboratorio' : ''}"/>`; }).join('');
+  const ord = L.slice().sort((a, b) => b.af - a.af), bajos = ord.slice().reverse().filter(t => t.af < 0.7).slice(0, 3);
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="svg" role="img" aria-label="Afinidad por tema">${g}</svg>
+    <div class="afl"><b>💚 Tus temas fuertes</b>${ord.filter(t => t.af >= 0.7).slice(0, 3).map(t => `<span class="aft ok">S${t.s} · ${esc(t.tema)} · ${Math.round(t.af * 100)}%</span>`).join('') || '<span class="gris">Aún ninguno sobre 70%: ¡a por ello!</span>'}</div>
+    <div class="afl"><b>🎯 Temas para reforzar</b>${bajos.map(t => `<span class="aft bajo">S${t.s} · ${esc(t.tema)} · ${Math.round(t.af * 100)}%</span>`).join('') || '<span class="gris">Ninguno bajo 70%. ¡Bien! 🎉</span>'}</div>
+    <div class="gris">Cada semana es una misión: laboratorio + trabajo grupal (sobre 6 puntos). La línea morada es la meta de 70%. Pasa el mouse sobre una barra para ver el detalle.</div>`;
+  activarTips();
+}
+// ---------- Equipo: aporte de cada integrante, ranking y progreso semanal ----------
+function pintarEquipoExtra() {
+  const mio = YO?.consultora, mem = R.filter(x => x.consultora && x.consultora === mio).sort((a, b) => n(b.xp) - n(a.xp)), max = Math.max(1, ...mem.map(x => n(x.xp)));
+  if ($('#eqAporte')) $('#eqAporte').innerHTML = mio && mem.length ? mem.map(x => `<div class="apr ${x.alias === YO.alias ? 'yo' : ''}">${avatar(x, 'rav')}<span>${esc(x.alias)}</span><div class="bar"><div style="width:${Math.max(0, n(x.xp)) / max * 100}%"></div></div><b>${f1(n(x.xp))}</b></div>`).join('') + `<div class="gris">XP de cada integrante. El XP del equipo es la suma de todos.</div>` : '<div class="gris">Aún no tienes equipo.</div>';
+  if ($('#consultoras2')) $('#consultoras2').innerHTML = CONS.map(c => `<div class="rank ${c.consultora === mio ? 'yo' : ''}"><span class="pos">${c.posicion}</span><span class="al">${esc(c.consultora)}</span><span class="xp">${f1(c.xp)} XP</span></div>`).join('') || '<div class="gris">Sin consultoras.</div>';
+}
+let EQPROG = null;
+async function cargarEqProg() {
+  const el = $('#eqProg'); if (!el || !YO) return;
+  if (!YO.consultora) { el.innerHTML = '<div class="gris">Cuando tu docente publique las consultoras verás aquí el progreso de tu equipo.</div>'; return; }
+  const { data, error } = await sb.rpc('mi_equipo_semanas');
+  if (error) { el.innerHTML = `<div class="gris">${/schema cache|function/i.test(error.message) ? 'El progreso del equipo aún no está activo. Avísale a tu docente.' : esc(error.message)}</div>`; return; }
+  const L = (data || []).filter(x => x.equipo !== null); if (!L.length) { el.innerHTML = '<div class="gris">Aún no hay semanas registradas.</div>'; return; }
+  const W = 560, H = 200, Lm = 32, T = 12, B = 26, vals = L.flatMap(x => [n(x.equipo), n(x.clase)]), hi = Math.max(1, ...vals), lo = Math.min(0, ...vals);
+  const X = i => Lm + 10 + (L.length === 1 ? (W - Lm - 20) / 2 : i * (W - Lm - 20) / (L.length - 1)), Y = v => T + (hi - v) * (H - T - B) / (hi - lo || 1);
+  const path = k => L.map((x, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(n(x[k])).toFixed(1)}`).join(' ');
+  let g = [lo, Math.round((lo + hi) / 2), Math.round(hi)].map(v => `<line x1="${Lm}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="#1d3a2c"/><text x="${Lm - 5}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle" fill="#8fa0bf" font-size="10">${v}</text>`).join('');
+  g += `<path d="${path('clase')}" fill="none" stroke="#00e5ff" stroke-width="2" stroke-dasharray="5 4"/><path d="${path('equipo')}" fill="none" stroke="#39ff14" stroke-width="2.5"/>`;
+  g += L.map((x, i) => `<circle cx="${X(i)}" cy="${Y(n(x.equipo))}" r="4" fill="#39ff14" stroke="#050807" stroke-width="2"/><text x="${X(i)}" y="${H - 8}" text-anchor="middle" fill="#b8c2e6" font-size="10">S${x.semana}</text><circle cx="${X(i)}" cy="${Y(n(x.equipo))}" r="14" fill="transparent" data-tip="S${x.semana}${x.tema ? ' · ' + esc(x.tema) : ''}: tu equipo ${f1(n(x.equipo))} pts por integrante · clase ${f1(n(x.clase))}${x.grupal_equipo !== null ? ' · trabajo grupal ' + f1(n(x.grupal_equipo)) + '/3 (clase ' + f1(n(x.grupal_clase)) + ')' : ''}"/>`).join('');
+  const ult = L.slice(-3), sobre = ult.filter(x => n(x.equipo) >= n(x.clase)).length;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="svg" role="img" aria-label="Progreso del equipo por semana">${g}</svg><div class="gris">Puntos promedio por integrante en cada semana. ${sobre >= 2 ? '💪 En las últimas semanas tu equipo va por encima del promedio de la clase.' : '🎯 En las últimas semanas tu equipo va por debajo del promedio: pónganse de acuerdo en el trabajo grupal.'}</div>`;
+  activarTips();
 }
 // ---------- Nombre de jugador y consultora ----------
 // Si la página se refresca sola mientras el alumno escribe, conserva el editor abierto y lo escrito

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Misión 0: Reclutamiento</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611210659">
+<link rel="stylesheet" href="assets/app.css?v=202611210703">
 <style>
 .ev{max-width:760px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:18px}
 .ev .panel{padding:24px}
@@ -101,8 +101,8 @@
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611210659"></script>
-<script src="assets/comun.js?v=202611210659"></script>
+<script src="assets/config.js?v=202611210703"></script>
+<script src="assets/comun.js?v=202611210703"></script>
 <script>
 let PT = [], PP = [], RESP = {}, IDX = 0, PREVIEW = false, ENVIANDO = false;
 const LIK = [[1, 'Nada'], [2, 'Poco'], [3, 'A veces'], [4, 'Bastante'], [5, 'Totalmente']];
@@ -132,7 +132,7 @@ function falla(e) {
 }
 function yaHecha() {
   ver('s-fin');
-  $('#fin').innerHTML = `<div class="mi">✅</div><div class="mt pix">MISIÓN 0 COMPLETADA</div><p>Ya enviaste tu evaluación. Tu docente publicará las consultoras y verás tu rol en <b>Mi perfil → Mi equipo</b>.</p><a class="evbtn" href="alumno.html#perfil" style="text-decoration:none">Ir a mi perfil</a>`;
+  $('#fin').innerHTML = `<div class="mi">✅</div><div class="mt pix">MISIÓN 0 COMPLETADA</div><p>Ya enviaste tu evaluación. Tu docente publicará las consultoras y verás tu rol en la pestaña <b>Equipo</b>.</p><a class="evbtn" href="alumno.html#equipo" style="text-decoration:none">Ir a mi equipo</a>`;
 }
 
 // ---------- Fase 1: una pregunta a la vez, avanza sola al elegir ----------
@@ -213,7 +213,7 @@ async function enviar(modo) {
   ver('s-fin'); window.scrollTo(0, 0);
   $('#fin').innerHTML = `<div class="mi">${m[0]}</div><div class="mt pix">MEDALLA: ${esc(m[1].toUpperCase())}</div>
     <p>${tipo === 'sin_miedo' ? 'Elegiste el Modo Reto a la primera. Así se hace, ingeniero.' : `Intentaste escapar ${INTENTOS} ${INTENTOS === 1 ? 'vez' : 'veces'}… pero el reto te encontró. 😉`}</p>
-    <p class="gris">Tu docente armará las consultoras con los resultados de todo el salón. Cuando las publique, verás tu equipo y tu rol en <b>Mi perfil → Mi equipo</b>.</p>
+    <p class="gris">Tu docente armará las consultoras con los resultados de todo el salón. Cuando las publique, verás tu equipo y tu rol en la pestaña <b>Equipo</b>.</p>
     <a class="evbtn" href="alumno.html#perfil" style="text-decoration:none">Volver a la arena</a>`;
 }
 iniciar();
