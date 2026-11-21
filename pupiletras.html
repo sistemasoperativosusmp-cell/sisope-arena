@@ -92,7 +92,7 @@ footer{text-align:center;font-size:12px;color:#8fa0bf;padding:22px 16px 26px}
         <div class="lista"><div class="mision" id="mision"></div>
           <div class="intr">⚠️ Cuidado: también hay <b id="nintr">2</b> <b id="nintrT">intrusos</b> escondidos: palabras que NO son del tema. Si los marcas, te restan.</div>
           <h3 style="margin-top:12px">📝 Tus marcadas <span class="sub" id="lsub"></span></h3><div id="pals"></div>
-          <button class="btn pri" id="finBtn" style="width:100%;margin-top:12px">🏁 Finalizar y revisar</button>
+          <button class="btn pri" id="finBtn" style="width:100%;margin-top:12px">🏁 Finalizar y revisar</button><div class="nota" id="guardEst" style="text-align:center;font-weight:700"></div>
           <p class="nota">Arrastra sobre las letras (o toca la primera y la última) para marcar una palabra. No sabrás si acertaste hasta finalizar; puedes quitar una marcada con ✕.</p></div>
       </div>
     </div>
@@ -114,7 +114,7 @@ footer{text-align:center;font-size:12px;color:#8fa0bf;padding:22px 16px 26px}
 <div id="toast"></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611211303"></script>
+<script src="assets/config.js?v=202611211306"></script>
 <script>
 document.getElementById('anio').textContent = new Date().getFullYear();
 const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, window.SISOPE_CONFIG.SUPABASE_KEY);
@@ -216,7 +216,7 @@ function start() {
   const t = { n: base.n, w: mezclar(base.w).slice(0, 10), x: mezclar(base.x.filter(x => !base.w.some(w => w[0] === x[0]))).slice(0, 2) };
   const validas = t.w.map(x => x[0]), intr = t.x.map(x => x[0]);
   const gen = generar([...validas, ...intr], nivel); if (!gen) { toast('No se pudo armar la sopa, intenta otra vez'); return; }
-  G = { tema: $('tema').value, T: t, nivel, g: gen.g, pos: gen.pos, validas, intr, marc: [], t0: Date.now(), fin: false };
+  $('guardEst').textContent = ''; G = { tema: $('tema').value, T: t, nivel, g: gen.g, pos: gen.pos, validas, intr, marc: [], t0: Date.now(), fin: false };
   clearInterval(timer); timer = setInterval(hud, 1000);
   $('mision').innerHTML = `🎯 Misión<b class="n">${validas.length}</b>En esta sopa hay <b>${validas.length}</b> palabras de <b>${esc(t.n)}</b>. ¡Encuéntralas! <span class="sub">(nivel ${['', 'fácil', 'normal', 'difícil'][nivel]})</span>`; $('nintr').textContent = intr.length; $('nintrT').textContent = intr.length === 1 ? 'intruso' : 'intrusos';
   pintar(); hud();
@@ -280,14 +280,16 @@ function fin() {
     ${falta.length ? `<h3 style="margin-top:12px">🔍 Te faltaron (${falta.length}) <small class="sub">marcadas con borde en la sopa</small></h3>${falta.map(x => fila('➖', x)).join('')}` : ''}
     ${evito.length ? `<h3 style="margin-top:12px">🛡️ Intrusos que evitaste (${evito.length})</h3>${evito.map(x => fila('🚫', x, 'no es del tema')).join('')}` : ''}
     <div style="display:flex;gap:8px;margin-top:12px;justify-content:center"><button class="btn" onclick="closeM()">Ver la sopa</button><button class="btn pri" onclick="closeM();start()">Jugar otra vez</button></div>`);
-  if (YO) { if (neto < 3) { $('gain').style.fontSize = '14px'; $('gain').textContent = 'Necesitas al menos 3 aciertos netos (correctas − intrusos) para sumar puntos.'; }
+  const est = m => { $('guardEst').innerHTML = m; };
+  est(YO ? 'Guardando…' : '👩‍🏫 Partida de prueba: tu cuenta no es de alumno, no se guarda en el top.');
+  if (YO) { if (neto < 3) { est('No suma: necesitas al menos 3 aciertos netos.'); $('gain').style.fontSize = '14px'; $('gain').textContent = 'Necesitas al menos 3 aciertos netos (correctas − intrusos) para sumar puntos.'; }
     else guardar(neto, Math.max(neto, G.marc.length + falta.length), Math.max(s, neto * 2), pct === 100 ? neto : 0); }
 }
 async function guardar(pares, intentos, segundos, racha) {
   const { data, error } = await sb.rpc('registrar_entrenamiento', { p_juego: JUEGO, p_mazo: G.T.n, p_pares: pares, p_intentos: intentos, p_segundos: segundos, p_racha: racha });
-  const g = $('gain'); if (!g) return;
-  if (error) { toast('No se guardó la partida: ' + esc(error.message), true); g.style.fontSize = '14px'; g.textContent = /schema cache|function|Juego no válido/i.test(error.message) ? 'El registro de puntos de este juego aún no está activo. Avísale a tu docente.' : error.message; return; }
-  g.textContent = `+${data} puntos`; cargarTop();
+  const g = $('gain') || document.createElement('div');
+  if (error) { $('guardEst').textContent = '⚠️ No se guardó: ' + error.message; toast('No se guardó la partida: ' + esc(error.message), true); g.style.fontSize = '14px'; g.textContent = /schema cache|function|Juego no válido/i.test(error.message) ? 'El registro de puntos de este juego aún no está activo. Avísale a tu docente.' : error.message; return; }
+  g.textContent = `+${data} puntos`; $('guardEst').textContent = `✅ Guardada: +${data} puntos`; cargarTop();
 }
 async function cargarTop() {
   const { data, error } = await sb.rpc('top_entrenamiento', { p_juego: JUEGO, p_dias: PER ? Number(PER) : null });
