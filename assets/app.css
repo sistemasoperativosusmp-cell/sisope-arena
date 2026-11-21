@@ -653,3 +653,9 @@ body:not(.arena) nav.tabs .mgt{color:var(--usmp-rojo)}
 .pie{text-align:center;font-size:12px;font-weight:700;color:var(--mute);padding:22px 16px 26px;letter-spacing:.2px}
 body.arena .pie{color:#8fa0bf}
 .login ~ .pie{position:fixed;left:0;right:0;bottom:0;padding:10px;color:#8fa0bf}
+
+/* Juego del Miedo: los controles nunca se encogen; si no caben, bajan a otra línea */
+.fila{flex-wrap:wrap!important}
+.fila .q{flex:1 1 180px;min-width:0}
+.fila .jmc,.fila .cnt,.fila .ab,.fila .chk{flex-shrink:0}
+.fila .cnt.voz{min-width:96px}
