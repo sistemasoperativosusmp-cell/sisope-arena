@@ -57,9 +57,10 @@ language sql stable security definer set search_path = public as $$
   with yo as (select id, seccion_id from public.jugadores where id = public.mi_jugador_id()),
   t as (
     select j.id, j.alias, j.avatar_url, sum(e.puntos) as total, count(*) as partidas, max(e.puntos) as mejor
-    from public.entrenamiento e join public.jugadores j on j.id = e.jugador_id and j.activo
+    from public.entrenamiento e join public.jugadores j on j.id = e.jugador_id
     where e.juego = p_juego and (p_dias is null or e.creado > now() - make_interval(days => p_dias))
-      and (j.seccion_id = (select seccion_id from yo) or public.es_docente())
+      and (j.id = (select id from yo)                                   -- uno mismo siempre se ve
+           or (j.activo and (j.seccion_id = (select seccion_id from yo) or public.es_docente())))
     group by j.id, j.alias, j.avatar_url)
   select t.alias, t.avatar_url, t.total, t.partidas, t.mejor, rank() over (order by t.total desc), t.id = (select id from yo)
   from t order by t.total desc, t.alias
