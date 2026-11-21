@@ -31,6 +31,12 @@ select,.btn{background:var(--p2);border:1px solid var(--ln);color:var(--tx);bord
 .cel.ok{background:#14503b;color:#7dffc8}
 .cel.mal{background:#5a1424;color:#ffb3c1}
 .cel.pista{outline:2px dashed var(--gold)}
+.cel.marc{background:#1d3f7a;color:#cfe0ff}
+.mision{background:linear-gradient(135deg,#1b2c55,#10203f);border:1px solid var(--ac);border-radius:12px;padding:14px;font-size:15px;line-height:1.45}
+.mision b.n{font-size:30px;color:var(--ac);display:block;line-height:1}
+.pal button{background:none;border:0;color:var(--mu);cursor:pointer;font-size:14px}
+.rev{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;padding:7px 0;border-bottom:1px solid var(--ln)}
+.rev .ic{font-size:18px}.rev small{color:var(--mu)}
 .lista{background:var(--p);border:1px solid var(--ln);border-radius:14px;padding:14px}
 .lista h3{font-size:15px;margin-bottom:4px}
 .pal{display:flex;justify-content:space-between;align-items:center;padding:7px 4px;border-bottom:1px solid var(--ln);font-weight:600;font-size:14px;letter-spacing:.5px}
@@ -83,9 +89,11 @@ footer{text-align:center;font-size:12px;color:#8fa0bf;padding:22px 16px 26px}
       <div class="hud" id="hud"></div>
       <div class="juego">
         <div id="grid"></div>
-        <div class="lista"><h3 id="ltit">Encuentra</h3><div class="sub" id="lsub"></div><div id="pals"></div>
-          <div class="intr">⚠️ En la sopa hay <b id="nintr">2</b> <b>intrusos</b>: palabras que NO son del tema. Si marcas uno, pierdes puntos.</div>
-          <p class="nota">Arrastra sobre las letras (o toca la primera y la última) para marcar una palabra.</p></div>
+        <div class="lista"><div class="mision" id="mision"></div>
+          <div class="intr">⚠️ Cuidado: también hay <b id="nintr">2</b> <b id="nintrT">intrusos</b> escondidos: palabras que NO son del tema. Si los marcas, te restan.</div>
+          <h3 style="margin-top:12px">📝 Tus marcadas <span class="sub" id="lsub"></span></h3><div id="pals"></div>
+          <button class="btn pri" id="finBtn" style="width:100%;margin-top:12px">🏁 Finalizar y revisar</button>
+          <p class="nota">Arrastra sobre las letras (o toca la primera y la última) para marcar una palabra. No sabrás si acertaste hasta finalizar; puedes quitar una marcada con ✕.</p></div>
       </div>
     </div>
     <aside class="side">
@@ -106,7 +114,7 @@ footer{text-align:center;font-size:12px;color:#8fa0bf;padding:22px 16px 26px}
 <div id="toast"></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611211251"></script>
+<script src="assets/config.js?v=202611211255"></script>
 <script>
 document.getElementById('anio').textContent = new Date().getFullYear();
 const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, window.SISOPE_CONFIG.SUPABASE_KEY);
@@ -205,23 +213,27 @@ function generar(palabras, nivel) {
 function start() {
   const base = TEMAS_JUEGO[$('tema').value], nivel = Number($('nivel').value);
   // Cada partida toma hasta 8 correctas y 2 intrusas al azar del tema
-  const t = { n: base.n, w: mezclar(base.w).slice(0, 8), x: mezclar(base.x.filter(x => !base.w.some(w => w[0] === x[0]))).slice(0, 2) };
+  const t = { n: base.n, w: mezclar(base.w).slice(0, 10), x: mezclar(base.x.filter(x => !base.w.some(w => w[0] === x[0]))).slice(0, 2) };
   const validas = t.w.map(x => x[0]), intr = t.x.map(x => x[0]);
   const gen = generar([...validas, ...intr], nivel); if (!gen) { toast('No se pudo armar la sopa, intenta otra vez'); return; }
-  G = { tema: $('tema').value, T: t, nivel, g: gen.g, pos: gen.pos, validas, intr, hall: new Set(), intrHall: new Set(), errores: 0, intentos: 0, racha: 0, best: 0, t0: Date.now(), fin: false };
+  G = { tema: $('tema').value, T: t, nivel, g: gen.g, pos: gen.pos, validas, intr, marc: [], t0: Date.now(), fin: false };
   clearInterval(timer); timer = setInterval(hud, 1000);
-  $('ltit').textContent = t.n; $('lsub').textContent = `${validas.length} palabras · nivel ${['', 'fácil', 'normal', 'difícil'][nivel]}`; $('nintr').textContent = intr.length;
+  $('mision').innerHTML = `🎯 Misión<b class="n">${validas.length}</b>En esta sopa hay <b>${validas.length}</b> palabras de <b>${esc(t.n)}</b>. ¡Encuéntralas! <span class="sub">(nivel ${['', 'fácil', 'normal', 'difícil'][nivel]})</span>`; $('nintr').textContent = intr.length; $('nintrT').textContent = intr.length === 1 ? 'intruso' : 'intrusos';
   pintar(); hud();
 }
 function pintar() {
   const gr = $('grid'); gr.style.gridTemplateColumns = `repeat(${N}, auto)`; gr.style.setProperty('--n', N);
-  const okC = new Set([...G.hall].flatMap(w => G.pos[w])), malC = new Set([...G.intrHall].flatMap(w => G.pos[w]));
-  gr.innerHTML = G.g.flat().map((ch, i) => `<div class="cel ${okC.has(i) ? 'ok' : malC.has(i) ? 'mal' : ''}" data-i="${i}">${ch}</div>`).join('');
-  const t = G.T;
-  $('pals').innerHTML = t.w.map(([w, nom]) => `<div class="pal ${G.hall.has(w) ? 'ok' : ''}"><span>${esc(nom)}</span><small>${G.hall.has(w) ? '✔' : w.length + ' letras'}</small></div>`).join('');
+  const cls = i => { if (!G.fin) return G.marc.some(w => G.pos[w].includes(i)) ? 'marc' : '';
+    for (const w of G.marc) if (G.pos[w].includes(i)) return G.validas.includes(w) ? 'ok' : 'mal';
+    return G.validas.some(w => G.pos[w].includes(i)) ? 'pista' : ''; };
+  gr.innerHTML = G.g.flat().map((ch, i) => `<div class="cel ${cls(i)}" data-i="${i}">${ch}</div>`).join('');
+  $('lsub').textContent = `(${G.marc.length})`;
+  $('pals').innerHTML = G.marc.map(w => `<div class="pal"><span>${w}</span>${G.fin ? `<small>${G.validas.includes(w) ? '✅' : '❌'}</small>` : `<button title="Quitar" onclick="quitar('${w}')">✕</button>`}</div>`).join('') || '<p class="nota">Aún no marcas ninguna.</p>';
+  $('finBtn').disabled = G.fin;
 }
 const secs = () => Math.floor(((G.finT || Date.now()) - G.t0) / 1000), fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-function hud() { if (!G) return; $('hud').innerHTML = `<span class="chip">Encontradas <b>${G.hall.size}/${G.validas.length}</b></span><span class="chip">⏱ <b>${fmt(secs())}</b></span><span class="chip">🔥 Racha <b>${G.racha}</b></span><span class="chip bad">❌ Errores <b>${G.errores}</b></span>`; }
+function hud() { if (!G) return; $('hud').innerHTML = `<span class="chip">Marcadas <b>${G.marc.length}</b></span><span class="chip">⏱ <b>${fmt(secs())}</b></span>`; }
+function quitar(w) { if (G.fin) return; G.marc = G.marc.filter(x => x !== w); pintar(); hud(); }
 
 // Selección: arrastrar o tocar primera y última letra
 let ini = null, linea = [];
@@ -240,35 +252,36 @@ $('grid').addEventListener('pointerup', () => { if (ini === null) return; if (li
 function comprobar() {
   const pal = linea.map(i => G.g[Math.floor(i / N)][i % N]).join(''), rev = pal.split('').reverse().join('');
   // Cuenta la palabra donde esté: también si el relleno al azar la formó en otro lugar
-  const w = [...G.validas.filter(x => !G.hall.has(x)), ...G.intr.filter(x => !G.intrHall.has(x))].find(x => x === pal || x === rev);
+  const w = [...G.validas, ...G.intr].filter(x => !G.marc.includes(x)).find(x => x === pal || x === rev) || [...G.validas, ...G.intr].find(x => x === pal || x === rev);
   ini = null; const sel = linea; linea = []; marcar([]);
-  if (w) G.pos[w] = sel;
+  if (w && !G.marc.includes(w)) G.pos[w] = sel;
   if (sel.length < 2) return;
-  G.intentos++;
-  if (w && G.validas.includes(w) && !G.hall.has(w)) {
-    G.hall.add(w); G.racha++; G.best = Math.max(G.best, G.racha);
-    const d = G.T.w.find(x => x[0] === w); toast(`<b>✔ ${esc(d[1])}</b>: ${esc(d[2])}${G.racha > 1 ? `<br>🔥 Racha x${G.racha}` : ''}`);
-  } else if (w && G.intr.includes(w) && !G.intrHall.has(w)) {
-    G.intrHall.add(w); G.errores++; G.racha = 0;
-    const d = G.T.x.find(x => x[0] === w); toast(`<b>❌ ¡Intruso! ${esc(d[1])}</b>: ${esc(d[2])}`, true);
-  } else if (!w && sel.length >= 3) { G.errores++; G.racha = 0; toast('<b>❌ Esa no es una palabra del tema.</b> Sigue buscando.', true); }
-  else { G.intentos--; }
+  if (w && !G.marc.includes(w)) { G.marc.push(w); toast(`📝 Marcaste <b>${w}</b>`); }
+  else if (w) toast('Ya la marcaste');
+  else if (sel.length >= 3) toast('No hay ninguna palabra escondida ahí. Sigue buscando.', true);
   pintar(); hud();
-  if (G.hall.size === G.validas.length) fin();
+  if (G.marc.length === G.validas.length + G.intr.length) fin();
 }
 function fin() {
-  G.fin = true; G.finT = Date.now(); clearInterval(timer); hud();
-  const s = secs(), t = G.T, prec = Math.round(100 * G.validas.length / Math.max(G.validas.length, G.intentos));
-  const head = G.errores === 0 ? '🧠 ¡Perfecto, sin errores!' : prec >= 70 ? '💪 ¡Bien hecho!' : '📚 A repasar los conceptos';
-  const noHall = G.intr.filter(w => !G.intrHall.has(w));
-  modal(`<div class="big">${G.errores === 0 ? '⭐⭐⭐' : prec >= 70 ? '⭐⭐' : '⭐'}</div><h2 style="text-align:center">${head}</h2>
+  if (!G || G.fin) return;
+  if (G.marc.length < G.validas.length && !confirm(`Marcaste ${G.marc.length} de ${G.validas.length}. ¿Finalizar igual?`)) return;
+  G.fin = true; G.finT = Date.now(); clearInterval(timer); pintar(); hud();
+  const s = secs(), t = G.T, nom = w => (t.w.find(x => x[0] === w) || t.x.find(x => x[0] === w));
+  const bien = t.w.filter(x => G.marc.includes(x[0])), falta = t.w.filter(x => !G.marc.includes(x[0]));
+  const cayo = t.x.filter(x => G.marc.includes(x[0])), evito = t.x.filter(x => !G.marc.includes(x[0]));
+  const neto = Math.max(0, bien.length - cayo.length), pct = Math.round(100 * neto / G.validas.length);
+  const head = pct === 100 ? '🧠 ¡Perfecto!' : pct >= 70 ? '💪 ¡Bien hecho!' : '📚 A repasar los conceptos';
+  const fila = (ic, x, extra) => `<div class="rev"><span class="ic">${ic}</span><div><b>${esc(x[1])}</b>${extra ? ` <small>${extra}</small>` : ''}<br><small>${esc(x[2])}</small></div></div>`;
+  modal(`<div class="big">${pct === 100 ? '⭐⭐⭐' : pct >= 70 ? '⭐⭐' : '⭐'}</div><h2 style="text-align:center">${head}</h2>
     ${YO ? '<div class="gain" id="gain">Guardando…</div>' : '<p style="text-align:center;color:var(--mu)">Solo las cuentas de alumno suman puntos.</p>'}
-    <p style="text-align:center">${G.validas.length} palabras · ${G.errores} error(es) · ${fmt(s)} · mejor racha ${G.best}</p>
-    <h3>📘 Lo que encontraste</h3><div class="gloss">${t.w.map(x => `<div><b>${esc(x[1])}</b>: ${esc(x[2])}</div>`).join('')}</div>
-    <h3 style="margin-top:12px">🚫 Los intrusos</h3><div class="gloss">${t.x.map(x => `<div class="x"><b>${esc(x[1])}</b>${G.intrHall.has(x[0]) ? ' (lo marcaste)' : ''}: ${esc(x[2])}</div>`).join('')}</div>
-    ${noHall.length ? `<p class="nota">💡 Los intrusos que no marcaste también estaban escondidos en la sopa: ¡bien por no caer!</p>` : ''}
-    <div style="display:flex;gap:8px;margin-top:12px;justify-content:center"><button class="btn" onclick="closeM()">Cerrar</button><button class="btn pri" onclick="closeM();start()">Jugar otra vez</button></div>`);
-  if (YO) guardar(G.validas.length, Math.max(G.validas.length, G.intentos), Math.max(s, G.validas.length * 2), Math.min(G.best, G.validas.length));
+    <p style="text-align:center"><b>${bien.length}/${G.validas.length}</b> correctas · <b>${cayo.length}</b> intruso(s) marcados · ${fmt(s)}</p>
+    ${bien.length ? `<h3>✅ Correctas (${bien.length})</h3>${bien.map(x => fila('✅', x)).join('')}` : ''}
+    ${cayo.length ? `<h3 style="margin-top:12px">❌ Incorrectas: no son del tema (${cayo.length})</h3>${cayo.map(x => fila('❌', x, 'intruso')).join('')}` : ''}
+    ${falta.length ? `<h3 style="margin-top:12px">🔍 Te faltaron (${falta.length}) <small class="sub">marcadas con borde en la sopa</small></h3>${falta.map(x => fila('➖', x)).join('')}` : ''}
+    ${evito.length ? `<h3 style="margin-top:12px">🛡️ Intrusos que evitaste (${evito.length})</h3>${evito.map(x => fila('🚫', x, 'no es del tema')).join('')}` : ''}
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:center"><button class="btn" onclick="closeM()">Ver la sopa</button><button class="btn pri" onclick="closeM();start()">Jugar otra vez</button></div>`);
+  if (YO) { if (neto < 3) { $('gain').style.fontSize = '14px'; $('gain').textContent = 'Necesitas al menos 3 aciertos netos (correctas − intrusos) para sumar puntos.'; }
+    else guardar(neto, Math.max(neto, G.marc.length + falta.length), Math.max(s, neto * 2), pct === 100 ? neto : 0); }
 }
 async function guardar(pares, intentos, segundos, racha) {
   const { data, error } = await sb.rpc('registrar_entrenamiento', { p_juego: JUEGO, p_mazo: G.T.n, p_pares: pares, p_intentos: intentos, p_segundos: segundos, p_racha: racha });
@@ -318,6 +331,7 @@ let tt; function toast(h, mal) { const t = $('toast'); t.innerHTML = h; t.classL
 function modal(h) { $('mbox').innerHTML = h; $('modal').style.display = 'flex'; }
 function closeM() { $('modal').style.display = 'none'; }
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeM(); });
+$('finBtn').onclick = fin;
 $('start').onclick = start; $('tema').onchange = start; $('nivel').onchange = start;
 (async () => {
   const { data } = await sb.auth.getSession();

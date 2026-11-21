@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611211251">
+<link rel="stylesheet" href="assets/app.css?v=202611211255">
 </head>
 <body>
 <header class="top">
@@ -97,7 +97,7 @@
   <!-- MEMORIA TÉCNICA -->
   <section class="card aj hide" id="sPupi">
     <h2 class="pix">PUPILETRAS · TEMAS Y PALABRAS</h2>
-    <p class="help" style="margin-top:0">Cada tema tiene palabras <b>✅ correctas</b> (las que el alumno debe encontrar) e <b>🚫 intrusas</b> (escondidas pero que NO son del tema: si las marca, pierde puntos). Cada partida toma al azar hasta 8 correctas y 2 intrusas; un tema necesita al menos 3 correctas para aparecer en el juego. La <b>palabra en la sopa</b> va sin espacios ni símbolos (máx. 12 letras) y el <b>nombre a mostrar</b> es opcional (ej. HYPERV → “Hyper-V”). 💬 Las sugerencias anónimas del juego se leen y responden <a href="pupiletras.html" target="_blank">dentro del juego →</a></p>
+    <p class="help" style="margin-top:0">Cada tema tiene palabras <b>✅ correctas</b> (las que el alumno debe encontrar) e <b>🚫 intrusas</b> (escondidas pero que NO son del tema: si las marca, pierde puntos). Cada partida toma al azar hasta 10 correctas y 2 intrusas; el alumno solo ve “hay N palabras del tema” (sin la lista) y al finalizar se le muestra cuáles acertó y cuáles no; un tema necesita al menos 3 correctas para aparecer en el juego. La <b>palabra en la sopa</b> va sin espacios ni símbolos (máx. 12 letras) y el <b>nombre a mostrar</b> es opcional (ej. HYPERV → “Hyper-V”). 💬 Las sugerencias anónimas del juego se leen y responden <a href="pupiletras.html" target="_blank">dentro del juego →</a></p>
     <div class="pupi">
       <div class="ptemas"><div id="pTemas"></div><div class="ajform" style="grid-template-columns:1fr auto;margin-top:8px"><input id="pNuevo" maxlength="60" placeholder="Nuevo tema (ej. Comandos Linux)"><button class="btn green" onclick="nuevoTema()">+ Tema</button></div></div>
       <div class="ppal" id="pPanel"><div class="empty">Elige un tema.</div></div>
@@ -145,8 +145,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611211251"></script>
-<script src="assets/comun.js?v=202611211251"></script>
+<script src="assets/config.js?v=202611211255"></script>
+<script src="assets/comun.js?v=202611211255"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
