@@ -114,7 +114,7 @@ footer{text-align:center;font-size:12px;color:#8fa0bf;padding:22px 16px 26px}
 <div id="toast"></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611211306"></script>
+<script src="assets/config.js?v=202611211310"></script>
 <script>
 document.getElementById('anio').textContent = new Date().getFullYear();
 const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, window.SISOPE_CONFIG.SUPABASE_KEY);
@@ -229,7 +229,7 @@ function pintar() {
   gr.innerHTML = G.g.flat().map((ch, i) => `<div class="cel ${cls(i)}" data-i="${i}">${ch}</div>`).join('');
   $('lsub').textContent = `(${G.marc.length})`;
   $('pals').innerHTML = G.marc.map(w => `<div class="pal"><span>${w}</span>${G.fin ? `<small>${G.validas.includes(w) ? '✅' : '❌'}</small>` : `<button title="Quitar" onclick="quitar('${w}')">✕</button>`}</div>`).join('') || '<p class="nota">Aún no marcas ninguna.</p>';
-  $('finBtn').disabled = G.fin;
+  $('finBtn').textContent = G.fin ? '▶ Jugar otra vez' : '🏁 Finalizar y revisar';
 }
 const secs = () => Math.floor(((G.finT || Date.now()) - G.t0) / 1000), fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 function hud() { if (!G) return; $('hud').innerHTML = `<span class="chip">Marcadas <b>${G.marc.length}</b></span><span class="chip">⏱ <b>${fmt(secs())}</b></span>`; }
@@ -333,7 +333,7 @@ let tt; function toast(h, mal) { const t = $('toast'); t.innerHTML = h; t.classL
 function modal(h) { $('mbox').innerHTML = h; $('modal').style.display = 'flex'; }
 function closeM() { $('modal').style.display = 'none'; }
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeM(); });
-$('finBtn').onclick = fin;
+$('finBtn').onclick = () => (G && G.fin ? start() : fin());
 $('start').onclick = start; $('tema').onchange = start; $('nivel').onchange = start;
 (async () => {
   const { data } = await sb.auth.getSession();
