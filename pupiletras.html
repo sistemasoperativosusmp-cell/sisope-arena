@@ -114,7 +114,7 @@ footer{text-align:center;font-size:12px;color:#8fa0bf;padding:22px 16px 26px}
 <div id="toast"></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611211310"></script>
+<script src="assets/config.js?v=202611220756"></script>
 <script>
 document.getElementById('anio').textContent = new Date().getFullYear();
 const sb = window.supabase.createClient(window.SISOPE_CONFIG.SUPABASE_URL, window.SISOPE_CONFIG.SUPABASE_KEY);
@@ -293,7 +293,7 @@ async function guardar(pares, intentos, segundos, racha) {
 }
 async function cargarTop() {
   const { data, error } = await sb.rpc('top_entrenamiento', { p_juego: JUEGO, p_dias: PER ? Number(PER) : null });
-  if (error) { $('top').innerHTML = `<div class="nota">${/schema cache|function/i.test(error.message) ? 'El top aún no está activo.' : esc(error.message)}</div>`; return; }
+  if (error) { $('top').innerHTML = `<div class="nota">${/schema cache|function/i.test(error.message) ? 'El top aún no está activo (' + esc(error.message) + ')' : esc(error.message)}</div>`; return; }
   const L = data || [], yo = L.find(x => x.es_yo);
   $('me').innerHTML = YO ? `<span class="chip">👾 <b>${esc(YO.alias)}</b></span><span class="chip">Puntos ${PER ? '(7 días)' : ''} <b>${yo ? yo.total : 0}</b></span><span class="chip">Puesto <b>${yo ? yo.posicion + '°' : '—'}</b></span>` : `<span class="chip" style="border-color:var(--gold);color:var(--gold)" title="Tu cuenta no es de alumno: puedes jugar, pero la partida no se guarda ni aparece en el top">👩‍🏫 Modo docente · no suma al top</span>`;
   const av = x => x.avatar_url ? `<img src="${esc(/^https?:/.test(x.avatar_url) ? x.avatar_url : window.SISOPE_CONFIG.SUPABASE_URL + '/storage/v1/object/public/' + x.avatar_url)}" alt="">` : `<span class="ini">${esc((x.alias || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase())}</span>`;
