@@ -25,7 +25,7 @@ create table if not exists public.mq_respuestas (
   id          bigint generated always as identity primary key,
   jugador_id  uuid not null references public.jugadores(id) on delete cascade,
   practica    int not null check (practica between 1 and 4),
-  respuestas  jsonb not null,          -- [{"id":12,"op":2,"ok":true,"semana":3,"rol":"Arquitecto"}, ...]
+  respuestas  jsonb not null,          -- [{"id":12,"op":2,"ok":true,"semana":3,"rol":"Arquitecto","f":0,"ms":8400}, ...]
   aciertos    int not null,
   total       int not null,
   tarde       boolean not null default false,
@@ -85,7 +85,8 @@ begin
   return query select q.id, q.texto, q.opciones from public.mq_preguntas q where q.practica = p_practica and q.activa order by random() limit 10;
 end $$;
 
--- Enviar respuestas: p_resp = [{"id": 12, "op": 2}, ...]  (op = índice de la alternativa original, -1 = en blanco)
+-- Enviar respuestas: p_resp = [{"id": 12, "op": 2, "f": 0, "ms": 8400}, ...]
+--   op = índice de la alternativa original (-1 = no lo sé / sin responder) · f = veces que salió de la pantalla · ms = tiempo usado
 drop function if exists public.responder_quiz_mision(int, jsonb);
 create function public.responder_quiz_mision(p_practica int, p_resp jsonb)
 returns int language plpgsql security definer set search_path = public as $$
@@ -96,7 +97,7 @@ begin
   v_u := public.mq_ultima_semana(p_practica);
   if v_u is null or coalesce(v_sem, 1) < v_u then raise exception 'Este quiz todavía no está abierto'; end if;
   if jsonb_typeof(p_resp) <> 'array' or jsonb_array_length(p_resp) = 0 or jsonb_array_length(p_resp) > 10 then raise exception 'Respuestas no válidas'; end if;
-  select jsonb_agg(jsonb_build_object('id', q.id, 'op', (e->>'op')::int, 'ok', (e->>'op')::int = q.correcta, 'semana', q.semana, 'rol', q.rol)),
+  select jsonb_agg(jsonb_build_object('id', q.id, 'op', (e->>'op')::int, 'ok', (e->>'op')::int = q.correcta, 'semana', q.semana, 'rol', q.rol, 'f', least(greatest(coalesce((e->>'f')::int, 0), 0), 99), 'ms', least(greatest(coalesce((e->>'ms')::int, 0), 0), 600000))),
          count(*) filter (where (e->>'op')::int = q.correcta), count(*)
     into v_det, v_ok, v_tot
   from (select distinct on ((x->>'id')::bigint) x as e from jsonb_array_elements(p_resp) x) r

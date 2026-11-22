@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Quiz de misión</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611220907">
+<link rel="stylesheet" href="assets/app.css?v=202611220924">
 <style>
 .ev{max-width:760px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:18px}
 .ev .panel{padding:24px}
@@ -44,6 +44,18 @@
 @keyframes pop{0%{transform:scale(.2) rotate(-25deg);opacity:0}70%{transform:scale(1.15) rotate(6deg)}100%{transform:scale(1)}}
 .prev{background:#5c1a24;border:2px solid var(--red);border-radius:12px;padding:10px 14px;font-weight:800;font-size:13px}
 .reglas{margin:0 0 14px;padding-left:20px;color:#d6dcf2;font-weight:700;line-height:1.6}
+.juego{user-select:none;-webkit-user-select:none}
+.qbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.tbar{height:10px;background:#0f1733;border:2px solid #2a3766;border-radius:999px;overflow:hidden;margin:6px 0 12px}.tbar i{display:block;height:100%;background:linear-gradient(90deg,#39ff14,#ffd23f,#ff3b5c);width:100%}
+.ley{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 10px}
+.ley div{background:#0f1733;border:2px solid #2a3766;border-radius:10px;padding:8px 10px;font-weight:700;font-size:14px;line-height:1.3;display:flex;gap:8px}
+.ley b{flex:none;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#0f1733;font-size:13px}
+.ley .nose{grid-column:1/-1;color:#b8c2e6;border-style:dashed}
+.cv{position:relative}.cv canvas{width:100%;display:block;border-radius:12px;background:#0a1124;border:2px solid #2a3766;touch-action:manipulation;cursor:pointer}
+.cv .ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;text-align:center;font-weight:800;background:#0a1124d9;border-radius:12px;color:var(--gold);font-size:18px;padding:10px}
+.cv .ov small{color:#d6dcf2;font-size:13px}
+.fuga .qt,.fuga .ley{filter:blur(8px)}
+.clasico .ops{margin-top:8px}
 @media(max-width:600px){.lks button small{display:none}.qt{font-size:17px}.huida{height:340px}}
 </style>
 </head>
@@ -60,28 +72,33 @@
     <ol class="reglas">
       <li><b id="nQ">10</b> preguntas de los temas de la práctica.</li>
       <li>Si no sabes, marca <b>“No lo sé”</b>: adivinar solo esconde lo que necesitas reforzar.</li>
-      <li>Tienes <b>un solo intento</b>. No hay límite de tiempo.</li>
+      <li>🦖 <b>Modo runner:</b> tu robot corre solo y las alternativas llegan como obstáculos con su letra. <b>Choca</b> con la correcta y <b>salta</b> las demás (⬆️, Espacio o toca la pantalla). Tienes <b id="nSeg">25</b> segundos por pregunta.</li>
+      <li>Tienes <b>un solo intento</b> y no puedes volver atrás. Si sales de la pantalla, la pregunta se oculta, el tiempo sigue corriendo y queda registrado.</li>
       <li>⚠️ Si no lo respondes antes de pasar a la siguiente práctica, quedas en la lista del <b>Juego del Miedo</b>.</li>
     </ol>
     <div class="acc"><span class="gris" id="estado"></span><button class="evbtn" id="bEmpezar" disabled>Cargando…</button></div>
   </section>
-  <section class="panel hide" id="s-q">
-    <h2 class="pix" id="tit2">QUIZ DE MISIÓN</h2>
+  <section class="panel hide juego" id="s-q">
+    <div class="qbar"><h2 class="pix" id="tit2" style="margin:0">QUIZ DE MISIÓN</h2><span class="qn pix" id="qNum" style="margin:0"></span></div>
     <div class="prog"><i id="pg"></i></div>
-    <div style="margin-top:18px"><div class="qn pix" id="qNum"></div><p class="qt" id="qTxt"></p><div class="ops" id="qOps"></div></div>
-    <div class="acc"><button class="evbtn sec" id="bAtras">◀ Atrás</button><span class="gris">Elige una alternativa para avanzar</span></div>
+    <p class="qt" id="qTxt" style="margin-top:14px"></p>
+    <div class="ley" id="ley"></div>
+    <div class="tbar"><i id="tb"></i></div>
+    <div class="cv" id="cvBox"><canvas id="cv" width="800" height="230"></canvas><div class="ov" id="ov"></div></div>
+    <div class="ops hide" id="qOps"></div>
+    <div class="acc"><span class="gris" id="ayuda">⬆️ / Espacio / toca la pantalla = saltar · <b>Choca</b> con la letra correcta · salta las demás</span><a href="#" class="gris" id="lnkClas" style="font-size:12px">¿Problemas con el juego? Modo clásico</a></div>
   </section>
   <section class="panel hide" id="s-env">
     <h2 class="pix">¿ENVIAR TUS RESPUESTAS?</h2>
     <p id="resumen" style="margin-top:12px"></p>
-    <div class="acc"><button class="evbtn sec" id="bRev">◀ Revisar</button><button class="evbtn" id="bEnviar">ENVIAR ▶</button></div>
+    <div class="acc"><span></span><button class="evbtn" id="bEnviar">ENVIAR ▶</button></div>
   </section>
   <section class="panel hide" id="s-fin"><div class="medfin" id="fin"></div></section>
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611220907"></script>
-<script src="assets/comun.js?v=202611220907"></script>
+<script src="assets/config.js?v=202611220924"></script>
+<script src="assets/comun.js?v=202611220924"></script>
 <script>
 let P = Number(new URLSearchParams(location.search).get('p')) || null, Q = [], R = {}, IDX = 0, PREVIEW = false, ENV = false;
 const mezclar = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
@@ -114,30 +131,99 @@ async function iniciar() {
   $('#tit').textContent = $('#tit2').textContent = `QUIZ DE MISIÓN · PRÁCTICA ${P}`;
   if (!data.length) { noDisp('Tu docente aún no cargó preguntas para este quiz', '📝'); return; }
   Q = mezclar(data).map(q => ({ ...q, ops: mezclar((q.opciones || []).map((t, i) => [i, t])) }));
-  $('#nQ').textContent = Q.length;
+  // Si recargó la página a mitad del quiz, sigue donde iba (no puede volver a empezar para ver las preguntas)
+  let guard = null; try { guard = PREVIEW ? null : JSON.parse(localStorage.getItem('sisope_qm_' + P) || 'null'); } catch (e) {}
+  if (guard && guard.Q?.length) { Q = guard.Q; R = guard.R || {}; F = guard.F || {}; MS = guard.MS || {}; const b = $('#bEmpezar'); b.disabled = false; b.textContent = `CONTINUAR (${Math.min(guard.IDX, Q.length)}/${Q.length}) ▶`; b.onclick = () => irQ(guard.IDX); $('#nQ').textContent = Q.length; $('#tit').textContent = $('#tit2').textContent = `QUIZ DE MISIÓN · PRÁCTICA ${P}`; return; }
+  $('#nQ').textContent = Q.length; $('#nSeg').textContent = SEG;
   const b = $('#bEmpezar'); b.disabled = false; b.textContent = '¡EMPEZAR! ▶'; b.onclick = () => irQ(0);
 }
+// ---------- Runner ----------
+const SEG = 25, COL = ['#39ff14', '#00e5ff', '#ffd23f', '#ff7ad9', '#8a94b8'], LET = ['A', 'B', 'C', 'D', '?'];
+const cv = $('#cv'), cx = cv.getContext('2d'), W = 800, H = 230, SUELO = 190;
+let G = null, CLASICO = false, raf = null;
+const guardarLocal = () => { if (PREVIEW) return; try { localStorage.setItem('sisope_qm_' + P, JSON.stringify({ Q, R, F, MS, IDX })); } catch (e) {} };
+let F = {}, MS = {};
 function irQ(i) {
-  IDX = i; ver('s-q'); const q = Q[i];
-  $('#qNum').textContent = `PREGUNTA ${i + 1} DE ${Q.length}`; $('#pg').style.width = `${100 * i / Q.length}%`;
+  IDX = i; guardarLocal(); if (i >= Q.length) { irEnv(); return; }
+  ver('s-q'); const q = Q[i];
+  $('#qNum').textContent = `${i + 1} / ${Q.length}`; $('#pg').style.width = `${100 * i / Q.length}%`;
   $('#qTxt').textContent = q.texto;
-  $('#qOps').innerHTML = q.ops.map(([k, t]) => `<button class="op ${R[q.id] === k ? 'on' : ''}" onclick="elegir(${k})">${esc(t)}</button>`).join('') + `<button class="op nose ${R[q.id] === -1 ? 'on' : ''}" onclick="elegir(-1)">🤷 No lo sé</button>`;
-  $('#bAtras').style.visibility = i ? 'visible' : 'hidden';
+  $('#ley').innerHTML = q.ops.map(([k, t], j) => `<div><b style="background:${COL[j]}">${LET[j]}</b><span>${esc(t)}</span></div>`).join('') + `<div class="nose"><b style="background:${COL[4]}">?</b><span>No lo sé</span></div>`;
+  $('#qOps').innerHTML = q.ops.map(([k, t], j) => `<button class="op" onclick="elegir(${j})"><b>${LET[j]})</b> ${esc(t)}</button>`).join('') + `<button class="op nose" onclick="elegir(4)">🤷 No lo sé</button>`;
+  $('#cvBox').classList.toggle('hide', CLASICO); $('#qOps').classList.toggle('hide', !CLASICO); $('#ayuda').classList.toggle('hide', CLASICO);
+  // Obstáculos: las 5 letras en orden al azar, se repiten hasta que se acabe el tiempo
+  G = { t0: null, y: 0, vy: 0, obs: [], sig: 0, fin: false, cuenta: 3, tCuenta: performance.now() };
+  ov(`¡Prepárate!<small>Lee la pregunta</small>`); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 }
-function elegir(k) { R[Q[IDX].id] = k; setTimeout(() => IDX + 1 < Q.length ? irQ(IDX + 1) : irEnv(), 180); irQ(IDX); }
+function ov(h) { const o = $('#ov'); o.innerHTML = h || ''; o.style.display = h ? 'flex' : 'none'; }
+function nuevaTanda() { const L = mezclar([0, 1, 2, 3, 4]); L.forEach((k, j) => G.obs.push({ k, x: W + 60 + G.sig + j * 300, w: 46, h: 54 })); G.sig += 5 * 300; }
+function saltar() { if (!G || G.fin || G.t0 === null || CLASICO) return; if (G.y === 0) G.vy = 11.5; }
+function loop(now) {
+  if (!G || G.fin) return;
+  if (G.t0 === null) { // cuenta regresiva para leer
+    const r = 4 - Math.floor((now - G.tCuenta) / 1000);
+    if (r > 0) { if (r <= 3) ov(`<span style="font-size:42px">${r}</span><small>Ubica la letra correcta en la lista</small>`); dibujar(0); raf = requestAnimationFrame(loop); return; }
+    G.t0 = now; G.last = now; ov(''); nuevaTanda(); nuevaTanda();
+  }
+  const dt = Math.min(40, now - G.last) / 16.67; G.last = now;
+  const rest = SEG - (now - G.t0) / 1000; $('#tb').style.width = Math.max(0, 100 * rest / SEG) + '%';
+  if (CLASICO || $('#s-q').classList.contains('fuga')) { G.vy = 0; if (rest <= 0) elegir(-1); else raf = requestAnimationFrame(loop); return; }   // fuera de pantalla: el juego se congela, el reloj no
+  const vel = 3.6 * dt; G.obs.forEach(o => o.x -= vel); G.sig -= vel;
+  if (G.obs.length < 6) nuevaTanda(); G.obs = G.obs.filter(o => o.x > -80);
+  G.vy -= 0.55 * dt; G.y = Math.max(0, G.y + G.vy * dt); if (G.y === 0) G.vy = 0;
+  // Choque: robot en x 70..112
+  const rob = { x: 70, w: 40, y: SUELO - 52 - G.y, h: 52 };
+  const ch = G.obs.find(o => o.x < rob.x + rob.w - 6 && o.x + o.w > rob.x + 6 && rob.y + rob.h > SUELO - o.h + 4);
+  dibujar(now);
+  if (ch) { elegir(ch.k); return; }
+  if (rest <= 0) { elegir(-1); return; }
+  raf = requestAnimationFrame(loop);
+}
+function robot(x, y, now) {
+  const c = cx, pata = Math.floor(now / 120) % 2;
+  c.fillStyle = '#c9d3f2'; c.fillRect(x + 6, y + 8, 30, 30);              // cuerpo (servidor)
+  c.fillStyle = '#2a3766'; [14, 22, 30].forEach(yy => c.fillRect(x + 10, y + yy, 22, 3));
+  c.fillStyle = '#39ff14'; c.fillRect(x + 28, y + 12, 4, 4);            // led
+  c.fillStyle = '#c9d3f2'; c.fillRect(x + 18, y, 4, 8); c.fillStyle = '#ff3b5c'; c.fillRect(x + 16, y - 4, 8, 5);   // antena
+  c.fillStyle = '#8a94b8'; if (G && G.y > 0) { c.fillRect(x + 10, y + 38, 6, 10); c.fillRect(x + 26, y + 38, 6, 10); }
+  else { c.fillRect(x + 10, y + 38, 6, pata ? 14 : 8); c.fillRect(x + 26, y + 38, 6, pata ? 8 : 14); }
+}
+function dibujar(now) {
+  cx.clearRect(0, 0, W, H);
+  cx.fillStyle = '#2a3766'; cx.fillRect(0, SUELO, W, 3);
+  cx.fillStyle = '#1b2547'; for (let i = 0; i < 16; i++) cx.fillRect((i * 70 - (now / 8) % 70 + W) % W, SUELO + 14 + (i % 3) * 8, 18, 3);
+  (G?.obs || []).forEach(o => { const c = COL[o.k];
+    cx.fillStyle = c; cx.fillRect(o.x, SUELO - o.h, o.w, o.h); cx.fillStyle = '#0a1124'; cx.fillRect(o.x + 4, SUELO - o.h + 4, o.w - 8, o.h - 8);
+    cx.fillStyle = c; cx.font = "bold 26px 'Press Start 2P', monospace"; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(LET[o.k], o.x + o.w / 2, SUELO - o.h / 2 + 2); });
+  robot(70, SUELO - 52 - (G?.y || 0), now || 0);
+}
+function elegir(j) {
+  if (!G || G.fin) return; G.fin = true; cancelAnimationFrame(raf);
+  const q = Q[IDX]; R[q.id] = j >= 0 && j < 4 ? q.ops[j][0] : -1; MS[q.id] = G.t0 ? Math.round(performance.now() - G.t0) : 0;
+  ov(j === -1 ? '⏱️ Se acabó el tiempo<small>Cuenta como sin responder</small>' : j === 4 ? '🤷 No lo sé<small>Gracias por ser honesto</small>' : `💥 Elegiste <span style="color:${COL[j]}">${LET[j]}</span><small>Siguiente pregunta…</small>`);
+  setTimeout(() => irQ(IDX + 1), 900);
+}
+// Detector de fuga: si sale de la pantalla se oculta la pregunta (el tiempo sigue)
+function fuga() { if (!G || G.fin || $('#s-q').classList.contains('hide')) return; const id = Q[IDX].id; F[id] = (F[id] || 0) + 1; $('#s-q').classList.add('fuga'); ov('👀 Saliste de la pantalla<small>Quedó registrado y el tiempo siguió corriendo. Toca para continuar.</small>'); }
+document.addEventListener('visibilitychange', () => { if (document.hidden) fuga(); });
+window.addEventListener('blur', fuga);
+const volver = () => { if ($('#s-q').classList.contains('fuga')) { $('#s-q').classList.remove('fuga'); ov(''); return true; } return false; };
+['copy', 'cut', 'contextmenu', 'selectstart'].forEach(ev => $('#s-q').addEventListener(ev, e => e.preventDefault()));
+document.addEventListener('keydown', e => { if ($('#s-q').classList.contains('hide')) return; if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (!volver()) saltar(); } });
+$('#cvBox').addEventListener('pointerdown', e => { e.preventDefault(); if (!volver()) saltar(); });
+$('#lnkClas').onclick = e => { e.preventDefault(); if (CLASICO) return; CLASICO = true; $('#cvBox').classList.add('hide'); $('#qOps').classList.remove('hide'); $('#ayuda').classList.add('hide'); toast('Modo clásico: el tiempo por pregunta sigue igual'); };
 function irEnv() {
   ver('s-env'); $('#pg').style.width = '100%';
-  const nose = Q.filter(q => R[q.id] === -1).length, falta = Q.filter(q => R[q.id] === undefined).length;
-  $('#resumen').innerHTML = `Respondiste <b>${Q.length - falta - nose}</b> de ${Q.length}${nose ? ` · marcaste <b>${nose}</b> como “No lo sé”` : ''}${falta ? ` · <b style="color:#ff8a8a">${falta} sin responder</b>` : ''}. Después de enviar no podrás cambiarlas.`;
+  const nose = Q.filter(q => R[q.id] === -1).length;
+  $('#resumen').innerHTML = `¡Terminaste las ${Q.length} preguntas!${nose ? ` (${nose} con “No lo sé” o sin responder)` : ''} Envía tus respuestas para registrar la misión.`;
 }
-$('#bAtras').onclick = () => IDX > 0 && irQ(IDX - 1);
-$('#bRev').onclick = () => irQ(0);
 $('#bEnviar').onclick = async () => {
   if (ENV) return;
   if (PREVIEW) { fin(); return; }
   ENV = true; $('#bEnviar').disabled = true; $('#bEnviar').textContent = 'ENVIANDO…';
-  const { error } = await sb.rpc('responder_quiz_mision', { p_practica: P, p_resp: Q.map(q => ({ id: q.id, op: R[q.id] ?? -1 })) });
+  const { error } = await sb.rpc('responder_quiz_mision', { p_practica: P, p_resp: Q.map(q => ({ id: q.id, op: R[q.id] ?? -1, f: F[q.id] || 0, ms: MS[q.id] || 0 })) });
   if (error) { ENV = false; $('#bEnviar').disabled = false; $('#bEnviar').textContent = 'ENVIAR ▶'; toast('No se envió: ' + error.message, true); return; }
+  try { localStorage.removeItem('sisope_qm_' + P); } catch (e) {}
   fin();
 };
 function fin() {

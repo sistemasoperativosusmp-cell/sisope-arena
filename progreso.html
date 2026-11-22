@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611220907">
+<link rel="stylesheet" href="assets/app.css?v=202611220924">
 <style>
 .evo{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .evo0{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
@@ -83,9 +83,9 @@ details.mis[open]>summary{margin-bottom:10px}
 <div class="modal hide" id="mIns" onclick="if (event.target === this) cerrarIns()"><div class="box plain det"><div class="dethead"><h2 class="pix" style="color:var(--navy)">INSIGNIAS DEL AULA</h2><button class="sbtn" onclick="cerrarIns()">✕ Cerrar</button></div><div id="mInsCuerpo" style="width:100%"></div></div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611220907"></script>
-<script src="assets/insignias.js?v=202611220907"></script>
-<script src="assets/comun.js?v=202611220907"></script>
+<script src="assets/config.js?v=202611220924"></script>
+<script src="assets/insignias.js?v=202611220924"></script>
+<script src="assets/comun.js?v=202611220924"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -278,7 +278,8 @@ function m0HTML(x) {
 // ---------- Misiones = trabajo grupal de la semana + quiz de misión (preguntas de esa semana) → afinidad por tema ----------
 // Afinidad = promedio de las partes que existan: rúbrica del grupal (+ bonus − falta) sobre 3  y  % de aciertos del quiz en las preguntas de esa semana
 let MQR = [];
-const quizSem = (jid, sem) => { let ok = 0, t = 0; MQR.filter(r => r.jugador_id === jid).forEach(r => (r.respuestas || []).forEach(x => { if (x.semana === sem) { t++; if (x.ok) ok++; } })); return t ? { ok, t, v: ok / t } : null; };
+// Un acierto después de salir de la pantalla vale la mitad
+const quizSem = (jid, sem) => { let ok = 0, t = 0; MQR.filter(r => r.jugador_id === jid).forEach(r => (r.respuestas || []).forEach(x => { if (x.semana === sem) { t++; if (x.ok) ok += x.f ? 0.5 : 1; } })); return t ? { ok, t, v: ok / t } : null; };
 function misionSem(d) {
   const grOk = [d.gr_comunicacion, d.gr_tecnico, d.gr_analisis].some(v => v !== null && v !== undefined), qz = quizSem(d.jugador_id, d.semana);
   if (!grOk && !qz) return null;
@@ -289,9 +290,9 @@ function misionSem(d) {
 // Afinidad de rol por práctica (preguntas del quiz ligadas a un rol)
 function rolesQuiz(jid) {
   return MQR.filter(r => r.jugador_id === jid).sort((a, b) => a.practica - b.practica).map(r => { const R = {};
-    (r.respuestas || []).forEach(x => { if (!x.rol) return; R[x.rol] = R[x.rol] || { ok: 0, t: 0 }; R[x.rol].t++; if (x.ok) R[x.rol].ok++; });
+    (r.respuestas || []).forEach(x => { if (!x.rol) return; R[x.rol] = R[x.rol] || { ok: 0, t: 0 }; R[x.rol].t++; if (x.ok) R[x.rol].ok += x.f ? 0.5 : 1; });
     const v = Object.entries(R).map(([rol, o]) => ({ rol, v: o.ok / o.t, t: o.t })).sort((a, b) => b.v - a.v);
-    return { p: r.practica, ac: r.aciertos, tot: r.total, tarde: r.tarde, roles: v, top: v[0] && (!v[1] || v[0].v > v[1].v) ? v[0].rol : null }; });
+    return { p: r.practica, ac: r.aciertos, tot: r.total, tarde: r.tarde, fugas: (r.respuestas || []).reduce((a, x) => a + (x.f || 0), 0), seg: Math.round((r.respuestas || []).reduce((a, x) => a + (x.ms || 0), 0) / 1000 / Math.max(1, (r.respuestas || []).length)), roles: v, top: v[0] && (!v[1] || v[0].v > v[1].v) ? v[0].rol : null }; });
 }
 function sugerenciaRol(x) {
   const L = rolesQuiz(x.j.id).filter(r => r.top), a = x.j.rol_consultora; if (L.length < 2 || !a) return null;
@@ -301,7 +302,7 @@ function quizMisHTML(x) {
   const ult = {}; Object.values(SEMS).forEach(w => { const p = Number(String(w.practica || '').replace(/\D/g, '')); if (p) ult[p] = Math.max(ult[p] || 0, w.semana); });
   const RQ = Object.fromEntries(rolesQuiz(x.j.id).map(r => [r.p, r])), sug = sugerenciaRol(x), a = x.j.rol_consultora;
   const fila = p => { const r = RQ[p], u = ult[p];
-    const est = r ? `<b>${r.ac}/${r.tot}</b> aciertos${r.tarde ? ' · <span style="color:#c8102e">tarde</span>' : ''}` : !u ? '<span class="vac2">sin semanas en el plan</span>' : ACT < u ? `<span class="vac2">se abre en S${u}</span>` : ACT === u ? '⏳ abierto, aún no responde' : '<b style="color:#c8102e">📝 DEBE el quiz (Juego del Miedo)</b>';
+    const est = r ? `<b>${r.ac}/${r.tot}</b> aciertos${r.tarde ? ' · <span style="color:#c8102e">tarde</span>' : ''}${r.seg ? ` · ⏱ ${r.seg} s/preg.` : ''}${r.fugas ? ` · <span style="color:#c8102e" title="Salió de la pantalla durante el quiz: esos aciertos valen la mitad">⚠️ salió ${r.fugas} vez/veces</span>` : ''}` : !u ? '<span class="vac2">sin semanas en el plan</span>' : ACT < u ? `<span class="vac2">se abre en S${u}</span>` : ACT === u ? '⏳ abierto, aún no responde' : '<b style="color:#c8102e">📝 DEBE el quiz (Juego del Miedo)</b>';
     const roles = r && r.roles.length ? r.roles.map(o => `<span class="m0t ${o.rol === r.top ? 'ok' : ''}" title="${o.t} pregunta(s)">${esc(o.rol)} ${Math.round(o.v * 100)}%${o.rol === a ? ' ★' : ''}</span>`).join('') : r ? '<span class="vac2">sin preguntas de rol</span>' : '';
     return `<tr><td><b>P${p}</b></td><td>${est}</td><td>${roles}</td></tr>`; };
   return `<div class="msub"><h5>📝 Quiz de misión <small>(sin nota · skill técnico por tema y afinidad de rol · ★ = rol actual${a ? ': ' + esc(a) : ''})</small></h5>
@@ -363,7 +364,7 @@ ${d.hay ? `- Domina: ${d.ok.map(i => temaQ(i.q)).join('; ') || 'ninguno'}
 - Modo Reto: ${Number(d.m.intentos_escape) ? 'intentó evitarlo ' + d.m.intentos_escape + (Number(d.m.intentos_escape) === 1 ? ' vez' : ' veces') : 'lo eligió a la primera'}` : '- No rindió la Misión 0'}
 
 1b) QUIZ DE MISIÓN (sin nota) · afinidad de rol (rol actual: ${x.j.rol_consultora || 'sin rol'})
-${rolesQuiz(x.j.id).map(r => `- P${r.p}: ${r.ac}/${r.tot} aciertos${r.tarde ? ' (tarde)' : ''}${r.roles.length ? ' · ' + r.roles.map(o => o.rol + ' ' + Math.round(o.v * 100) + '%').join(', ') : ''}`).join('\n') || '- Aún no responde ningún quiz de misión'}${sugerenciaRol(x) ? `\n- Sugerencia de la plataforma: evaluar cambio de rol a ${sugerenciaRol(x)}` : ''}
+${rolesQuiz(x.j.id).map(r => `- P${r.p}: ${r.ac}/${r.tot} aciertos${r.tarde ? ' (tarde)' : ''}${r.fugas ? ` (salió de la pantalla ${r.fugas} veces)` : ''}${r.roles.length ? ' · ' + r.roles.map(o => o.rol + ' ' + Math.round(o.v * 100) + '%').join(', ') : ''}`).join('\n') || '- Aún no responde ningún quiz de misión'}${sugerenciaRol(x) ? `\n- Sugerencia de la plataforma: evaluar cambio de rol a ${sugerenciaRol(x)}` : ''}
 
 1c) MISIONES SEMANALES · afinidad por tema (trabajo grupal sobre 3 + quiz de misión sin nota)
 ${misionesSem(x.j.id).map(t => `- S${t.s} ${t.tema}: ${Math.round(t.af * 100)}% (grupal ${t.gr === null ? '—' : r1(t.gr) + '/3'}, quiz ${t.qz ? t.qz.ok + '/' + t.qz.t : '—'}${t.clase !== null ? ', clase ' + Math.round(t.clase * 100) + '%' : ''})`).join('\n') || '- Aún sin laboratorios ni grupales calificados'}

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611220907">
+<link rel="stylesheet" href="assets/app.css?v=202611220924">
 </head>
 <body>
 <header class="top">
@@ -163,8 +163,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611220907"></script>
-<script src="assets/comun.js?v=202611220907"></script>
+<script src="assets/config.js?v=202611220924"></script>
+<script src="assets/comun.js?v=202611220924"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -535,7 +535,7 @@ function pintarQm() {
   $('#qmInfo').innerHTML = u ? `📅 El quiz de la <b>Práctica ${QMP}</b> se abre solo en la <b>semana ${u}</b> (última de la práctica, semanas ${Math.min(...sems)}–${u}). Activas: <b>${c}</b>${c > 10 ? ' · cada alumno recibe 10 al azar' : c < 10 ? ' · recomendado: al menos 10' : ''}.` : `⚠️ Ninguna semana tiene asignada la Práctica ${QMP} en <b>Semanas y temas</b>: el quiz no se abrirá.`;
   $('#qmNueva').innerHTML = qmForm({ practica: QMP, opciones: ['', '', '', ''], correcta: 0 }, 0);
   const L = QM.filter(q => q.practica === QMP);
-  $('#qmLista').innerHTML = L.length ? L.map((q, i) => `<div class="qmc ${q.activa ? '' : 'off'}" data-id="${q.id}"><div class="qn">${i + 1}</div><div>${qmForm(q, q.id)}</div></div>`).join('') : '<div class="empty">Aún no hay preguntas para esta práctica.</div>';
+  $('#qmLista').innerHTML = L.length ? L.map((q, i) => `<div class="qmc ${q.activa ? '' : 'off'}" data-id="${q.id}"><div class="qmn">${i + 1}</div><div>${qmForm(q, q.id)}</div></div>`).join('') : '<div class="empty">Aún no hay preguntas para esta práctica.</div>';
 }
 function leerQm(box) {
   const o = { texto: box.querySelector('.qtx').value.trim(), opciones: [...box.querySelectorAll('.qo')].map(x => x.value.trim()), correcta: Number((box.querySelector('input[type=radio]:checked') || {}).value ?? -1),
