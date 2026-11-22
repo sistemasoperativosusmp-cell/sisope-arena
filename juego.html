@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Juego del Miedo</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611220756">
+<link rel="stylesheet" href="assets/app.css?v=202611220907">
 </head>
 <body>
 <header class="top">
@@ -102,10 +102,10 @@
 
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611220756"></script>
-<script src="assets/comun.js?v=202611220756"></script>
+<script src="assets/config.js?v=202611220907"></script>
+<script src="assets/comun.js?v=202611220907"></script>
 <script>
-let SEM = 1, FILAS = [], ETQ = [], OBS = {}, RADAR = {}, PA = 0.5, PF = 0.5, soloMudos = false, PILA = [], ELEGIDOS = new Set(), SEL = new Set(), VIC = null, ETQ_ALUMNO = null;
+let DEUDA = {}, SEM = 1, FILAS = [], ETQ = [], OBS = {}, RADAR = {}, PA = 0.5, PF = 0.5, soloMudos = false, PILA = [], ELEGIDOS = new Set(), SEL = new Set(), VIC = null, ETQ_ALUMNO = null;
 const num = n => Number(n || 0);
 const fmt = n => String(Math.round(n * 100) / 100);
 const VOZ_GR = { 'Lideró': 3, 'Apoyó': 2, 'Habló': 1, 'Intentando': 0.5 };
@@ -142,9 +142,20 @@ async function cargar() {
   ETQ = r2.data || [];
   OBS = Object.fromEntries((r3.data || []).map(o => [o.jugador_id, o.etiquetas || []]));
   RADAR = Object.fromEntries((r4.data || []).map(r => [r.jugador_id, r]));
-  pintar();
+  await cargarDeudas(); pintar();
 }
 
+// Quiz de misión: quien no lo respondió cuando el aula ya pasó a la práctica siguiente es "deudor" y sale primero
+async function cargarDeudas() {
+  DEUDA = {};
+  const [s, q, r] = await Promise.all([sb.from('semanas').select('semana, practica'), sb.from('mq_preguntas').select('practica').eq('activa', true), sb.from('mq_respuestas').select('jugador_id, practica')]);
+  if (q.error || r.error) return;
+  const ult = {}; (s.data || []).forEach(x => { const p = Number(String(x.practica || '').replace(/\D/g, '')); if (p) ult[p] = Math.max(ult[p] || 0, x.semana); });
+  const venc = [1, 2, 3, 4].filter(p => ult[p] && ult[p] < SEM && (q.data || []).some(x => x.practica === p));
+  const hecho = new Set((r.data || []).map(x => x.jugador_id + ':' + x.practica));
+  FILAS.forEach(f => { const d = venc.filter(p => !hecho.has(f.jugador_id + ':' + p)); if (d.length) DEUDA[f.jugador_id] = d; });
+}
+const deudaTxt = jid => DEUDA[jid] ? `📝 Debe el quiz ${DEUDA[jid].map(p => 'P' + p).join(', ')}` : '';
 function pintar() {
   if (!FILAS.length) { $('#grupos').innerHTML = `<div class="empty">No hay filas para la semana ${SEM}. Ve a <a href="docente.html">Inicio</a> y presiona "Iniciar / continuar semana".</div>`; resumen(); return; }
   const q = $('#buscar').value.trim().toLowerCase();
@@ -161,7 +172,7 @@ function filaHTML(f) {
   const dis = aus ? 'disabled' : '', sel = SEL.has(f.jugador_id), n = xpJM(f);
   return `<div class="fila ${aus ? 'aus' : v === 0 ? 'mudo' : ''} ${sel ? 'sel' : ''}">
     <input type="checkbox" class="chk" ${dis} ${sel ? 'checked' : ''} title="Seleccionar" onchange="alternarSel('${f.jugador_id}')">
-    <div class="q" onclick="${aus ? '' : `alternarSel('${f.jugador_id}')`}"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : aus ? ' · AUSENTE' : ''}${f.se_escapo ? ' · 🏃 SE ESCAPÓ' : ''}</small>
+    <div class="q" onclick="${aus ? '' : `alternarSel('${f.jugador_id}')`}"><b>${esc(f.jugadores?.nombre)}</b><small>${esc(f.jugadores?.alias)}${f.asistencia === 'Tarde' ? ' · TARDE ' + esc((f.hora_llegada || '').slice(0, 5)) : aus ? ' · AUSENTE' : ''}${f.se_escapo ? ' · 🏃 SE ESCAPÓ' : ''}${DEUDA[f.jugador_id] ? ` · <span style="color:#c8102e;font-weight:800">${deudaTxt(f.jugador_id)}</span>` : ''}</small>
       <div class="tags"><span class="tag ${v === 0 ? 'rojo' : ''}">${v === 0 ? 'Sin hablar' : 'Voz ' + v}</span><span class="tag xp">✓${num(f.jm_aciertos)} · ✗${num(f.jm_fallos)}</span>${et.map(e => `<span class="tag et">${esc(e)}</span>`).join('')}</div></div>
     <div class="jmc ${dis ? 'off' : ''}">
       <button ${dis} class="menos" title="No contestó: −${fmt(PF)}" onclick="sumar(['${f.jugador_id}'],'jm_fallos',1)">−${fmt(PF)}</button>
@@ -241,7 +252,8 @@ function abrirEtq(jid) {
 function elegirVictima() {
   const cand = FILAS.filter(f => f.asistencia !== 'Ausente' && !f.se_escapo && !ELEGIDOS.has(f.jugador_id));   // quien se escapó ya no está en el aula
   if (!cand.length) { toast(ELEGIDOS.size ? 'Ya pasaron todos los presentes. Reinicio el sorteo.' : 'No hay alumnos presentes', !ELEGIDOS.size); ELEGIDOS.clear(); if (!FILAS.some(f => f.asistencia !== 'Ausente')) return; return elegirVictima(); }
-  const mudos = cand.filter(f => voz(f) === 0), pool = mudos.length ? mudos : cand;
+  // 1° los que deben el quiz de misión · 2° los que no han hablado · 3° el resto
+  const deud = cand.filter(f => DEUDA[f.jugador_id]), mudos = cand.filter(f => voz(f) === 0), pool = deud.length ? deud : mudos.length ? mudos : cand;
   const peso = f => 1 / (1 + num(RADAR[f.jugador_id]?.voz_ciclo)) + 0.5 * num(RADAR[f.jugador_id]?.semanas_silencio);
   const total = pool.reduce((s, f) => s + peso(f), 0); let r = Math.random() * total, elegido = pool[pool.length - 1];
   for (const f of pool) { r -= peso(f); if (r <= 0) { elegido = f; break; } }
@@ -251,7 +263,7 @@ function pintarVictima() {
   const f = FILAS.find(x => x.jugador_id === VIC); if (!f) return; const j = f.jugadores || {}, rd = RADAR[VIC] || {}, v = voz(f);
   $('#vAv').innerHTML = j.avatar_url ? `<img class="av" src="${esc(avatarSrc(j.avatar_url))}" alt="">` : `<div class="av">${esc(iniciales(j.alias))}</div>`;
   $('#vNom').textContent = j.nombre || ''; $('#vSub').textContent = [j.alias, j.consultora, j.rol_consultora].filter(Boolean).join(' · ');
-  $('#vTags').innerHTML = (v === 0 ? '<span class="tag rojo" style="font-size:13px;padding:4px 12px">Sin hablar esta semana</span>' : `<span class="tag" style="font-size:13px;padding:4px 12px">Voz ${v} esta semana</span>`)
+  $('#vTags').innerHTML = (DEUDA[VIC] ? `<span class="tag rojo" style="font-size:13px;padding:4px 12px">${deudaTxt(VIC)}</span>` : '') + (v === 0 ? '<span class="tag rojo" style="font-size:13px;padding:4px 12px">Sin hablar esta semana</span>' : `<span class="tag" style="font-size:13px;padding:4px 12px">Voz ${v} esta semana</span>`)
     + (num(rd.semanas_silencio) ? `<span class="tag" style="font-size:13px;padding:4px 12px;background:#fde8e8;color:#a02424">${num(rd.semanas_silencio)} semana(s) en silencio</span>` : '')
     + `<span class="tag xp" style="font-size:13px;padding:4px 12px">Juego del Miedo hoy: ${xpJM(f) > 0 ? '+' : xpJM(f) < 0 ? '−' : ''}${fmt1(Math.abs(xpJM(f)))} · Voz ${num(f.part_vol)}</span>`;
   $('#vEtq').innerHTML = etqHTML(VIC);

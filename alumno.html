@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611220756">
+<link rel="stylesheet" href="assets/app.css?v=202611220907">
 <style>
 .entr{display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;background:#0f1733;border:2px solid #2a3766;border-radius:14px;padding:14px;transition:border-color .15s,transform .15s}
 .entr:hover{border-color:var(--gold);transform:translateY(-2px)}
@@ -33,6 +33,7 @@ body.observador .who .cambiar{display:none}
   <div id="vbanner"></div>
   <div id="recordatorios"></div>
   <div id="mision0"></div>
+  <div id="quizmis"></div>
   <!-- A1 · RANKING -->
   <section class="vista" id="v-ranking">
     <div class="acol">
@@ -119,9 +120,9 @@ body.observador .who .cambiar{display:none}
 <div class="tip hide" id="tip"></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611220756"></script>
-<script src="assets/insignias.js?v=202611220756"></script>
-<script src="assets/comun.js?v=202611220756"></script>
+<script src="assets/config.js?v=202611220907"></script>
+<script src="assets/insignias.js?v=202611220907"></script>
+<script src="assets/comun.js?v=202611220907"></script>
 <script>
 let EQ = [], ENL = [], INSR = {}, EQST = null;
 // Insignias visibles en el ranking: solo las que NO dependen de notas (las de nota se ven únicamente en el perfil propio)
@@ -183,7 +184,7 @@ async function refrescar() {
     YO ? sb.rpc('insignias_ranking', { p_seccion: YO.seccion_id }) : { data: [] },
     YO ? (OBS ? sb.rpc('ver_eq_estado', { p_jugador: YO.id }) : sb.rpc('eq_mi_estado')) : { data: null }
   ]);
-  EQST = q[9].error ? null : q[9].data; pintarMision0();
+  EQST = q[9].error ? null : q[9].data; pintarMision0(); pintarQuizMis();
   INSR = q[8].error ? {} : Object.fromEntries((q[8].data || []).map(x => [x.alias, x.insignias || []]));
   EQ = q[6].error ? [] : q[6].data || []; ENL = q[7].error ? [] : q[7].data || []; pintarEnlaces();
   const yoEq = EQ.find(x => x.es_yo); if (YO && yoEq) YO.rol_consultora = yoEq.rol_consultora;
@@ -397,6 +398,14 @@ function guardarEditor(caja, campo) {
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const titulo = t => String(t).toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()), nombreCorto = nm => { const [ap, no] = String(nm).split(','); return no ? `${titulo(no.trim())} ${titulo(ap.trim())}` : titulo(nm); };
 // ---------- Misión 0, reportes y strikes (los roles los asigna la docente) ----------
+async function pintarQuizMis() {
+  const el = $('#quizmis'); if (!el || !YO) return;
+  const { data, error } = await sb.rpc('mi_quiz_mision'); if (error || !data) { el.innerHTML = ''; return; }
+  const p = data.find(x => x.estado === 'atrasado') || data.find(x => x.estado === 'abierto');
+  if (!p || !p.preguntas) { el.innerHTML = ''; return; }
+  const tarde = p.estado === 'atrasado';
+  el.innerHTML = `<a class="entr" href="quizmision.html?p=${p.practica}${OBS ? '" onclick="return !soloLectura()' : ''}" style="margin-bottom:16px;${tarde ? 'border-color:var(--red)' : ''}"><span class="eico">${tarde ? '😱' : '📝'}</span><span class="etx"><b>Quiz de misión · Práctica ${p.practica}${tarde ? ' · ¡ATRASADO!' : ''}</b><span>${tarde ? 'Tu aula ya pasó a la siguiente práctica y no lo respondiste: estás en la lista del <b>Juego del Miedo</b>. Respóndelo ahora para salir.' : 'Sin nota, 10 preguntas, un solo intento. Respóndelo antes de pasar a la siguiente práctica o entrarás a la lista del <b>Juego del Miedo</b>.'}</span></span><span class="ego pix">${tarde ? 'YA ▶' : 'EMPEZAR ▶'}</span></a>`;
+}
 function pintarMision0() {
   const el = $('#mision0'); if (!el) return;
   el.innerHTML = EQST && !EQST.evaluado ? `<a class="entr" href="evaluacion.html" style="margin-bottom:16px"><span class="eico">🎖️</span><span class="etx"><b>Misión 0: Reclutamiento</b><span>Responde el diagnóstico para que tu docente arme las consultoras y te asigne un rol. Toma unos 15 minutos.</span></span><span class="ego pix">EMPEZAR ▶</span></a>` : '';

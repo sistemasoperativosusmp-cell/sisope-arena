@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Ajustes</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611220756">
+<link rel="stylesheet" href="assets/app.css?v=202611220907">
 </head>
 <body>
 <header class="top">
@@ -24,6 +24,7 @@
     <button data-s="sEnl" data-h="enlaces">🔗 Enlaces</button>
     <button data-s="sMem" data-h="memoria">🧠 Memoria Técnica</button>
     <button data-s="sPupi" data-h="pupiletras">🔎 Pupiletras</button>
+    <button data-s="sQm" data-h="quiz">📝 Quiz de misión</button>
     <button data-s="sSeg" data-h="seguridad">🔒 Seguridad</button>
     <button data-s="sSem" data-h="semestre" class="peligro">🧹 Nuevo semestre</button>
   </div>
@@ -95,6 +96,23 @@
   </section>
 
   <!-- MEMORIA TÉCNICA -->
+  <section class="card aj hide" id="sQm">
+    <h2 class="pix">QUIZ DE MISIÓN · SIN NOTA</h2>
+    <p class="help" style="margin-top:0">Un quiz por práctica para medir lo que <b>aprendió cada alumno</b> (skill técnico por tema) y su <b>afinidad de rol</b>. No da nota ni puntos. <b>Se abre solo</b> en la última semana de cada práctica (según <b>Semanas y temas</b>) y el alumno lo responde <b>una sola vez</b>, con 10 preguntas al azar del banco. Quien no lo respondió cuando el aula pasa a la práctica siguiente queda como <b>deudor 📝</b> y el <b>Juego del Miedo</b> lo elige primero. Cada pregunta se liga a una <b>semana</b> (su tema) y, si quieres, a un <b>rol</b>: así Progreso calcula la afinidad por tema y por rol.</p>
+    <div class="qmtabs" id="qmTabs"></div>
+    <div id="qmInfo" class="help"></div>
+    <details class="imp" open><summary>➕ Nueva pregunta</summary>
+      <div class="qmc nueva" id="qmNueva"></div>
+      <button class="btn green" onclick="agregarQm()">+ Agregar pregunta</button>
+    </details>
+    <details class="imp"><summary>📋 Cargar varias a la vez (pegar desde Excel)</summary>
+      <p class="help">Una por línea, columnas separadas por tabulación o <b>|</b>: <b>Pregunta · A · B · C · D · Correcta (A-D) · Semana · Rol</b> (semana y rol son opcionales).</p>
+      <textarea id="qmImp" rows="5" placeholder="¿Qué hipervisor es de tipo 1?|VirtualBox|Hyper-V|VMware Workstation|QEMU usuario|B|2|Arquitecto"></textarea>
+      <button class="btn green" onclick="importarQm()">Importar</button>
+    </details>
+    <div id="qmLista"></div>
+  </section>
+
   <section class="card aj hide" id="sPupi">
     <h2 class="pix">PUPILETRAS · TEMAS Y PALABRAS</h2>
     <p class="help" style="margin-top:0">Cada tema tiene palabras <b>✅ correctas</b> (las que el alumno debe encontrar) e <b>🚫 intrusas</b> (escondidas pero que NO son del tema: si las marca, pierde puntos). Cada partida toma al azar hasta 10 correctas y 2 intrusas; el alumno solo ve “hay N palabras del tema” (sin la lista) y al finalizar se le muestra cuáles acertó y cuáles no; un tema necesita al menos 3 correctas para aparecer en el juego. La <b>palabra en la sopa</b> va sin espacios ni símbolos (máx. 12 letras) y el <b>nombre a mostrar</b> es opcional (ej. HYPERV → “Hyper-V”). 💬 Las sugerencias anónimas del juego se leen y responden <a href="pupiletras.html" target="_blank">dentro del juego →</a></p>
@@ -145,8 +163,8 @@
 <datalist id="consList"></datalist>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611220756"></script>
-<script src="assets/comun.js?v=202611220756"></script>
+<script src="assets/config.js?v=202611220907"></script>
+<script src="assets/comun.js?v=202611220907"></script>
 <script>
 const ROLES = ['Sales Specialist', 'Preventa', 'Arquitecto', 'Implementador / Project Manager'];
 const ALIAS_A = ['Neo', 'Shadow', 'Pixel', 'Root', 'Byte', 'Zero', 'Kernel', 'Code', 'Null', 'Bit', 'Sudo', 'Cyber', 'Quantum', 'Hyper', 'Cloud', 'Packet', 'Docker', 'Nano', 'Turbo', 'Vector'];
@@ -163,7 +181,7 @@ async function iniciar() {
   await cargarSeccion();
   $('#secNom').textContent = SECC ? SECC.nombre.toUpperCase() : 'SIN SECCIÓN'; document.querySelectorAll('.secNom').forEach(e => e.textContent = $('#secNom').textContent);
   await cargarEq();
-  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc(), cargarEnl(), cargarSemanas(), cargarMem(), cargarPupi()]); cargarIntentos();
+  await Promise.all([cargarAl(), cargarCfg(), cargarEtq(), cargarSecc(), cargarEnl(), cargarSemanas(), cargarMem(), cargarPupi(), cargarQm()]); cargarIntentos();
 }
 
 // ---------- Alumnos ----------
@@ -493,6 +511,65 @@ async function borrarEnl(id) { if (!confirm('¿Borrar este enlace?')) return; co
 
 // ---------- Memoria Técnica ----------
 let MEM = [], MEMSEM = [];
+// ---------- Quiz de misión (sin nota) ----------
+let QM = [], QMP = 1, QMSEM = [];
+const prNum = t => Number(String(t || '').replace(/\D/g, '')) || null;
+async function cargarQm() {
+  const [q, s] = await Promise.all([sb.from('mq_preguntas').select('*').order('orden').order('id'), sb.from('semanas').select('semana, tema, practica').order('semana')]);
+  if (q.error) { $('#qmLista').innerHTML = `<div class="empty">${/does not exist|schema cache|relation/i.test(q.error.message) ? 'Falta ejecutar el script 39 en Supabase.' : esc(q.error.message)}</div>`; return; }
+  QM = q.data || []; QMSEM = s.data || []; pintarQm();
+}
+const qmSemOpts = (p, sel) => `<option value="">— Sin semana —</option>` + QMSEM.filter(x => prNum(x.practica) === p).map(x => `<option value="${x.semana}" ${Number(sel) === x.semana ? 'selected' : ''}>S${x.semana} · ${esc(x.tema || '')}</option>`).join('');
+const qmRolOpts = sel => `<option value="">— Sin rol —</option>` + ROLES_EQUIPO.map(r => `<option ${r === sel ? 'selected' : ''}>${esc(r)}</option>`).join('');
+function qmForm(q, id) {
+  const op = q.opciones || ['', '', '', ''], L = 'ABCD';
+  return `<textarea class="qtx" rows="2" maxlength="400" placeholder="Escribe la pregunta" ${id ? `onchange="guardarQm(${id})"` : ''}>${esc(q.texto || '')}</textarea>
+    <div class="qops">${[0, 1, 2, 3].map(i => `<label class="qop ${q.correcta === i ? 'ok' : ''}"><input type="radio" name="qc${id || 'n'}" value="${i}" ${q.correcta === i ? 'checked' : ''} ${id ? `onchange="guardarQm(${id})"` : ''} title="Marcar como correcta"><b>${L[i]}</b><input class="qo" maxlength="160" value="${esc(op[i] || '')}" placeholder="Alternativa ${L[i]}" ${id ? `onchange="guardarQm(${id})"` : ''}></label>`).join('')}</div>
+    <div class="qmeta"><label>Semana / tema <select class="qs" ${id ? `onchange="guardarQm(${id})"` : ''}>${qmSemOpts(q.practica || QMP, q.semana)}</select></label><label>Rol que mide <select class="qr" ${id ? `onchange="guardarQm(${id})"` : ''}>${qmRolOpts(q.rol)}</select></label>
+      ${id ? `<label class="chk" style="white-space:nowrap;width:auto"><input type="checkbox" class="qa" style="width:auto" ${q.activa ? 'checked' : ''} onchange="guardarQm(${id})"> Activa</label><button class="sbtn mini" onclick="borrarQm(${id})">🗑 Borrar</button>` : ''}</div>`;
+}
+function pintarQm() {
+  $('#qmTabs').innerHTML = [1, 2, 3, 4].map(p => { const c = QM.filter(q => q.practica === p && q.activa).length;
+    return `<button class="${p === QMP ? 'on' : ''}" onclick="QMP=${p};pintarQm()">Práctica ${p}<small>${c} pregunta${c === 1 ? '' : 's'}${c < 10 ? ' · ⚠ faltan ' + (10 - c) : ''}</small></button>`; }).join('');
+  const sems = QMSEM.filter(x => prNum(x.practica) === QMP).map(x => x.semana), u = sems.length ? Math.max(...sems) : null, c = QM.filter(q => q.practica === QMP && q.activa).length;
+  $('#qmInfo').innerHTML = u ? `📅 El quiz de la <b>Práctica ${QMP}</b> se abre solo en la <b>semana ${u}</b> (última de la práctica, semanas ${Math.min(...sems)}–${u}). Activas: <b>${c}</b>${c > 10 ? ' · cada alumno recibe 10 al azar' : c < 10 ? ' · recomendado: al menos 10' : ''}.` : `⚠️ Ninguna semana tiene asignada la Práctica ${QMP} en <b>Semanas y temas</b>: el quiz no se abrirá.`;
+  $('#qmNueva').innerHTML = qmForm({ practica: QMP, opciones: ['', '', '', ''], correcta: 0 }, 0);
+  const L = QM.filter(q => q.practica === QMP);
+  $('#qmLista').innerHTML = L.length ? L.map((q, i) => `<div class="qmc ${q.activa ? '' : 'off'}" data-id="${q.id}"><div class="qn">${i + 1}</div><div>${qmForm(q, q.id)}</div></div>`).join('') : '<div class="empty">Aún no hay preguntas para esta práctica.</div>';
+}
+function leerQm(box) {
+  const o = { texto: box.querySelector('.qtx').value.trim(), opciones: [...box.querySelectorAll('.qo')].map(x => x.value.trim()), correcta: Number((box.querySelector('input[type=radio]:checked') || {}).value ?? -1),
+    semana: Number(box.querySelector('.qs').value) || null, rol: box.querySelector('.qr').value || null };
+  const qa = box.querySelector('.qa'); if (qa) o.activa = qa.checked;
+  if (o.texto.length < 5) return 'Escribe la pregunta';
+  if (o.opciones.some(x => !x)) return 'Completa las 4 alternativas';
+  if (o.correcta < 0) return 'Marca cuál es la correcta';
+  return o;
+}
+async function agregarQm() {
+  const o = leerQm($('#qmNueva')); if (typeof o === 'string') { toast(o, true); return; }
+  const { error } = await sb.from('mq_preguntas').insert({ ...o, practica: QMP, orden: QM.filter(q => q.practica === QMP).length + 1 });
+  if (error) { toast('No se agregó: ' + error.message, true); return; } toast('Pregunta agregada'); cargarQm();
+}
+async function guardarQm(id) {
+  const box = document.querySelector(`.qmc[data-id="${id}"]`), o = leerQm(box); if (typeof o === 'string') { toast(o, true); return; }
+  const { error } = await sb.from('mq_preguntas').update(o).eq('id', id); if (error) { toast('No se guardó: ' + error.message, true); return; }
+  const q = QM.find(x => x.id === id); Object.assign(q, o); box.classList.toggle('off', !q.activa); box.querySelectorAll('.qop').forEach((l, i) => l.classList.toggle('ok', i === o.correcta)); toast('Guardado');
+  $('#qmTabs').querySelector('.on small').textContent = (c => `${c} pregunta${c === 1 ? '' : 's'}${c < 10 ? ' · ⚠ faltan ' + (10 - c) : ''}`)(QM.filter(q => q.practica === QMP && q.activa).length);
+}
+async function borrarQm(id) { if (!confirm('¿Borrar esta pregunta?')) return; const { error } = await sb.from('mq_preguntas').delete().eq('id', id); if (error) { toast('No se borró: ' + error.message, true); return; } cargarQm(); }
+async function importarQm() {
+  const filas = $('#qmImp').value.split(/\r?\n/).map(l => l.split(/\t|\|/).map(x => x.trim())).filter(c => c[0]), malas = [], nuevas = [];
+  const semsP = QMSEM.filter(x => prNum(x.practica) === QMP).map(x => x.semana);
+  filas.forEach((c, i) => { const k = 'ABCD'.indexOf((c[5] || '').toUpperCase()), sem = Number(c[6]) || null, rol = ROLES_EQUIPO.find(r => r.toLowerCase() === (c[7] || '').toLowerCase()) || null;
+    if (c.length < 6 || c.slice(1, 5).some(x => !x) || k < 0) { malas.push(i + 1); return; }
+    nuevas.push({ practica: QMP, texto: c[0], opciones: c.slice(1, 5), correcta: k, semana: semsP.includes(sem) ? sem : null, rol, orden: QM.length + i + 1 }); });
+  if (malas.length) { toast(`Revisa la(s) línea(s) ${malas.slice(0, 5).join(', ')}: faltan columnas o la correcta no es A-D`, true); return; }
+  if (!nuevas.length) { toast('No hay líneas para importar', true); return; }
+  const { error } = await sb.from('mq_preguntas').insert(nuevas); if (error) { toast('No se importó: ' + error.message, true); return; }
+  $('#qmImp').value = ''; toast(`${nuevas.length} pregunta(s) agregada(s) a la Práctica ${QMP}`); cargarQm();
+}
+
 // ---------- Pupiletras: temas y palabras (correctas e intrusas) ----------
 let PT = [], PP = [], PSEL = null;
 const claveDe = w => String(w || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z]/g, '');

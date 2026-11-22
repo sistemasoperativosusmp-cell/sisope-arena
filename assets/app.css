@@ -679,3 +679,25 @@ body.arena .pie{color:#8fa0bf}
 .pwr input,.pwr select{width:100%;padding:7px;border:2px solid var(--line);border-radius:8px;font-size:13px}
 .pwr.intr{background:#fff6f6}.pwr span{text-align:center;font-weight:800;color:var(--mute)}.pwr span.mal{color:#c23030}
 @media(max-width:1000px){.pupi{grid-template-columns:1fr}}
+
+/* Ajustes → Quiz de misión */
+.qmtabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
+.qmtabs button{background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px 14px;cursor:pointer;font-weight:800;color:var(--ink);text-align:left}
+.qmtabs button small{display:block;font-size:11px;font-weight:700;color:var(--mute)}
+.qmtabs button.on{border-color:var(--navy);box-shadow:inset 0 -4px 0 var(--navy)}
+.qmc{display:grid;grid-template-columns:34px 1fr;gap:10px;border:2px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:#fff}
+.qmc.nueva{display:block;border-style:dashed}.qmc.off{opacity:.55}
+.qn{width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+.qmc textarea{width:100%;padding:8px;border:2px solid var(--line);border-radius:8px;font:inherit;font-weight:600}
+.qops{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
+.qop{display:flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:8px;padding:4px 8px}
+.qop.ok{border-color:#2f7d16;background:#eef8ea}.qop b{width:16px}
+.qop .qo{flex:1;border:0;padding:5px;font:inherit;background:transparent}
+.qmeta{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:13px;font-weight:700;color:var(--mute)}
+.qmeta select{margin-left:4px;padding:5px;border:2px solid var(--line);border-radius:8px}
+.qmeta .chk{display:flex;gap:4px;align-items:center}
+@media(max-width:800px){.qops{grid-template-columns:1fr}}
+
+/* Progreso → Quiz de misión */
+.qmt{width:100%;border-collapse:collapse;font-size:13px}.qmt td{padding:6px 8px;border-bottom:1px solid #edf0f6;vertical-align:middle}.qmt td:first-child{width:40px}
+.m0alerta{background:#fff7e0;border:2px solid #e3b23c;border-radius:10px;padding:8px 12px;margin:6px 0 8px;font-size:13px}

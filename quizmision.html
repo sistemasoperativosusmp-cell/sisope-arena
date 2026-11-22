@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SISOPE Arena · Quiz de misión</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css?v=202611220907">
+<style>
+.ev{max-width:760px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:18px}
+.ev .panel{padding:24px}
+.ev h1{font-size:15px;color:var(--gold);line-height:1.7;margin:0}
+.ev h2{font-size:11px}
+.ev p{color:#d6dcf2;font-weight:700;line-height:1.5;margin:0 0 12px}
+.ev .gris{color:#b8c2e6;font-size:13px;font-weight:700}
+.evbtn{background:var(--gold);color:#0f1733;border:0;border-radius:12px;padding:14px 20px;font-family:'Press Start 2P',monospace;font-size:11px;cursor:pointer;box-shadow:0 5px 0 #a87d00}
+.evbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #a87d00}
+.evbtn.sec{background:#2a3766;color:#fff;box-shadow:0 5px 0 #141c3d}
+.evbtn:disabled{opacity:.5;cursor:not-allowed}
+.acc{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:8px}
+.prog{height:12px;background:#0f1733;border:2px solid #2a3766;border-radius:999px;overflow:hidden}.prog i{display:block;height:100%;background:linear-gradient(90deg,#39ff14,#00e5ff);transition:width .3s}
+.qn{font-size:10px;color:#00e5ff;margin-bottom:10px}
+.qt{font-size:19px;font-weight:800;line-height:1.35;margin:0 0 16px}
+.ops{display:flex;flex-direction:column;gap:10px}
+.op{text-align:left;background:#0f1733;border:2px solid #2a3766;color:#fff;border-radius:12px;padding:14px 16px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.op:hover{border-color:#00e5ff}.op.on{border-color:var(--gold);background:#2a1d05;color:var(--gold)}
+.op.nose{color:#b8c2e6;border-style:dashed}
+.lk{border-bottom:1px solid #2a3766;padding:14px 0}.lk:last-child{border-bottom:0}
+.lk b{display:block;font-size:16px;margin-bottom:10px}
+.lks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.lks button{background:#0f1733;border:2px solid #2a3766;color:#b8c2e6;border-radius:10px;padding:9px 4px;font-weight:800;cursor:pointer;font-family:inherit;font-size:13px;line-height:1.2}
+.lks button small{display:block;font-size:10px;font-weight:700}
+.lks button.on{border-color:var(--gold);color:var(--gold);background:#2a1d05}
+.lk.falta b{color:#ff8a8a}
+.huida{position:relative;height:300px;border:2px dashed #2a3766;border-radius:16px;margin-top:10px;overflow:hidden;touch-action:manipulation}
+.huida button{position:absolute;top:50%;transform:translateY(-50%);border:0;border-radius:14px;padding:16px 18px;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;transition:left .25s,top .25s,transform .25s;max-width:46%}
+#bReto{left:6%;background:var(--red);color:#fff;box-shadow:0 5px 0 #8f1f1f;font-family:'Press Start 2P',monospace;font-size:11px;line-height:1.6}
+#bReto:active{transform:translateY(calc(-50% + 3px))}
+#bCom{right:6%;background:#2a3766;color:#d6dcf2;box-shadow:0 5px 0 #141c3d}
+#bCom.rendido{background:#5c5c5c;opacity:.6;cursor:default}
+.mhuida{min-height:48px;text-align:center;font-weight:800;color:var(--gold);margin-top:12px}
+.medfin{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.medfin .mi{font-size:90px;line-height:1;animation:pop .6s ease-out}
+.medfin .mt{font-size:14px;color:var(--gold)}
+@keyframes pop{0%{transform:scale(.2) rotate(-25deg);opacity:0}70%{transform:scale(1.15) rotate(6deg)}100%{transform:scale(1)}}
+.prev{background:#5c1a24;border:2px solid var(--red);border-radius:12px;padding:10px 14px;font-weight:800;font-size:13px}
+.reglas{margin:0 0 14px;padding-left:20px;color:#d6dcf2;font-weight:700;line-height:1.6}
+@media(max-width:600px){.lks button small{display:none}.qt{font-size:17px}.huida{height:340px}}
+</style>
+</head>
+<body class="arena">
+<header class="top atop">
+  <div class="pix">SISOPE ARENA</div>
+  <div class="who"><a href="alumno.html#perfil" class="cambiar">← Volver a la arena</a></div>
+</header>
+<div class="ev">
+  <div id="prev"></div>
+  <section class="panel" id="s-intro">
+    <h1 class="pix" id="tit">QUIZ DE MISIÓN</h1>
+    <p style="margin-top:14px">Este quiz <b>no da ni quita nota</b>. Sirve para que tu docente vea qué temas de esta práctica ya dominas y cuáles hay que reforzar, y en qué <b>rol</b> de tu consultora rindes mejor.</p>
+    <ol class="reglas">
+      <li><b id="nQ">10</b> preguntas de los temas de la práctica.</li>
+      <li>Si no sabes, marca <b>“No lo sé”</b>: adivinar solo esconde lo que necesitas reforzar.</li>
+      <li>Tienes <b>un solo intento</b>. No hay límite de tiempo.</li>
+      <li>⚠️ Si no lo respondes antes de pasar a la siguiente práctica, quedas en la lista del <b>Juego del Miedo</b>.</li>
+    </ol>
+    <div class="acc"><span class="gris" id="estado"></span><button class="evbtn" id="bEmpezar" disabled>Cargando…</button></div>
+  </section>
+  <section class="panel hide" id="s-q">
+    <h2 class="pix" id="tit2">QUIZ DE MISIÓN</h2>
+    <div class="prog"><i id="pg"></i></div>
+    <div style="margin-top:18px"><div class="qn pix" id="qNum"></div><p class="qt" id="qTxt"></p><div class="ops" id="qOps"></div></div>
+    <div class="acc"><button class="evbtn sec" id="bAtras">◀ Atrás</button><span class="gris">Elige una alternativa para avanzar</span></div>
+  </section>
+  <section class="panel hide" id="s-env">
+    <h2 class="pix">¿ENVIAR TUS RESPUESTAS?</h2>
+    <p id="resumen" style="margin-top:12px"></p>
+    <div class="acc"><button class="evbtn sec" id="bRev">◀ Revisar</button><button class="evbtn" id="bEnviar">ENVIAR ▶</button></div>
+  </section>
+  <section class="panel hide" id="s-fin"><div class="medfin" id="fin"></div></section>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js?v=202611220907"></script>
+<script src="assets/comun.js?v=202611220907"></script>
+<script>
+let P = Number(new URLSearchParams(location.search).get('p')) || null, Q = [], R = {}, IDX = 0, PREVIEW = false, ENV = false;
+const mezclar = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+const ver = id => document.querySelectorAll('.ev > section').forEach(s => s.classList.toggle('hide', s.id !== id));
+const noDisp = (m, ico = '⏳') => { ver('s-fin'); $('#fin').innerHTML = `<div class="mi">${ico}</div><div class="mt pix">${esc(m)}</div><a class="evbtn sec" href="alumno.html#perfil" style="text-decoration:none">VOLVER</a>`; };
+
+async function iniciar() {
+  const ses = await sesionORedirigir(); if (!ses) return;
+  PREVIEW = await esDocente();
+  let data;
+  if (PREVIEW) {
+    P = P || 1; $('#prev').innerHTML = `<div class="prev">👀 Vista previa de docente (Práctica ${P}): puedes recorrer el quiz, pero no se guarda nada. Cambia de práctica con ?p=2, ?p=3…</div>`;
+    const r = await sb.from('mq_preguntas').select('id, texto, opciones').eq('practica', P).eq('activa', true);
+    if (r.error) { noDisp('Falta ejecutar el script 39 en Supabase', '⚙️'); return; }
+    data = mezclar(r.data || []).slice(0, 10);
+  } else {
+    const { data: st, error } = await sb.rpc('mi_quiz_mision');
+    if (error) { noDisp(/schema cache|function/i.test(error.message) ? 'El quiz de misión aún no está activo' : error.message, '⚙️'); return; }
+    const L = st || [], pend = L.filter(x => x.estado === 'abierto' || x.estado === 'atrasado');
+    const e = P ? L.find(x => x.practica === P) : pend[0];
+    if (!e) { noDisp('No tienes quizzes de misión pendientes', '✅'); return; }
+    P = e.practica;
+    if (e.estado === 'respondido') { noDisp(`Ya respondiste el quiz de la Práctica ${P}. ¡Gracias!`, '✅'); return; }
+    if (e.estado === 'proximo') { noDisp(`El quiz de la Práctica ${P} se abre en la semana ${e.abre_semana ?? '—'}`); return; }
+    const r = await sb.rpc('quiz_mision_preguntas', { p_practica: P });
+    if (r.error) { noDisp(r.error.message, '⚠️'); return; }
+    data = r.data || [];
+    if (e.estado === 'atrasado') $('#estado').innerHTML = '⚠️ Vas tarde: respóndelo ya para salir de la lista del Juego del Miedo.';
+  }
+  $('#tit').textContent = $('#tit2').textContent = `QUIZ DE MISIÓN · PRÁCTICA ${P}`;
+  if (!data.length) { noDisp('Tu docente aún no cargó preguntas para este quiz', '📝'); return; }
+  Q = mezclar(data).map(q => ({ ...q, ops: mezclar((q.opciones || []).map((t, i) => [i, t])) }));
+  $('#nQ').textContent = Q.length;
+  const b = $('#bEmpezar'); b.disabled = false; b.textContent = '¡EMPEZAR! ▶'; b.onclick = () => irQ(0);
+}
+function irQ(i) {
+  IDX = i; ver('s-q'); const q = Q[i];
+  $('#qNum').textContent = `PREGUNTA ${i + 1} DE ${Q.length}`; $('#pg').style.width = `${100 * i / Q.length}%`;
+  $('#qTxt').textContent = q.texto;
+  $('#qOps').innerHTML = q.ops.map(([k, t]) => `<button class="op ${R[q.id] === k ? 'on' : ''}" onclick="elegir(${k})">${esc(t)}</button>`).join('') + `<button class="op nose ${R[q.id] === -1 ? 'on' : ''}" onclick="elegir(-1)">🤷 No lo sé</button>`;
+  $('#bAtras').style.visibility = i ? 'visible' : 'hidden';
+}
+function elegir(k) { R[Q[IDX].id] = k; setTimeout(() => IDX + 1 < Q.length ? irQ(IDX + 1) : irEnv(), 180); irQ(IDX); }
+function irEnv() {
+  ver('s-env'); $('#pg').style.width = '100%';
+  const nose = Q.filter(q => R[q.id] === -1).length, falta = Q.filter(q => R[q.id] === undefined).length;
+  $('#resumen').innerHTML = `Respondiste <b>${Q.length - falta - nose}</b> de ${Q.length}${nose ? ` · marcaste <b>${nose}</b> como “No lo sé”` : ''}${falta ? ` · <b style="color:#ff8a8a">${falta} sin responder</b>` : ''}. Después de enviar no podrás cambiarlas.`;
+}
+$('#bAtras').onclick = () => IDX > 0 && irQ(IDX - 1);
+$('#bRev').onclick = () => irQ(0);
+$('#bEnviar').onclick = async () => {
+  if (ENV) return;
+  if (PREVIEW) { fin(); return; }
+  ENV = true; $('#bEnviar').disabled = true; $('#bEnviar').textContent = 'ENVIANDO…';
+  const { error } = await sb.rpc('responder_quiz_mision', { p_practica: P, p_resp: Q.map(q => ({ id: q.id, op: R[q.id] ?? -1 })) });
+  if (error) { ENV = false; $('#bEnviar').disabled = false; $('#bEnviar').textContent = 'ENVIAR ▶'; toast('No se envió: ' + error.message, true); return; }
+  fin();
+};
+function fin() {
+  ver('s-fin');
+  $('#fin').innerHTML = `<div class="mi">🎖️</div><div class="mt pix">MISIÓN DE LA PRÁCTICA ${P} REGISTRADA</div><p>${PREVIEW ? 'Vista previa: no se guardó nada.' : 'Tu docente verá qué temas dominas y cuáles reforzar. Ya no estás en la lista del Juego del Miedo por este quiz.'}</p><a class="evbtn" href="alumno.html#perfil" style="text-decoration:none">VOLVER A LA ARENA</a>`;
+}
+iniciar();
+</script>
+</body>
+</html>
