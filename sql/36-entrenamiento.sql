@@ -50,6 +50,7 @@ begin
   return v_pts;
 end $$;
 
+drop function if exists public.top_entrenamiento(text, int, bigint);   -- versión antigua del otro chat (24)
 drop function if exists public.top_entrenamiento(text, int);
 create function public.top_entrenamiento(p_juego text, p_dias int default null)
 returns table (alias text, avatar_url text, total bigint, partidas bigint, mejor int, posicion bigint, es_yo boolean)
