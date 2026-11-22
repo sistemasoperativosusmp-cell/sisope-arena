@@ -701,3 +701,7 @@ body.arena .pie{color:#8fa0bf}
 /* Progreso → Quiz de misión */
 .qmt{width:100%;border-collapse:collapse;font-size:13px}.qmt td{padding:6px 8px;border-bottom:1px solid #edf0f6;vertical-align:middle}.qmt td:first-child{width:40px}
 .m0alerta{background:#fff7e0;border:2px solid #e3b23c;border-radius:10px;padding:8px 12px;margin:6px 0 8px;font-size:13px}
+
+.mch{display:inline-block;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;margin:0 6px 6px 0;background:#eef1f7;color:var(--ink)}
+.mch.ok{background:#eef8ea;color:#24600f}.mch.med{background:#fff4d6;color:#8a5a00}.mch.mal{background:#ffe4e4;color:#b02a2a}.mch.pend{background:#eef1f7;color:#55607a}
+.qmt td small{font-weight:700}

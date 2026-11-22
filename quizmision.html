@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Quiz de misión</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611220935">
+<link rel="stylesheet" href="assets/app.css?v=202611220947">
 <style>
 .ev{max-width:760px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:18px}
 .ev .panel{padding:24px}
@@ -98,8 +98,8 @@
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611220935"></script>
-<script src="assets/comun.js?v=202611220935"></script>
+<script src="assets/config.js?v=202611220947"></script>
+<script src="assets/comun.js?v=202611220947"></script>
 <script>
 let P = Number(new URLSearchParams(location.search).get('p')) || null, Q = [], R = {}, IDX = 0, PREVIEW = false, ENV = false;
 const mezclar = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };

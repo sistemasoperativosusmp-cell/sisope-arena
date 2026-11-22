@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Progreso</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611220935">
+<link rel="stylesheet" href="assets/app.css?v=202611220947">
 <style>
 .evo{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .evo0{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
@@ -83,9 +83,9 @@ details.mis[open]>summary{margin-bottom:10px}
 <div class="modal hide" id="mIns" onclick="if (event.target === this) cerrarIns()"><div class="box plain det"><div class="dethead"><h2 class="pix" style="color:var(--navy)">INSIGNIAS DEL AULA</h2><button class="sbtn" onclick="cerrarIns()">✕ Cerrar</button></div><div id="mInsCuerpo" style="width:100%"></div></div></div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611220935"></script>
-<script src="assets/insignias.js?v=202611220935"></script>
-<script src="assets/comun.js?v=202611220935"></script>
+<script src="assets/config.js?v=202611220947"></script>
+<script src="assets/insignias.js?v=202611220947"></script>
+<script src="assets/comun.js?v=202611220947"></script>
 <script>
 const C_AL = '#6f3cc3', C_CL = '#e0742a';
 const CAT = [['jm', 'Juego del Miedo'], ['gr', 'Trabajo grupal'], ['lab', 'Laboratorio'], ['foro', 'Foro'], ['quiz', 'Quiz'], ['kah', 'Kahoot']];
@@ -112,7 +112,8 @@ async function iniciar() {
   const [rk, rc, m0, st] = await Promise.all([sb.from('v_ranking').select('*').eq('seccion_id', SECC.id), sb.from('v_ranking_consultoras').select('*').eq('seccion_id', SECC.id),
     sb.from('eq_perfil').select('jugador_id, tecnico, comunicacion, afinidad, respuestas, modo_elegido, intentos_escape, enviado'), sb.from('eq_reportes').select('reportado_id, semana').eq('estado', 'Validado')]);
   M0 = m0.error ? {} : Object.fromEntries((m0.data || []).map(x => [x.jugador_id, x]));
-  { const r = await sb.from('mq_respuestas').select('jugador_id, practica, respuestas, aciertos, total, tarde, creado'); MQR = r.error ? [] : (r.data || []); }
+  { const [r, pq] = await Promise.all([sb.from('mq_respuestas').select('jugador_id, practica, respuestas, aciertos, total, tarde, creado'), sb.from('mq_preguntas').select('id, texto, opciones, correcta, semana')]);
+    MQR = r.error ? [] : (r.data || []); MQP = pq.error ? {} : Object.fromEntries((pq.data || []).map(q => [q.id, q])); }
   { let r = await sb.from('eq_preguntas').select('id, parte, orden, texto, opciones, correcta, tema').eq('activa', true).order('orden');
     if (r.error && /tema/.test(r.error.message)) r = await sb.from('eq_preguntas').select('id, parte, orden, texto, opciones, correcta').eq('activa', true).order('orden');
     EQP = r.error ? [] : (r.data || []).filter(q => q.parte === 'tecnica'); }
@@ -277,7 +278,7 @@ function m0HTML(x) {
 }
 // ---------- Misiones = trabajo grupal de la semana + quiz de misión (preguntas de esa semana) → afinidad por tema ----------
 // Afinidad = promedio de las partes que existan: rúbrica del grupal (+ bonus − falta) sobre 3  y  % de aciertos del quiz en las preguntas de esa semana
-let MQR = [];
+let MQR = [], MQP = {};
 // Un acierto después de salir de la pantalla vale la mitad
 const quizSem = (jid, sem) => { let ok = 0, t = 0; MQR.filter(r => r.jugador_id === jid).forEach(r => (r.respuestas || []).forEach(x => { if (x.semana === sem) { t++; if (x.ok) ok += x.f ? 0.5 : 1; } })); return t ? { ok, t, v: ok / t } : null; };
 function misionSem(d) {
@@ -298,16 +299,48 @@ function sugerenciaRol(x) {
   const L = rolesQuiz(x.j.id).filter(r => r.top), a = x.j.rol_consultora; if (L.length < 2 || !a) return null;
   const [u1, u2] = L.slice(-2); return u1.top === u2.top && u1.top !== a ? u1.top : null;
 }
+// Estado de cada Misión 1..4 (= quiz de misión de la Práctica 1..4)
+function ultSem() { const u = {}; Object.values(SEMS).forEach(w => { const p = Number(String(w.practica || '').replace(/\D/g, '')); if (p) u[p] = Math.max(u[p] || 0, w.semana); }); return u; }
+function misEstado(x) {
+  const u = ultSem(), RQ = Object.fromEntries(rolesQuiz(x.j.id).map(r => [r.p, r]));
+  return [1, 2, 3, 4].map(p => { const r = RQ[p];
+    if (r) { const pct = Math.round(100 * r.ac / Math.max(1, r.tot)); return { p, ico: '✅', cls: pct >= 70 ? 'ok' : pct >= 50 ? 'med' : 'mal', txt: `Misión ${p} completada · ${r.ac}/${r.tot} (${pct}%)${r.tarde ? ' · tarde' : ''}${r.fugas ? ' · ⚠️ salió ' + r.fugas : ''}`, corto: `M${p} ✅ ${r.ac}/${r.tot}` }; }
+    if (!u[p] || ACT < u[p]) return { p, ico: '🔒', cls: 'pend', txt: `Misión ${p} · se abre en S${u[p] || '—'}`, corto: `M${p} 🔒` };
+    if (ACT === u[p]) return { p, ico: '⏳', cls: 'pend', txt: `Misión ${p} pendiente · abierta esta semana`, corto: `M${p} ⏳` };
+    return { p, ico: '📝', cls: 'mal', txt: `Misión ${p} pendiente · DEBE (Juego del Miedo)`, corto: `M${p} ❌ debe` }; });
+}
+const misChips = x => misEstado(x).filter(e => e.ico !== '🔒' || e.p === 1).map(e => `<span class="mch ${e.cls}">🎖️ ${esc(e.txt)}</span>`).join('');
+function misionNHTML(x, r) {
+  const rol = x.j.rol_consultora, R = rolesQuiz(x.j.id).find(o => o.p === r.practica) || { roles: [] };
+  const items = (r.respuestas || []).map(a => { const q = MQP[a.id] || {}, sinT = a.op === -1 && (a.ms || 0) >= 24000;
+    return { a, q, est: a.ok ? 'ok' : a.op === -1 ? 'nose' : 'mal', sinT, tema: SEMS[a.semana ?? q.semana]?.tema || (a.semana ? 'Semana ' + a.semana : 'Sin tema') }; });
+  const chip = (i, cls) => `<span class="m0t ${cls}" title="${esc(i.q.texto || 'Pregunta eliminada')}${i.est === 'mal' && i.q.opciones ? '\nRespondió: ' + esc(i.q.opciones[i.a.op] ?? '—') + '\nCorrecta: ' + esc(i.q.opciones[i.q.correcta] ?? '—') : ''}${i.sinT ? '\n⏱ Se le acabó el tiempo' : ''}${i.a.f ? '\n⚠️ Salió de la pantalla en esta pregunta' : ''}${i.a.ms ? '\nTiempo: ' + Math.round(i.a.ms / 1000) + ' s' : ''}">${esc(i.tema)}${i.a.f ? ' ⚠️' : ''}${i.sinT ? ' ⏱' : ''}</span>`;
+  // Agrupa por tema: un chip por tema con el número de preguntas (el detalle va en el tooltip)
+  const grupo = (L, cls) => Object.values(L.reduce((g, i) => ((g[i.tema] = g[i.tema] || []).push(i), g), {})).map(g => g.length === 1 ? chip(g[0], cls)
+    : `<span class="m0t ${cls}" title="${g.map(i => chip(i, cls).match(/title="([^"]*)"/)[1]).join('\n— — —\n')}">${esc(g[0].tema)} ×${g.length}${g.some(i => i.a.f) ? ' ⚠️' : ''}</span>`).join('');
+  const ok = items.filter(i => i.est === 'ok'), mal = items.filter(i => i.est === 'mal'), nose = items.filter(i => i.est === 'nose');
+  const pct = r.total ? Math.round(100 * r.aciertos / r.total) : 0, mapa = Object.fromEntries(R.roles.map(o => [o.rol, o]));
+  const roles = ROLES_EQUIPO.map(n => [n, mapa[n]]).sort((a, b) => (b[1]?.v ?? -1) - (a[1]?.v ?? -1));
+  return `<div class="msub"><h5>🎖️ Misión ${r.practica} · quiz de la Práctica ${r.practica} <small>(${new Date(r.creado).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}${r.tarde ? ' · <span style="color:#c8102e">respondió tarde</span>' : ''} · sin nota · pasa el mouse por un tema para ver la pregunta)</small></h5>
+    <div class="m0g">
+      <div><div class="m0k"><b>${pct}%</b><span>skill técnico (${r.aciertos}/${r.total})</span></div>
+        <div class="m0l">💪 Domina (${ok.length})</div><div>${grupo(ok, 'ok') || '<span class="vac2">—</span>'}</div>
+        <div class="m0l">⚠️ Debilidades: respondió mal (${mal.length})</div><div>${grupo(mal, 'mal') || '<span class="vac2">Ninguna 🎉</span>'}</div>
+        <div class="m0l">🤷 "No lo sé" o sin tiempo (${nose.length})</div><div>${grupo(nose, 'nose') || '<span class="vac2">—</span>'}</div></div>
+      <div><div class="m0k"><b>${R.seg ? R.seg + ' s' : '—'}</b><span>promedio por pregunta${R.fugas ? ` · <b style="color:#c8102e">⚠️ salió de la pantalla ${R.fugas} ${R.fugas === 1 ? 'vez' : 'veces'}</b>` : ' · 👍 no salió de la pantalla'}</span></div>
+        <div class="m0l">Afinidad por rol (aciertos en preguntas de cada rol)${rol ? ` · asignado: <b>${esc(rol)}</b>` : ''}</div>
+        ${roles.map(([n, o]) => `<div class="m0af ${n === rol ? 'yo' : ''}"><span>${esc(n)}</span><div class="ubar"><i style="width:${o ? Math.round(o.v * 100) : 0}%"></i></div><b>${o ? Math.round(o.v * 100) + '%' : '—'}</b></div>`).join('')}
+        <div class="m0l">${R.top ? (R.top === rol ? `✅ Rinde mejor en su rol actual` : `🔄 Rindió mejor como <b>${esc(R.top)}</b>`) : 'Sin un rol destacado'}</div></div>
+    </div></div>`;
+}
 function quizMisHTML(x) {
   const ult = {}; Object.values(SEMS).forEach(w => { const p = Number(String(w.practica || '').replace(/\D/g, '')); if (p) ult[p] = Math.max(ult[p] || 0, w.semana); });
-  const RQ = Object.fromEntries(rolesQuiz(x.j.id).map(r => [r.p, r])), sug = sugerenciaRol(x), a = x.j.rol_consultora;
-  const fila = p => { const r = RQ[p], u = ult[p];
-    const est = r ? `<b>${r.ac}/${r.tot}</b> aciertos${r.tarde ? ' · <span style="color:#c8102e">tarde</span>' : ''}${r.seg ? ` · ⏱ ${r.seg} s/preg.` : ''}${r.fugas ? ` · <span style="color:#c8102e" title="Salió de la pantalla durante el quiz: esos aciertos valen la mitad">⚠️ salió ${r.fugas} vez/veces</span>` : ''}` : !u ? '<span class="vac2">sin semanas en el plan</span>' : ACT < u ? `<span class="vac2">se abre en S${u}</span>` : ACT === u ? '⏳ abierto, aún no responde' : '<b style="color:#c8102e">📝 DEBE el quiz (Juego del Miedo)</b>';
-    const roles = r && r.roles.length ? r.roles.map(o => `<span class="m0t ${o.rol === r.top ? 'ok' : ''}" title="${o.t} pregunta(s)">${esc(o.rol)} ${Math.round(o.v * 100)}%${o.rol === a ? ' ★' : ''}</span>`).join('') : r ? '<span class="vac2">sin preguntas de rol</span>' : '';
-    return `<tr><td><b>P${p}</b></td><td>${est}</td><td>${roles}</td></tr>`; };
-  return `<div class="msub"><h5>📝 Quiz de misión <small>(sin nota · skill técnico por tema y afinidad de rol · ★ = rol actual${a ? ': ' + esc(a) : ''})</small></h5>
-    ${sug ? `<div class="m0alerta">💡 <b>Sugerencia: cambiar de rol.</b> En sus dos últimos quizzes rindió mejor en preguntas de <b>${esc(sug)}</b> que en las de su rol actual (${esc(a)}). La decisión es tuya.</div>` : ''}
-    <table class="qmt"><tbody>${[1, 2, 3, 4].map(fila).join('')}</tbody></table></div>`;
+  const sug = sugerenciaRol(x), a = x.j.rol_consultora, hechas = MQR.filter(r => r.jugador_id === x.j.id).sort((p, q) => p.practica - q.practica);
+  const pend = [1, 2, 3, 4].filter(p => !hechas.some(r => r.practica === p)).map(p => { const u = ult[p];
+    return `<span class="m0t ${u && ACT > u ? 'mal' : ''}">Misión ${p}: ${!u ? 'sin semanas en el plan' : ACT < u ? `se abre en S${u}` : ACT === u ? '⏳ abierta, aún no responde' : '📝 DEBE el quiz (Juego del Miedo)'}</span>`; }).join('');
+  return `${sug ? `<div class="msub"><div class="m0alerta">💡 <b>Sugerencia: cambiar de rol.</b> En sus dos últimas misiones rindió mejor en preguntas de <b>${esc(sug)}</b> que en las de su rol actual (${esc(a)}). La decisión es tuya.</div></div>` : ''}
+    ${hechas.map(r => misionNHTML(x, r)).join('')}
+    ${pend ? `<div class="msub"><h5>📝 Próximas misiones <small>(quiz sin nota de cada práctica)</small></h5><div>${pend}</div></div>` : ''}`;
 }
 function misionesSem(id) {
   const fs = DET.filter(d => d.jugador_id === id && d.semana <= ACT).sort((a, b) => a.semana - b.semana);
@@ -321,12 +354,12 @@ function misionesHTML(x) {
   const prom = L.length ? L.reduce((a, b) => a + b.af, 0) / L.length : null;
   const res = m0 ? `0 ✔` : '0 ⏳';
   return `<details class="pbox ancho2 mis" ${MIS_ABIERTO ? 'open' : ''} ontoggle="MIS_ABIERTO = this.open; this.querySelector('.mtog').textContent = this.open ? 'Contraer ▲' : 'Expandir ▼'; try { localStorage.setItem('sisope_mis', this.open ? '1' : '0'); } catch (e) {}">
-    <summary><h4>🎖️ Misiones <small>· Misión ${res} · ${L.length} misiones semanales (trabajo grupal + quiz de misión)${sugerenciaRol(x) ? ' · 💡 cambio de rol sugerido' : ''}${prom !== null ? ` · afinidad promedio ${Math.round(prom * 100)}%` : ''}</small></h4><span class="mtog">${MIS_ABIERTO ? 'Contraer ▲' : 'Expandir ▼'}</span></summary>
+    <summary><h4>🎖️ Misiones <small>· Misión ${res} · ${misEstado(x).map(e => e.corto).join(' · ')}${sugerenciaRol(x) ? ' · 💡 cambio de rol sugerido' : ''}${prom !== null ? ` · afinidad promedio ${Math.round(prom * 100)}%` : ''}</small></h4><span class="mtog">${MIS_ABIERTO ? 'Contraer ▲' : 'Expandir ▼'}</span></summary>
     ${m0HTML(x)}
     ${quizMisHTML(x)}
     <div class="msub"><h5>📚 Afinidad por tema <small>(cada semana: rúbrica del trabajo grupal sobre 3 + % de aciertos del quiz de misión en las preguntas de esa semana, promediados)</small></h5>
       ${L.length ? afinidadChart(L) + `<div class="m0g" style="margin-top:8px"><div><div class="m0l">💚 Temas con más afinidad</div>${ord.slice(0, 3).map(t => `<span class="m0t ok" title="S${t.s}: ${Math.round(t.af * 100)}%">S${t.s} · ${esc(t.tema)}</span>`).join('')}</div>
-        <div><div class="m0l">🎯 Temas a reforzar</div>${ord.slice(-3).reverse().filter(t => t.af < 0.7).map(t => `<span class="m0t mal" title="S${t.s}: ${Math.round(t.af * 100)}%">S${t.s} · ${esc(t.tema)}</span>`).join('') || '<span class="vac2">Ninguno bajo 70% 🎉</span>'}</div></div>` : '<div class="vac2">Aún no hay laboratorios ni trabajos grupales calificados.</div>'}
+        <div><div class="m0l">🎯 Temas a reforzar</div>${ord.slice(-3).reverse().filter(t => t.af < 0.7).map(t => `<span class="m0t mal" title="S${t.s}: ${Math.round(t.af * 100)}%">S${t.s} · ${esc(t.tema)}</span>`).join('') || '<span class="vac2">Ninguno bajo 70% 🎉</span>'}</div></div>` : '<div class="vac2">Aún no hay trabajos grupales calificados ni quizzes de misión con preguntas de estas semanas.</div>'}
     </div></details>`;
 }
 function afinidadChart(L) {
@@ -430,8 +463,8 @@ const v1 = v => v === null || v === undefined ? '—' : (Math.round(v * 10) / 10
 function evoHTML(x) {
   const e = x.evo, m = e.m, rol = x.j.rol_consultora, af = m && rol && m.afinidad ? m.afinidad[rol] : null;
   const com = m ? Number(m.comunicacion) : null, voz0 = com === null ? '' : com <= 33 ? '🤫 Reservado' : com >= 67 ? '🗣 Le gusta hablar' : '💬 Intermedio';
-  const base = m ? `<div class="evo0"><span>📅 ${new Date(m.enviado).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}</span><span>🧠 Diagnóstico técnico ${Math.round(m.tecnico)}%</span><span>${voz0} (${Math.round(com)}%)</span><span>${Number(m.intentos_escape) ? `🫠 Intentó escapar del reto ${m.intentos_escape} ${Number(m.intentos_escape) === 1 ? 'vez' : 'veces'}` : '😈 Eligió el reto a la primera'}</span>${rol ? `<span>🎯 ${esc(rol)}${af !== null && af !== undefined ? ` · afinidad ${Math.round(af)}%` : ''}</span>` : ''}</div>`
-    : '<div class="evo0"><span style="background:#ffe4e4;color:#b02a2a">⚠ Aún no hace la Misión 0: la comparación usa solo sus semanas de clase</span></div>';
+  const base = `<div class="evo0">${misChips(x)}</div>` + (m ? `<div class="evo0"><span>📅 ${new Date(m.enviado).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}</span><span>🧠 Diagnóstico técnico ${Math.round(m.tecnico)}%</span><span>${voz0} (${Math.round(com)}%)</span><span>${Number(m.intentos_escape) ? `🫠 Intentó escapar del reto ${m.intentos_escape} ${Number(m.intentos_escape) === 1 ? 'vez' : 'veces'}` : '😈 Eligió el reto a la primera'}</span>${rol ? `<span>🎯 ${esc(rol)}${af !== null && af !== undefined ? ` · afinidad ${Math.round(af)}%` : ''}</span>` : ''}</div>`
+    : '<div class="evo0"><span style="background:#ffe4e4;color:#b02a2a">⚠ Aún no hace la Misión 0: la comparación usa solo sus semanas de clase</span></div>');
   const tarjeta = (titulo, a, b, fmt, unidad, vd, nota) => `<div class="evc ${vd[0]}"><h5>${titulo}</h5><div class="ft"><i>${e.rIni || 'inicio'}</i><b>${fmt(a)}</b><i>→ ${e.rFin || 'ahora'}</i><b>${fmt(b)}</b><i>${unidad}</i></div><div class="vd">${{ ok: '✅', sube: '📈', mal: '⚠️', pend: '⏳' }[vd[0]]} ${vd[1]}</div><small>${nota}</small></div>`;
   const so2 = x.comp.SO2;
   return `<div class="pbox ancho2"><h4>🎖️ Evolución desde la Misión 0 <small>(primeras 3 semanas vs. últimas 3)</small></h4>${base}<div class="evo">
