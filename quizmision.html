@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SISOPE Arena · Quiz de misión</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=202611220924">
+<link rel="stylesheet" href="assets/app.css?v=202611220935">
 <style>
 .ev{max-width:760px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:18px}
 .ev .panel{padding:24px}
@@ -52,9 +52,9 @@
 .ley b{flex:none;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#0f1733;font-size:13px}
 .ley .nose{grid-column:1/-1;color:#b8c2e6;border-style:dashed}
 .cv{position:relative}.cv canvas{width:100%;display:block;border-radius:12px;background:#0a1124;border:2px solid #2a3766;touch-action:manipulation;cursor:pointer}
-.cv .ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;text-align:center;font-weight:800;background:#0a1124d9;border-radius:12px;color:var(--gold);font-size:18px;padding:10px}
-.cv .ov small{color:#d6dcf2;font-size:13px}
-.fuga .qt,.fuga .ley{filter:blur(8px)}
+#s-q{position:relative}#ov{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;text-align:center;font-weight:800;background:#0a1124d9;border-radius:12px;color:var(--gold);font-size:18px;padding:10px}
+#ov small{color:#d6dcf2;font-size:13px}
+.fuga .qt,.fuga .ley,.fuga .ops{filter:blur(8px)}
 .clasico .ops{margin-top:8px}
 @media(max-width:600px){.lks button small{display:none}.qt{font-size:17px}.huida{height:340px}}
 </style>
@@ -72,8 +72,8 @@
     <ol class="reglas">
       <li><b id="nQ">10</b> preguntas de los temas de la práctica.</li>
       <li>Si no sabes, marca <b>“No lo sé”</b>: adivinar solo esconde lo que necesitas reforzar.</li>
-      <li>🦖 <b>Modo runner:</b> tu robot corre solo y las alternativas llegan como obstáculos con su letra. <b>Choca</b> con la correcta y <b>salta</b> las demás (⬆️, Espacio o toca la pantalla). Tienes <b id="nSeg">25</b> segundos por pregunta.</li>
-      <li>Tienes <b>un solo intento</b> y no puedes volver atrás. Si sales de la pantalla, la pregunta se oculta, el tiempo sigue corriendo y queda registrado.</li>
+      <li>⏱ Tienes <b id="nSeg">25</b> segundos por pregunta. Si se acaba el tiempo, cuenta como sin responder.</li>
+      <li>Tienes <b>un solo intento</b> y no puedes volver atrás. Si sales de la pantalla (otra pestaña u otra app), la pregunta se oculta, el tiempo sigue corriendo y queda registrado.</li>
       <li>⚠️ Si no lo respondes antes de pasar a la siguiente práctica, quedas en la lista del <b>Juego del Miedo</b>.</li>
     </ol>
     <div class="acc"><span class="gris" id="estado"></span><button class="evbtn" id="bEmpezar" disabled>Cargando…</button></div>
@@ -84,9 +84,10 @@
     <p class="qt" id="qTxt" style="margin-top:14px"></p>
     <div class="ley" id="ley"></div>
     <div class="tbar"><i id="tb"></i></div>
-    <div class="cv" id="cvBox"><canvas id="cv" width="800" height="230"></canvas><div class="ov" id="ov"></div></div>
+    <div class="cv hide" id="cvBox"><canvas id="cv" width="800" height="230"></canvas></div>
+    <div class="ov" id="ov" style="display:none"></div>
     <div class="ops hide" id="qOps"></div>
-    <div class="acc"><span class="gris" id="ayuda">⬆️ / Espacio / toca la pantalla = saltar · <b>Choca</b> con la letra correcta · salta las demás</span><a href="#" class="gris" id="lnkClas" style="font-size:12px">¿Problemas con el juego? Modo clásico</a></div>
+    <p class="gris" style="margin-top:10px">⏱ Elige antes de que se acabe la barra. No puedes volver a una pregunta anterior.</p>
   </section>
   <section class="panel hide" id="s-env">
     <h2 class="pix">¿ENVIAR TUS RESPUESTAS?</h2>
@@ -97,8 +98,8 @@
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js?v=202611220924"></script>
-<script src="assets/comun.js?v=202611220924"></script>
+<script src="assets/config.js?v=202611220935"></script>
+<script src="assets/comun.js?v=202611220935"></script>
 <script>
 let P = Number(new URLSearchParams(location.search).get('p')) || null, Q = [], R = {}, IDX = 0, PREVIEW = false, ENV = false;
 const mezclar = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
@@ -140,7 +141,7 @@ async function iniciar() {
 // ---------- Runner ----------
 const SEG = 25, COL = ['#39ff14', '#00e5ff', '#ffd23f', '#ff7ad9', '#8a94b8'], LET = ['A', 'B', 'C', 'D', '?'];
 const cv = $('#cv'), cx = cv.getContext('2d'), W = 800, H = 230, SUELO = 190;
-let G = null, CLASICO = false, raf = null;
+let G = null, CLASICO = true, raf = null;   // modo runner desactivado: botones + 25 s
 const guardarLocal = () => { if (PREVIEW) return; try { localStorage.setItem('sisope_qm_' + P, JSON.stringify({ Q, R, F, MS, IDX })); } catch (e) {} };
 let F = {}, MS = {};
 function irQ(i) {
@@ -150,10 +151,11 @@ function irQ(i) {
   $('#qTxt').textContent = q.texto;
   $('#ley').innerHTML = q.ops.map(([k, t], j) => `<div><b style="background:${COL[j]}">${LET[j]}</b><span>${esc(t)}</span></div>`).join('') + `<div class="nose"><b style="background:${COL[4]}">?</b><span>No lo sé</span></div>`;
   $('#qOps').innerHTML = q.ops.map(([k, t], j) => `<button class="op" onclick="elegir(${j})"><b>${LET[j]})</b> ${esc(t)}</button>`).join('') + `<button class="op nose" onclick="elegir(4)">🤷 No lo sé</button>`;
-  $('#cvBox').classList.toggle('hide', CLASICO); $('#qOps').classList.toggle('hide', !CLASICO); $('#ayuda').classList.toggle('hide', CLASICO);
+  $('#cvBox').classList.toggle('hide', CLASICO); $('#qOps').classList.toggle('hide', !CLASICO); $('#ley').classList.toggle('hide', CLASICO);
   // Obstáculos: las 5 letras en orden al azar, se repiten hasta que se acabe el tiempo
   G = { t0: null, y: 0, vy: 0, obs: [], sig: 0, fin: false, cuenta: 3, tCuenta: performance.now() };
-  ov(`¡Prepárate!<small>Lee la pregunta</small>`); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+  if (CLASICO) { ov(''); G.t0 = G.last = performance.now(); } else ov(`¡Prepárate!<small>Lee la pregunta</small>`);
+  cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 }
 function ov(h) { const o = $('#ov'); o.innerHTML = h || ''; o.style.display = h ? 'flex' : 'none'; }
 function nuevaTanda() { const L = mezclar([0, 1, 2, 3, 4]); L.forEach((k, j) => G.obs.push({ k, x: W + 60 + G.sig + j * 300, w: 46, h: 54 })); G.sig += 5 * 300; }
@@ -166,7 +168,7 @@ function loop(now) {
     G.t0 = now; G.last = now; ov(''); nuevaTanda(); nuevaTanda();
   }
   const dt = Math.min(40, now - G.last) / 16.67; G.last = now;
-  const rest = SEG - (now - G.t0) / 1000; $('#tb').style.width = Math.max(0, 100 * rest / SEG) + '%';
+  const rest = SEG - (now - G.t0) / 1000; $('#tb').style.width = Math.max(0, 100 * rest / SEG) + '%'; $('#qNum').textContent = `${IDX + 1} / ${Q.length} · ⏱ ${Math.max(0, Math.ceil(rest))} s`;
   if (CLASICO || $('#s-q').classList.contains('fuga')) { G.vy = 0; if (rest <= 0) elegir(-1); else raf = requestAnimationFrame(loop); return; }   // fuera de pantalla: el juego se congela, el reloj no
   const vel = 3.6 * dt; G.obs.forEach(o => o.x -= vel); G.sig -= vel;
   if (G.obs.length < 6) nuevaTanda(); G.obs = G.obs.filter(o => o.x > -80);
@@ -200,8 +202,8 @@ function dibujar(now) {
 function elegir(j) {
   if (!G || G.fin) return; G.fin = true; cancelAnimationFrame(raf);
   const q = Q[IDX]; R[q.id] = j >= 0 && j < 4 ? q.ops[j][0] : -1; MS[q.id] = G.t0 ? Math.round(performance.now() - G.t0) : 0;
-  ov(j === -1 ? '⏱️ Se acabó el tiempo<small>Cuenta como sin responder</small>' : j === 4 ? '🤷 No lo sé<small>Gracias por ser honesto</small>' : `💥 Elegiste <span style="color:${COL[j]}">${LET[j]}</span><small>Siguiente pregunta…</small>`);
-  setTimeout(() => irQ(IDX + 1), 900);
+  ov(j === -1 ? '⏱️ Se acabó el tiempo<small>Cuenta como sin responder</small>' : j === 4 ? '🤷 No lo sé<small>Gracias por ser honesto</small>' : (CLASICO ? `✔ Respuesta registrada<small>Siguiente pregunta…</small>` : `💥 Elegiste <span style="color:${COL[j]}">${LET[j]}</span><small>Siguiente pregunta…</small>`));
+  setTimeout(() => irQ(IDX + 1), CLASICO ? 700 : 900);
 }
 // Detector de fuga: si sale de la pantalla se oculta la pregunta (el tiempo sigue)
 function fuga() { if (!G || G.fin || $('#s-q').classList.contains('hide')) return; const id = Q[IDX].id; F[id] = (F[id] || 0) + 1; $('#s-q').classList.add('fuga'); ov('👀 Saliste de la pantalla<small>Quedó registrado y el tiempo siguió corriendo. Toca para continuar.</small>'); }
@@ -210,8 +212,8 @@ window.addEventListener('blur', fuga);
 const volver = () => { if ($('#s-q').classList.contains('fuga')) { $('#s-q').classList.remove('fuga'); ov(''); return true; } return false; };
 ['copy', 'cut', 'contextmenu', 'selectstart'].forEach(ev => $('#s-q').addEventListener(ev, e => e.preventDefault()));
 document.addEventListener('keydown', e => { if ($('#s-q').classList.contains('hide')) return; if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (!volver()) saltar(); } });
+$('#ov').addEventListener('pointerdown', e => { e.preventDefault(); volver(); });
 $('#cvBox').addEventListener('pointerdown', e => { e.preventDefault(); if (!volver()) saltar(); });
-$('#lnkClas').onclick = e => { e.preventDefault(); if (CLASICO) return; CLASICO = true; $('#cvBox').classList.add('hide'); $('#qOps').classList.remove('hide'); $('#ayuda').classList.add('hide'); toast('Modo clásico: el tiempo por pregunta sigue igual'); };
 function irEnv() {
   ver('s-env'); $('#pg').style.width = '100%';
   const nose = Q.filter(q => R[q.id] === -1).length;
